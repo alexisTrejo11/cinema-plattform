@@ -1,10 +1,10 @@
 from pydantic import Field
-from typing import Dict, List, Optional, ClassVar
+from typing import Dict, List, Optional, ClassVar, Any
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from ..value_objects import Seats
 from ..exceptions import *
-from .showtime_base import ShowtimeBase
+from .base import ShowtimeBase
 
 class Showtime(ShowtimeBase): 
     """Full domain entity for a Showtime, including DB-generated fields and derived properties."""
@@ -12,14 +12,14 @@ class Showtime(ShowtimeBase):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    total_seats: Optional[int] = None # Will be derived/calculated by use case
-    available_seats: Optional[int] = None # Will be derived/calculated by use case
+    total_seats: Optional[int] = 0 # Will be derived/calculated by use case
+    available_seats: int = 0 # Will be derived/calculated by use case
     seats: List[Seats] = Field([], description="List of individual seat statuses for this showtime.") # Derived/calculated
 
     class Config:
         from_attributes = True
         use_enum_values = True
-        json_schema_extra = {
+        json_schema_extra: Dict[str, Any] = {
             "example": {
                 "id": 1,
                 "movie_id": 10,
@@ -87,12 +87,11 @@ class Showtime(ShowtimeBase):
         self._validate_duration()
         self._validate_schedule_date()
 
-   
     def take_seats(self, seats_number: int):
         self._validate_seat_quantity(seats_number)
         self._validate_avaliable_seats(seats_number)
 
-        self.avaialble_seats -= seats_number
+        self.available_seats -= seats_number
 
     def _validate_seat_quantity(self, seats_number: int):
         """
@@ -111,7 +110,7 @@ class Showtime(ShowtimeBase):
         """
         Validates enough quantity of a avaliable seats
         """
-        if seats_number > self.avaialble_seats:
+        if seats_number > self.available_seats:
             raise ShowtimeSeatsError("No Seats Avaliable for requested operation")
 
     def _validate_price(self):

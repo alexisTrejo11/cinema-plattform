@@ -1,3 +1,4 @@
+from token import OP
 from pydantic import BaseModel, Field, PositiveInt, HttpUrl
 from .enums import MovieGenre, MovieRating
 from typing import Optional
@@ -6,8 +7,8 @@ from datetime import datetime, date
 class Movie(BaseModel):
     id: Optional[int] = None
     title: str = Field(..., max_length=200)
-    original_title: Optional[str] = Field(None, max_length=200)
-    minute_duration: PositiveInt = Field(..., help_text="Duration in minutes")
+    original_title: Optional[str] = None
+    minute_duration: PositiveInt = Field(..., description="Duration in minutes")
     release_date: date
     end_date: date
     description: str

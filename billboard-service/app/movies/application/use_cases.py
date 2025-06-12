@@ -1,13 +1,13 @@
 from typing import List
+from app.shared.exceptions import NotFoundException
 from app.shared.pagination import PaginationParams
 from app.movies.domain.entities import Movie
 from app.movies.application.repositories import MovieRepository
 from app.movies.domain.entities import Movie
-from app.showtime.application.repositories.showtime_repository import ShowTimeRepository
+from app.showtime.application.repositories import ShowTimeRepository
 from .dtos import MovieShowtime, MovieShowtimesFilters
 from .repositories import MovieRepository
 from .services import MovieShowtimeService
-from app.shared.exceptions import NotFoundException
 
 class GetMovieByIdUseCase:
    def __init__(self, movie_repository: MovieRepository):
@@ -20,12 +20,13 @@ class GetMovieByIdUseCase:
       
        return movie
   
+  
 class GetMoviesInExhitionUseCase:
    def __init__(self, movie_repository: MovieRepository):
        self.movie_repository = movie_repository
 
    async def execute(self) -> List[Movie]:
-       movies = await self.movie_repository.get_active_movies()
+       movies = await self.movie_repository.list_active()
        return movies
 
 
@@ -33,15 +34,16 @@ class CreateMovieUseCase:
    def __init__(self, movie_repository: MovieRepository):
        self.movie_repository = movie_repository
 
-   async def execute(self, new_movie: Movie) -> List[Movie]:
+   async def execute(self, new_movie: Movie) -> Movie:
        movies = await self.movie_repository.save(new_movie)
        return movies
+   
    
 class UpdateMovieUseCase:
    def __init__(self, movie_repository: MovieRepository):
        self.movie_repository = movie_repository
 
-   async def execute(self, movie_id: int, movie_updated: Movie) -> List[Movie]:
+   async def execute(self, movie_id: int, movie_updated: Movie) -> Movie:
         movie = await self.movie_repository.get_by_id(movie_id)
         if not movie:
            raise NotFoundException("Movie", movie_id)
@@ -55,12 +57,12 @@ class DeleteMovieUseCase:
    def __init__(self, movie_repository: MovieRepository):
        self.movie_repository = movie_repository
 
-   async def execute(self, id: int) -> List[Movie]:
+   async def execute(self, id: int) -> None:
        movie = await self.movie_repository.get_by_id(id)
        if not movie:
            raise NotFoundException("Movie", id)
 
-       await self.movie_repository.delete(movie)
+       await self.movie_repository.delete(id)
 
 
 class GetMovieShowtimesUseCase:
@@ -69,7 +71,7 @@ class GetMovieShowtimesUseCase:
         self.movie_repo = movie_repo
     
     async def execute(self, filters: MovieShowtimesFilters, page_data: PaginationParams) -> List[MovieShowtime]:
-        movies = await self.movie_repo.get_in_exhibition()
+        movies = await self.movie_repo.list_active()
         if not movies:
             return []
 

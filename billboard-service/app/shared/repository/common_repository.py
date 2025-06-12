@@ -17,7 +17,7 @@ class CommonRepository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def get_all(self, page_params: Dict[str, int]) -> List[T]:
+    async def list_all(self, page_params: Dict[str, int]) -> List[T]:
         """
         Retrieves a list of entities with pagination parameters.
         page_params should contain 'offset' and 'limit'.

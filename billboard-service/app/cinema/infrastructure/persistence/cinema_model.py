@@ -1,14 +1,15 @@
 from __future__ import annotations
 from datetime import datetime, date, timezone
 from typing import List, TYPE_CHECKING, Optional
-from sqlalchemy import String, Integer, Boolean, DateTime, Date, Text, Float, ARRAY, Enum as SQLEnum
+from sqlalchemy import ARRAY, String, Integer, Boolean, DateTime, Date, Text, Float, Enum as SQLEnum
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from app.shared.base_model import Base
-from app.cinema.domain.enums import LocationRegion, CinemaType,CinemaStatus
+from config.base_model import Base
+from app.shared.string_list import StringList
+from app.cinema.domain.enums import LocationRegion, CinemaType, CinemaStatus
 
 if TYPE_CHECKING:
-    from app.theater.infrastructure.persistence.models.theater_model import TheaterModel
-    from app.showtime.infrastructure.persistence.models.showtime_model import ShowtimeModel
+    from app.theater.infrastructure.persistence.models import TheaterModel
+    from app.showtime.infrastructure.persistence.models import ShowtimeModel
 
 class CinemaModel(Base):
     __tablename__ = 'cinemas'
@@ -55,7 +56,8 @@ class CinemaModel(Base):
     tik_tok_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Features 
-    features: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False, default=[])
+    #features: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False, default=list) PROD
+    features: Mapped[StringList] = mapped_column(StringList, nullable=False, default=list)
 
     theaters: Mapped[List["TheaterModel"]] = relationship(
         back_populates="cinema",

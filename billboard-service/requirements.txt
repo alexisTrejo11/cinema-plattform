@@ -3,3 +3,8 @@ pydantic
 SQLAlchemy
 asyncpg
 greenlet
+pytest
+pytest-asyncio
+aiosqlite
+colorlog
+slowapi

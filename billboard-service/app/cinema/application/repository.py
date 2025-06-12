@@ -1,4 +1,4 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from abc import abstractmethod, ABC
 from app.shared.repository.common_repository import CommonRepository
 from app.cinema.domain.entities import Cinema
@@ -9,16 +9,16 @@ class CinemaRepository(CommonRepository[Cinema], ABC):
     Inherits common CRUD methods for Cinema.
     """
     @abstractmethod
-    async def get_cinemas_by_tax_number(self, tax_number: str) -> Optional[Cinema]:
+    async def get_by_tax_number(self, tax_number: str) -> Optional[Cinema]:
         pass
     
 
     @abstractmethod
-    async def get_active_cinemas(self, tax_number: str) -> List[Cinema]:
+    async def list_active(self) -> List[Cinema]:
         pass
 
     @abstractmethod
-    async def search(self, page_params: Dict[str, int], filter_params: Dict[str, any]) -> List[Cinema]:
+    async def search(self, page_params: Dict[str, int], filter_params: Dict[str, Any]) -> List[Cinema]:
         """
         Perform a dynamic search of cinemas with pagination and filtering capabilities.
         

@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from dataclasses import dataclass
-from app.showtime.domain.entities.showtime import Showtime
 
 @dataclass
 class MovieShowtime:
@@ -9,7 +8,7 @@ class MovieShowtime:
     Class to Represent a Showtime with Cinema with required field to show it on 
     billboard catalog
     """
-    movie_id: int
+    movie_id: Optional[int]
     title: str
     sinopsis: str
     poster_url: str
@@ -19,7 +18,7 @@ class MovieShowtime:
  
 @dataclass
 class ShowtimeDetail(BaseModel):
-    showtime_id: int
+    showtime_id: Optional[int]
     type: str # IMAX
     start_time: str
     language: str
@@ -29,13 +28,6 @@ class ShowtimeDetail(BaseModel):
 
 
 class MovieShowtimesFilters(BaseModel):
-    cinema_id_list: Optional[List[int]] = None, 
-    movie_id: Optional[int] = None,
-    incoming: bool = True,
-
-
-
-@dataclass
-class ShowtimesByMovie:
-    movie_id: int
-    showtimes: List['Showtime']
+    cinema_id_list: Optional[List[int]] = [] 
+    movie_id: Optional[int]
+    incoming: Optional[bool] = True

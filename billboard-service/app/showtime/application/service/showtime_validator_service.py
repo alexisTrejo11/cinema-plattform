@@ -1,11 +1,10 @@
 from app.shared.exceptions import ValidationException
-from app.theater.application.repositories.theater_seat_repository import TheaterSeatRepository
+from app.theater.application.repositories import TheaterSeatRepository
 from app.showtime.domain.entities.showtime import Showtime
-from ..repositories.showtime_repository import ShowTimeRepository
+from ..repositories import ShowTimeRepository
 
-#TODO: Validation To Specfic Exception
 class ShowtimeValidationService:
-    def __init__(self, showtime_repo: ShowTimeRepository, theater_seat_repo:TheaterSeatRepository):
+    def __init__(self, showtime_repo: ShowTimeRepository, theater_seat_repo: TheaterSeatRepository):
         self.showtime_repo = showtime_repo
         self.theater_seat_repo = theater_seat_repo
 
@@ -13,10 +12,10 @@ class ShowtimeValidationService:
         await self.validate_no_overlap(proposed_showtime, has_post_credits)
         await self.validate_theater_seats(proposed_showtime.theater_id)
 
-    async def validate_theater_seats(self, theater_id):
+    async def validate_theater_seats(self, theater_id: int):
         theater_count = await self.theater_seat_repo.exists_by_theater(theater_id)
         if theater_count == 0:
-            raise ValidationException("Theater don't have seats can't create showtime")
+            raise ValidationException(field="Theater", reason="Don't have seats to create showtime")
 
     async def validate_no_overlap(self, proposed_showtime: Showtime, include_post_credits_scene: bool = False):
         """
@@ -39,13 +38,13 @@ class ShowtimeValidationService:
         buffered_end_time = proposed_showtime.end_time + post_buffer
         
         if not proposed_showtime.id:
-            overlapping_showtimes = await self.showtime_repo.get_by_theater_and_date_range(
+            overlapping_showtimes = await self.showtime_repo.list_by_theater_and_date_range(
                 theater_id=proposed_showtime.theater_id,
                 start_time_to_check=buffered_start_time,
                 end_time_to_check=buffered_end_time
             )
         else:
-            overlapping_showtimes = await self.showtime_repo.get_by_theater_and_date_range(
+            overlapping_showtimes = await self.showtime_repo.list_by_theater_and_date_range(
                 theater_id=proposed_showtime.theater_id,
                 start_time_to_check=buffered_start_time,
                 end_time_to_check=buffered_end_time,

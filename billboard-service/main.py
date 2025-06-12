@@ -1,11 +1,22 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+
 from model_initialization import *
+from config import exception_handlers
+from app.shared import logging
+
 from app.movies.infrastructure.api import movie_controllers
 from app.movies.infrastructure.api import movie_showtime_controller
 from app.cinema.infrastructure.api import cinema_controllers
-from app.theater.infrastructure.api.controllers import theater_controllers, theather_seat_controllers
+from app.theater.infrastructure.api import theater_controllers, theather_seat_controllers
 from app.showtime.infrastructure.api import showtime_controller
-from config import exception_handlers
+
+logging.setup_logging()
+
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(
         title="Cinema Backend: Billboard Service API",
@@ -13,8 +24,12 @@ app = FastAPI(
         exception_handlers=exception_handlers
     )
 
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
 @app.get("/")
-def read_home():
+@limiter.limit("5/minute")  # type: ignore
+def read_home(request: Request):
     return { "home": "Welcome To Billboard Service" } 
 
 app.include_router(movie_controllers.router)

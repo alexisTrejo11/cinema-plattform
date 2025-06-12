@@ -25,9 +25,9 @@ class CinemaModelMapper:
         
         amenities_data = entity.amenities.model_dump() if entity.amenities else {}
         contact_info_data = entity.contact_info.model_dump() if entity.contact_info else {}
-        location_data = entity.location.model_dump() if entity.location else {}
+        location_data = entity.contact_info.location.model_dump() if entity.contact_info.location.model_dump() else {}
         social_media_data = entity.social_media.model_dump() if entity.social_media else {}
-        features_list = [feature.value for feature in entity.features] if entity.features else []
+        features_list = [feature for feature in entity.features] if entity.features else []
 
         orm_data = {
             'id': entity.id,

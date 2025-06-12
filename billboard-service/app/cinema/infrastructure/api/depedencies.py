@@ -1,12 +1,13 @@
 from datetime import date
-from typing import Optional
-from fastapi import Depends, Query
+from typing import Any, Optional
+from fastapi import Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.postgres_config import get_db
 from app.cinema.domain.enums import LocationRegion, CinemaType, CinemaStatus
 from app.cinema.application.dtos.cinema_search import CinemaSearchFilters
 from app.cinema.application.use_cases import GetCinemaByIdUseCase, GetActiveCinemasUseCase, SearchCinemasUseCase, CreateCinemaUseCase, UpdateCinemaUseCase, DeleteCinemaUseCase
 from ..persistence.sql_alch_repository import SQLAlchemyCinemaRepository
+import logging
 
 # Query
 async def get_cinema_by_id_use_case(db: AsyncSession = Depends(get_db)) -> GetCinemaByIdUseCase:
@@ -71,3 +72,19 @@ async def get_filters(
         phone=phone,
         email_contact=email_contact
     )
+
+
+logger = logging.getLogger("app")
+audit_logger = logging.getLogger("audit")
+
+def get_route_logger(request: Request) -> Any:
+    def route_logger(action: str, **kwargs: Any):
+        audit_logger.info(action, extra={
+            "props": {
+                "path": request.url.path,
+                "method": request.method,
+                "client": request.client.host if request.client else None,
+                **kwargs
+            }
+        })
+    return route_logger

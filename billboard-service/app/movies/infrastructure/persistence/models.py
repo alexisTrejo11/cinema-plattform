@@ -2,14 +2,14 @@ from __future__ import annotations
 from sqlalchemy import String, Integer, Boolean, Date, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.sql import func
-from app.shared.base_model import Base
+from config.base_model import Base
 from app.movies.domain.enums import MovieRating, MovieGenre
 from sqlalchemy.orm import mapped_column, relationship, Mapped
 from typing import List, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from app.showtime.infrastructure.persistence.models.showtime_model import ShowtimeModel
+    from app.showtime.infrastructure.persistence.models import ShowtimeModel
 
 class MovieModel(Base):
     __tablename__ = 'movies'
@@ -29,6 +29,11 @@ class MovieModel(Base):
     created_at = mapped_column(DateTime, server_default=func.now())
     updated_at = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
+    
     showtimes: Mapped[List["ShowtimeModel"]] = relationship(
-        back_populates="movie"
+        "ShowtimeModel",
+        back_populates="movie",
+        lazy='select',
+        cascade="all, delete-orphan"
     )
+

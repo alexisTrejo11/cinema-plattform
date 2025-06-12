@@ -2,9 +2,9 @@ from app.shared.exceptions import NotFoundException
 from app.showtime.domain.entities.showtime import Showtime
 from ..service.showtime_validator_service import ShowtimeValidationService as ValidationService
 from ..service.showtime_seat_service import ShowTimeSeatService
-from ..repositories.showtime_repository import ShowTimeRepository
-from ...application.mappers.showtime_mappers import ShowtimeMappers
-from ...application.dtos.showtime_insert import ShowtimeCreate, ShowtimeUpdate
+from ..repositories import ShowTimeRepository
+from ..mappers import ShowtimeMappers
+from ..dtos import ShowtimeCreate, ShowtimeUpdate
 
 class ScheduleShowtimeUseCase:
     def __init__(
@@ -36,8 +36,8 @@ class UpdateShowtimeUseCase:
         existing_showtime = await self.get_showtime(showtime_id)
 
         showtime_updated = ShowtimeMappers.update_with_dto(update_data, existing_showtime)
-        self.validation_service.validate_insert(showtime_updated, has_post_credits)
-        # await self.seat_service.create_showtimes_seats(showtime_updated)
+        await self.validation_service.validate_insert(showtime_updated, has_post_credits)
+        # Update: HANDLE SEATS await self.seat_service.create_showtimes_seats(showtime_updated)
 
         return await self.showtime_repo.save(showtime_updated)
 

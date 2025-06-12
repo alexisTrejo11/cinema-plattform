@@ -11,5 +11,6 @@ class MovieRepository(CommonRepository[Movie], ABC):
     # @abstractmethod
     # async def find_movies_by_genre(self, genre: str) -> List[Movie]:
     #     pass
-    async def get_in_exhibition(self) -> List[Movie]:
+    @abstractmethod
+    async def list_active(self) -> List[Movie]:
         pass

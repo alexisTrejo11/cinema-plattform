@@ -1,18 +1,17 @@
 from typing import List
 from app.shared.exceptions import NotFoundException, ValidationException
-from ...application.repositories.showtime_seat_repository import ShowtimeSeatRepository
-from ...application.repositories.showtime_repository import ShowTimeRepository
-from ...core.entities.showtime_seat import ShowtimeSeatEntity as ShowtimeSeat
+from app.showtime.domain.entities.showtime_seat import ShowtimeSeat
+from ..repositories import ShowtimeSeatRepository, ShowTimeRepository
 
-class GetShowtimeSeatsUseCase:
+class ListShowtimeSeatsUseCase:
     def __init__(self, seat_repo: ShowtimeSeatRepository, showtime_repo: ShowTimeRepository):
         self.seat_repo = seat_repo
         self.showtime_repo = showtime_repo
 
-    async def execute(self, showtime_id: int, to_be_exhibited=True) -> List[ShowtimeSeat]:
+    async def execute(self, showtime_id: int, to_be_exhibited: bool = True) -> List[ShowtimeSeat]:
         await self._validate_showtime(showtime_id, to_be_exhibited)
         
-        showtime_seats = self.seat_repo.get_by_showtime(showtime_id)
+        showtime_seats = await self.seat_repo.list_by_showtime(showtime_id)
         return showtime_seats if (showtime_seats and len(showtime_seats) > 0) else [] 
 
     
@@ -32,7 +31,7 @@ class GetShowtimeSeatByIdUseCase:
         self.seat_repo = seat_repo
 
     async def execute(self,  showtime_id: int, seat_id: int) -> ShowtimeSeat:
-        seat = self.seat_repo.get_by_showtime_and_seat(showtime_id,seat_id)
+        seat = await self.seat_repo.get_by_showtime_and_seat(showtime_id,seat_id)
         if not seat:
             raise NotFoundException("Showtime Seat", f"showtime:{showtime_id} - seat:{seat_id}")
         
@@ -43,13 +42,13 @@ class TakeSeatUseCase:
     def __init__(self, seat_repo: ShowtimeSeatRepository):
         self.seat_repo = seat_repo
 
-    async def execute(self, showtime_id: int, seat_id: int, data: dict) -> ShowtimeSeat:
-        seat = self.seat_repo.get_by_showtime_and_seat(showtime_id, seat_id)
+    async def execute(self, showtime_id: int, seat_id: int) -> ShowtimeSeat:
+        seat = await self.seat_repo.get_by_showtime_and_seat(showtime_id, seat_id)
         if not seat:
             raise NotFoundException("Showtime Seat", seat_id)
         
         seat.take()
-        self.seat_repo.save(seat)
+        await self.seat_repo.save(seat)
 
         return seat
 
@@ -58,13 +57,13 @@ class CancelSeatUseCase:
     def __init__(self, seat_repo: ShowtimeSeatRepository):
         self.seat_repo = seat_repo
 
-    async def execute(self, showtime_id: int, seat_id: int, data: dict) -> ShowtimeSeat:
-        seat = self.seat_repo.get_by_showtime_and_seat(showtime_id, seat_id)
+    async def execute(self, showtime_id: int, seat_id: int) -> ShowtimeSeat:
+        seat = await self.seat_repo.get_by_showtime_and_seat(showtime_id, seat_id)
         if not seat:
             raise NotFoundException("Showtime Seat", seat_id)
         
         seat.leave()
-        self.seat_repo.save(seat)
+        await self.seat_repo.save(seat)
 
         return seat
 

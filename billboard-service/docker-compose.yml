@@ -1,6 +1,28 @@
 version: '3.8'
 
 services:
+  api:
+    build: .
+    ports:
+      - "8001:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/billboard
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=billboard
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "db", "-U", "postgres", "-d", "billboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   db:
     image: postgres:13
     environment:
@@ -11,6 +33,18 @@ services:
       - postgres_data:/var/lib/postgresql/data/
     ports:
       - "5431:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d billboard"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
+    attachable: true

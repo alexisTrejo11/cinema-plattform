@@ -1,8 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from app.shared.base_model import Base
 
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/cinema_billboard_db"
+DATABASE_URL = "postgresql+asyncpg://postgres:root@localhost:5432/billboard"
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException
 from typing import Annotated, List, Optional
 from app.shared.pagination import PaginationParams
 from app.movies.application.dtos import MovieShowtimesFilters, MovieShowtime
@@ -36,22 +36,13 @@ async def get_movie_showtime(
     """
     try:
         page_params = PaginationParams(offset=offset, limit=limit)
-        
         filters = MovieShowtimesFilters(
-            cinema_id_list=cinema_id_list,
-            movie_id=movie_id,
-            incoming=True
+            cinema_id_list=cinema_id_list, 
+            movie_id=movie_id, 
+            incoming=False # Incoming False to use demo data
         )
 
         movie_showtimes = await use_case.execute(filters, page_params)
         return movie_showtimes
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,8 +1,7 @@
-from typing import Optional, Dict, List
+from typing import Any, Optional, Dict, List
 from sqlalchemy import and_, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.cinema.domain.entities import Cinema
-from app.cinema.domain.exceptions import CinemaNotFound
 from app.cinema.application.repository import CinemaRepository
 from .cinema_model import CinemaModel
 from .cinema_mappers import CinemaModelMapper as CinemaMapper
@@ -11,7 +10,8 @@ class SQLAlchemyCinemaRepository(CinemaRepository):
     def __init__(self,  session: AsyncSession):
         self.session = session
 
-    async def get_all(self, page_params: Dict[str, int]) -> List[Cinema]:
+
+    async def list_all(self, page_params: Dict[str, int]) -> List[Cinema]:
         offset = page_params.get('offset', 0)
         limit = page_params.get('limit', 10)
         
@@ -21,35 +21,70 @@ class SQLAlchemyCinemaRepository(CinemaRepository):
 
         return [CinemaMapper.to_domain(model) for model in models]
 
-    async def get_active_cinemas(self) -> List[Cinema]:
-        stmt = select(CinemaModel).where(
-            CinemaModel.is_active == True,
-        )
+
+    async def list_active(self) -> List[Cinema]:
+        stmt = select(CinemaModel).where(CinemaModel.is_active == True)
         result = await self.session.execute(stmt)
         models = result.scalars().all()
 
         return [CinemaMapper.to_domain(model) for model in models]
 
-    async def search(self, page_params: Dict[str, int], filter_params: Dict[str, any]) -> List[Cinema]:
-        """
-        Perform a dynamic search of cinemas with pagination and filtering capabilities.
-        
-        Args:
-            page_params: Dictionary containing pagination parameters (offset, limit)
-            filter_params: Dictionary containing filter criteria for cinemas
-            
-        Returns:
-            List of Cinema domain objects matching the criteria
-        """
+
+    async def search(self, page_params: Dict[str, int], filter_params: Dict[str, Any]) -> List[Cinema]:
         offset = page_params.get('offset', 0)
         limit = page_params.get('limit', 10)
 
         stmt = select(CinemaModel).offset(offset).limit(limit)
         
         if filter_params:
-            filters = []
+            filters = self._build_filters_param(filter_params)
+
+            if filters:
+                stmt = stmt.where(and_(*filters))
+        
+        result = await self.session.execute(stmt)
+        models = result.scalars().all()
+
+        return [CinemaMapper.to_domain(model) for model in models]
+
+
+    async def get_by_id(self, entity_id: int) -> Optional[Cinema]:
+        model = await self.session.get(CinemaModel, entity_id)
+        
+        return CinemaMapper.to_domain(model) if model else None
+
+    
+    async def get_by_tax_number(self, tax_number: str) -> Optional[Cinema]: 
+        stmt = select(CinemaModel).where(CinemaModel.tax_number == tax_number)
+        result = await self.session.execute(stmt)
+        model = result.scalars().first()        
+        
+        return CinemaMapper.to_domain(model) if model else None
+
+    async def save(self, entity: Cinema) -> Cinema:
+        model = CinemaMapper.from_domain(entity)
+        
+        if entity.id is None:
+            self.session.add(model)
+        else:
+            model = await self.session.merge(model)
             
-            if 'name' in filter_params:
+        await self.session.commit()
+        await self.session.refresh(model)
+        
+        return CinemaMapper.to_domain(model)
+
+
+    async def delete(self, entity_id: int) -> None:
+        stmt = delete(CinemaModel).where(CinemaModel.id == entity_id)
+        await self.session.execute(stmt)
+        await self.session.commit()
+
+
+    def _build_filters_param(self, filter_params: Dict[str, Any]) -> List[Any]:
+            filters: List[Any] = []
+            
+            if 'name' in filters:
                 filters.append(CinemaModel.name.ilike(f"%{filter_params['name']}%"))
             if 'tax_number' in filter_params:
                 filters.append(CinemaModel.tax_number == filter_params['tax_number'])
@@ -90,61 +125,4 @@ class SQLAlchemyCinemaRepository(CinemaRepository):
             if 'email_contact' in filter_params:
                 filters.append(CinemaModel.email_contact.ilike(f"%{filter_params['email_contact']}%"))
             
-            if filters:
-                stmt = stmt.where(and_(*filters))
-        
-        result = await self.session.execute(stmt)
-        models = result.scalars().all()
-
-        return [CinemaMapper.to_domain(model) for model in models]
-
-    async def get_by_id(self, cinema_id: int) -> Optional[Cinema]:
-        model = await self.session.get(CinemaModel, cinema_id)
-        if model:
-            return CinemaMapper.to_domain(model)
-        return None
-    
-    async def get_cinemas_by_tax_number(self, tax_number: str) -> Optional[Cinema]: 
-        stmt = select(CinemaModel).where(
-            CinemaModel.tax_number == tax_number,
-        )
-        result = await self.session.execute(stmt)
-        model = result.scalars().first()        
-        return CinemaMapper.to_domain(model) if model else None
-
-    async def save(self, entity: Cinema) -> Cinema:
-        if entity.id:
-          model = await self._update(entity)
-        else:
-            model = await self._create(entity)
-        return CinemaMapper.to_domain(model)
-
-    async def _create(self, entity: Cinema) -> CinemaModel:
-        model = CinemaMapper.from_domain(entity)
-        self.session.add(model)
-        await self.session.commit()
-        await self.session.refresh(model)
-        return model
-    
-    async def _update(self, entity: Cinema) -> CinemaModel:
-        model = await self.session.get(CinemaModel, entity.id)
-        
-        if not model:
-            raise CinemaNotFound(f"Cinema with ID {entity.id} not found for update.")
-
-        entity_data = CinemaMapper.from_domain(entity).__dict__
-        keys_to_exclude = {'id', 'created_at', '_sa_instance_state'}
-        
-        for key, value in entity_data.items():
-            if key not in keys_to_exclude:
-                setattr(model, key, value)
-        
-        await self.session.commit()
-        await self.session.refresh(model) 
-        
-        return model
-
-    async def delete(self, entity) -> None:
-        stmt = delete(CinemaModel).where(CinemaModel.id == entity.id)
-        await self.session.execute(stmt)
-        await self.session.commit()
+            return filters

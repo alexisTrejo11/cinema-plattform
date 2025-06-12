@@ -19,10 +19,12 @@ class MovieShowtimeService:
         showtimes: List[Showtime]
     ) -> MovieShowtime:
         return MovieShowtime(
-            movie_id=movie.id,
+            movie_id= movie.id,
             title=movie.title,
-            poster_url=movie.poster_url,
+            poster_url=str(movie.poster_url),
             minute_duration=movie.minute_duration,
+            sinopsis=movie.description,
+            rating=movie.rating,
             showtimes=cls._create_showtimes_details(showtimes),
         )
 
@@ -34,9 +36,10 @@ class MovieShowtimeService:
             dto = ShowtimeDetail(
                 showtime_id=showtime.id,
                 type=showtime.type,
-                start_time=showtime.start_time,
+                start_time=str(showtime.start_time),
                 language=showtime.language,
-                total_seats=showtime.total_seats,
+                screen=f"Room - {showtime.theater_id}",
+                total_seats=showtime.total_seats if showtime.total_seats is not None else 0,
                 avaailable_seats=showtime.avaialble_seats,
             )
             showtimes_dtos.append(dto)

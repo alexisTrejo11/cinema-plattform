@@ -1,5 +1,4 @@
 from typing import Optional, Dict, List
-from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from app.movies.application.repositories import MovieRepository
@@ -8,25 +7,22 @@ from .models import MovieModel
 from .mappers import MovieMapper
 
 class SQLAlchemyMovieRepository(MovieRepository):
-    def __init__(self,  session: AsyncSession):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_active_movies(self) -> List[Movie]:        
-        stmt = select(MovieModel).where(
-            MovieModel.is_active == True
-        )
+    async def list_active(self) -> List[Movie]:        
+        stmt = select(MovieModel).where(MovieModel.is_active == True)
         result = await self.session.execute(stmt)
         models = result.scalars().all()
 
         return [MovieMapper.to_entity(model) for model in models]
 
-    async def get_by_id(self, movie_id: int) -> Optional[Movie]:
-        model = await self.session.get(MovieModel, movie_id)
-        if model:
-            return MovieMapper.to_entity(model)
-        return None
+    async def get_by_id(self, entity_id: int) -> Optional[Movie]:
+        model = await self.session.get(MovieModel, entity_id)
 
-    async def get_all(self, page_params: Dict[str, int]) -> List[Movie]:
+        return MovieMapper.to_entity(model) if model else None
+
+    async def list_all(self, page_params: Dict[str, int]) -> List[Movie]:
         offset = page_params.get('offset', 0)
         limit = page_params.get('limit', 10)
         
@@ -45,14 +41,13 @@ class SQLAlchemyMovieRepository(MovieRepository):
             model = await self.session.merge(model)
             
         await self.session.commit()
+        await self.session.refresh(model)
         
-        if entity.id is None:
-            await self.session.refresh(model)
         return MovieMapper.to_entity(model)
 
     
-    async def delete(self, entity) -> None:
-        stmt = delete(MovieModel).where(MovieModel.id == entity.id)
+    async def delete(self, entity_id: int) -> None:
+        stmt = delete(MovieModel).where(MovieModel.id == entity_id)
         await self.session.execute(stmt)
         await self.session.commit()
 

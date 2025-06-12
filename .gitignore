@@ -17,3 +17,5 @@ notification-service/.env
 notification-service/env/
 
 
+__pycache__
+.pyest_cache
