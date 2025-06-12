@@ -1,9 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from dataclasses import dataclass
 
-@dataclass
-class MovieShowtime:
+class MovieShowtime(BaseModel):
     """
     Class to Represent a Showtime with Cinema with required field to show it on 
     billboard catalog
@@ -16,7 +14,6 @@ class MovieShowtime:
     minute_duration: int
     showtimes: List['ShowtimeDetail']
  
-@dataclass
 class ShowtimeDetail(BaseModel):
     showtime_id: Optional[int]
     type: str # IMAX
@@ -24,7 +21,7 @@ class ShowtimeDetail(BaseModel):
     language: str
     screen: str # Theater ID with Theather {id} 
     total_seats: int
-    avaailable_seats: int
+    available_seats: int
 
 
 class MovieShowtimesFilters(BaseModel):

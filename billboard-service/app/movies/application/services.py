@@ -8,7 +8,10 @@ class MovieShowtimeService:
     def generate_movie_showtimes(cls, movies: List[Movie], showtimes_by_movie: Dict[int, List[Showtime]]
     ) -> List[MovieShowtime]:        
         return [
-            cls._create_movie_showtime(movie, showtimes_by_movie.get(movie.id, []))
+            cls._create_movie_showtime(
+                movie, 
+                showtimes_by_movie.get(movie.id, []) if movie.id is not None else []
+            )
             for movie in movies
         ]
 
@@ -30,7 +33,7 @@ class MovieShowtimeService:
 
     @classmethod
     def _create_showtimes_details(cls, showtimes: List[Showtime]) -> List[ShowtimeDetail]:
-        showtimes_dtos = []
+        showtimes_dtos: List[ShowtimeDetail] = []
         
         for showtime in showtimes:
             dto = ShowtimeDetail(
@@ -40,7 +43,7 @@ class MovieShowtimeService:
                 language=showtime.language,
                 screen=f"Room - {showtime.theater_id}",
                 total_seats=showtime.total_seats if showtime.total_seats is not None else 0,
-                avaailable_seats=showtime.avaialble_seats,
+                available_seats=showtime.available_seats,
             )
             showtimes_dtos.append(dto)
 

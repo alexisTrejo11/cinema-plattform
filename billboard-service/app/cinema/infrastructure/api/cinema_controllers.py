@@ -2,7 +2,7 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, Query, status, Request
 from app.cinema.domain.entities import Cinema
 from app.cinema.application.dtos.cinema_insert import CinemaCreate, CinemaUpdate
-from app.cinema.application.use_cases import GetCinemaByIdUseCase, GetActiveCinemasUseCase, SearchCinemasUseCase, CreateCinemaUseCase, UpdateCinemaUseCase, DeleteCinemaUseCase
+from app.cinema.application.use_cases import GetCinemaByIdUseCase, ListActiveCinemasUseCase, SearchCinemasUseCase, CreateCinemaUseCase, UpdateCinemaUseCase, DeleteCinemaUseCase
 from app.cinema.application.dtos.cinema_search import CinemaSearchFilters
 from .depedencies import get_cinema_by_id_use_case, get_active_cinemas_use_case, search_cinemas_use_case, update_cinema_use_case, create_cinema_use_case, delete_cinema_use_case, get_filters
 import logging
@@ -27,7 +27,7 @@ async def get_cinema_by_id(
 
 @router.get("/active/", response_model=list[Cinema])
 async def get_active_cinemas(
-    use_case: Annotated[GetActiveCinemasUseCase, Depends(get_active_cinemas_use_case)],
+    use_case: Annotated[ListActiveCinemasUseCase, Depends(get_active_cinemas_use_case)],
     request: Request
 ):
     logger.info(f"GET active cinemas started | client:{request.client.host if request.client else None}")

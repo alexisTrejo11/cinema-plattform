@@ -56,8 +56,8 @@ class CinemaModel(Base):
     tik_tok_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Features 
-    #features: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False, default=list) PROD
-    features: Mapped[StringList] = mapped_column(StringList, nullable=False, default=list)
+    features: Mapped[List[str]] = mapped_column(ARRAY(String), nullable=False, default=list) # PRODUCTION
+    #features: Mapped[StringList] = mapped_column(StringList, nullable=False, default=list) # TEST
 
     theaters: Mapped[List["TheaterModel"]] = relationship(
         back_populates="cinema",

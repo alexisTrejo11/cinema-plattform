@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from config.postgres_config import get_db
 from app.cinema.domain.enums import LocationRegion, CinemaType, CinemaStatus
 from app.cinema.application.dtos.cinema_search import CinemaSearchFilters
-from app.cinema.application.use_cases import GetCinemaByIdUseCase, GetActiveCinemasUseCase, SearchCinemasUseCase, CreateCinemaUseCase, UpdateCinemaUseCase, DeleteCinemaUseCase
+from app.cinema.application.use_cases import GetCinemaByIdUseCase, ListActiveCinemasUseCase, SearchCinemasUseCase, CreateCinemaUseCase, UpdateCinemaUseCase, DeleteCinemaUseCase
 from ..persistence.sql_alch_repository import SQLAlchemyCinemaRepository
 import logging
 
@@ -14,9 +14,9 @@ async def get_cinema_by_id_use_case(db: AsyncSession = Depends(get_db)) -> GetCi
     repo = SQLAlchemyCinemaRepository(db)
     return GetCinemaByIdUseCase(repo)
 
-async def get_active_cinemas_use_case(db: AsyncSession = Depends(get_db)) -> GetActiveCinemasUseCase:
+async def get_active_cinemas_use_case(db: AsyncSession = Depends(get_db)) -> ListActiveCinemasUseCase:
     repo = SQLAlchemyCinemaRepository(db)
-    return GetActiveCinemasUseCase(repo)
+    return ListActiveCinemasUseCase(repo)
 
 async def search_cinemas_use_case(db: AsyncSession = Depends(get_db)) -> SearchCinemasUseCase:
     repo = SQLAlchemyCinemaRepository(db)

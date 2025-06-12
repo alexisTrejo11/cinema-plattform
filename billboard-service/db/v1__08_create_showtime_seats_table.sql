@@ -5,10 +5,10 @@ CREATE TABLE showtime_seats(
 
     taken_at TIMESTAMP WITH TIME ZONE,
     transation_id INT,
-    user_id INT,
+    taken_by_user_id INT,
 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_showtime
         FOREIGN KEY (showtime_id)
@@ -26,7 +26,6 @@ CREATE TABLE showtime_seats(
 
 CREATE INDEX idx_showtime_seats_showtime_id ON showtime_seats (showtime_id);
 CREATE INDEX idx_showtime_seats_user_id ON showtime_seats (taken_by_user_id);
-CREATE INDEX idx_showtime_seats_booking_id ON showtime_seats (booking_id);
 
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()

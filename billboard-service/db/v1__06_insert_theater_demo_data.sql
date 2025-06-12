@@ -1,34 +1,23 @@
-CREATE TYPE seat_type_enum AS ENUM (
-    'STANDARD',
-    'VIP',
-    'ACCESSIBLE', -- For disabled access
-    'PREMIUM',
-    '4DX',
-    'LOVESEAT'
-);
+INSERT INTO theaters (cinema_id, name, capacity, theater_type, is_active, maintenance_mode)
+VALUES
+(1, 'Room 1 - Main', 200, 'TWO_D', TRUE, FALSE),
+(1, 'Room 2 - 3D', 160, 'THREE_D', TRUE, FALSE),
+(2, 'Room 3 - IMAX', 300, 'IMAX', TRUE, FALSE),
+(2, 'Room 4 - VIP', 50, 'VIP', TRUE, FALSE),
+(3, 'Room 5 - 4DX', 120, 'FOUR_DX', TRUE, FALSE), 
+(3, 'Room 6 - Standard', 160, 'TWO_D', FALSE, TRUE), -- No Seats
+(4, 'Room 7 - Premium 3D', 150, 'THREE_D', FALSE, TRUE), -- No Seats
+(4, 'Room 8 - Small', 80, 'THREE_D', FALSE, TRUE),
+(5, 'Room 9 - Great Format', 280, 'IMAX', FALSE, TRUE), -- No Seats
+(5, 'Room 10 - Experience', 120, 'FOUR_DX', FALSE, TRUE), -- No Seats
+(6, 'Room 11 - Classic', 220, 'THREE_D', FALSE, TRUE), -- No Seats
+(7, 'Room 12 - Comfort', 160, 'THREE_D', FALSE, TRUE), -- No Seats
+(8, 'Room 13 - Exlusive', 70, 'VIP', FALSE, TRUE), -- No Seats
+(9, 'Room 14 - Futurist', 110, 'FOUR_DX', FALSE, TRUE), -- No Seats
+(10, 'Room 15 - Familiar', 190, 'THREE_D', FALSE, TRUE); -- No Seats
 
-CREATE TABLE theater_seats(
-    id SERIAL PRIMARY KEY,
-    theater_id int NOT NULL,
-    seat_row VARCHAR(5) NOT NULL,
-    seat_number INT NOT NULL,
-    seat_type seat_type_enum NOT NULL DEFAULT 'STANDARD',
-    need_maintenance BOOLEAN NOT NULL DEFAULT FALSE,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT fk_theater
-        FOREIGN KEY (theater_id)
-        REFERENCES theaters (id)
-        ON DELETE CASCADE,
-        
-    CONSTRAINT uq_theater_seat_position
-        UNIQUE (theater_id, seat_row, seat_number)
-);
 
-CREATE INDEX idx_theater_seats_theater_id ON theater_seats (theater_id);
-CREATE INDEX idx_theater_seats_row_number ON theater_seats (theater_id, seat_row, seat_number);
+
 
 
 
@@ -395,11 +384,6 @@ INSERT INTO theater_seats (theater_id, seat_row, seat_number, seat_type, is_acti
 
 
 
-
-
-
-
-
 -- 50 seats for theater_id = 5 (New Theater, starting rows from A)
 -- Row A (10 VIP Seats)
 INSERT INTO theater_seats (theater_id, seat_row, seat_number, seat_type, is_active) VALUES
@@ -442,71 +426,67 @@ INSERT INTO theater_seats (theater_id, seat_row, seat_number, seat_type, is_acti
 
 
 
-
-
-
-
 -- Seats for theater_id = 5 ('Room 5 - 4DX')
 -- Rows A-J: 10 seats per row (100 seats total)
 INSERT INTO theater_seats (theater_id, seat_row, seat_number, seat_type, is_active) VALUES
-(5, 'A', 1, '4DX', TRUE), (5, 'A', 2, '4DX', TRUE), (5, 'A', 3, '4DX', TRUE), 
-(5, 'A', 4, '4DX', TRUE), (5, 'A', 5, '4DX', TRUE), (5, 'A', 6, '4DX', TRUE), 
-(5, 'A', 7, '4DX', TRUE), (5, 'A', 8, '4DX', TRUE), (5, 'A', 9, '4DX', TRUE), 
-(5, 'A', 10, '4DX', TRUE),
+(5, 'A', 1, 'FOUR_DX', TRUE), (5, 'A', 2, 'FOUR_DX', TRUE), (5, 'A', 3, 'FOUR_DX', TRUE), 
+(5, 'A', 4, 'FOUR_DX', TRUE), (5, 'A', 5, 'FOUR_DX', TRUE), (5, 'A', 6, 'FOUR_DX', TRUE), 
+(5, 'A', 7, 'FOUR_DX', TRUE), (5, 'A', 8, 'FOUR_DX', TRUE), (5, 'A', 9, 'FOUR_DX', TRUE), 
+(5, 'A', 10, 'FOUR_DX', TRUE),
 
-(5, 'B', 1, '4DX', TRUE), (5, 'B', 2, '4DX', TRUE), (5, 'B', 3, '4DX', TRUE), 
-(5, 'B', 4, '4DX', TRUE), (5, 'B', 5, '4DX', TRUE), (5, 'B', 6, '4DX', TRUE), 
-(5, 'B', 7, '4DX', TRUE), (5, 'B', 8, '4DX', TRUE), (5, 'B', 9, '4DX', TRUE),
-(5, 'B', 10, '4DX', TRUE),
+(5, 'B', 1, 'FOUR_DX', TRUE), (5, 'B', 2, 'FOUR_DX', TRUE), (5, 'B', 3, 'FOUR_DX', TRUE), 
+(5, 'B', 4, 'FOUR_DX', TRUE), (5, 'B', 5, 'FOUR_DX', TRUE), (5, 'B', 6, 'FOUR_DX', TRUE), 
+(5, 'B', 7, 'FOUR_DX', TRUE), (5, 'B', 8, 'FOUR_DX', TRUE), (5, 'B', 9, 'FOUR_DX', TRUE),
+(5, 'B', 10, 'FOUR_DX', TRUE),
 
-(5, 'C', 1, '4DX', TRUE), (5, 'C', 2, '4DX', TRUE), (5, 'C', 3, '4DX', TRUE), 
-(5, 'C', 4, '4DX', TRUE), (5, 'C', 5, '4DX', TRUE), (5, 'C', 6, '4DX', TRUE), 
-(5, 'C', 7, '4DX', TRUE), (5, 'C', 8, '4DX', TRUE), (5, 'C', 9, '4DX', TRUE), 
-(5, 'C', 10, '4DX', TRUE),
+(5, 'C', 1, 'FOUR_DX', TRUE), (5, 'C', 2, 'FOUR_DX', TRUE), (5, 'C', 3, 'FOUR_DX', TRUE), 
+(5, 'C', 4, 'FOUR_DX', TRUE), (5, 'C', 5, 'FOUR_DX', TRUE), (5, 'C', 6, 'FOUR_DX', TRUE), 
+(5, 'C', 7, 'FOUR_DX', TRUE), (5, 'C', 8, 'FOUR_DX', TRUE), (5, 'C', 9, 'FOUR_DX', TRUE), 
+(5, 'C', 10, 'FOUR_DX', TRUE),
 
-(5, 'D', 1, '4DX', TRUE), (5, 'D', 2, '4DX', TRUE), (5, 'D', 3, '4DX', TRUE), 
-(5, 'D', 4, '4DX', TRUE), (5, 'D', 5, '4DX', TRUE), (5, 'D', 6, '4DX', TRUE), 
-(5, 'D', 7, '4DX', TRUE), (5, 'D', 8, '4DX', TRUE), (5, 'D', 9, '4DX', TRUE), 
-(5, 'D', 10, '4DX', TRUE), 
+(5, 'D', 1, 'FOUR_DX', TRUE), (5, 'D', 2, 'FOUR_DX', TRUE), (5, 'D', 3, 'FOUR_DX', TRUE), 
+(5, 'D', 4, 'FOUR_DX', TRUE), (5, 'D', 5, 'FOUR_DX', TRUE), (5, 'D', 6, 'FOUR_DX', TRUE), 
+(5, 'D', 7, 'FOUR_DX', TRUE), (5, 'D', 8, 'FOUR_DX', TRUE), (5, 'D', 9, 'FOUR_DX', TRUE), 
+(5, 'D', 10, 'FOUR_DX', TRUE), 
 
-(5, 'E', 1, '4DX', TRUE), (5, 'E', 2, '4DX', TRUE), (5, 'E', 3, '4DX', TRUE), 
-(5, 'E', 4, '4DX', TRUE), (5, 'E', 5, '4DX', TRUE), (5, 'E', 6, '4DX', TRUE), 
-(5, 'E', 7, '4DX', TRUE), (5, 'E', 8, '4DX', TRUE), (5, 'E', 9, '4DX', TRUE), 
-(5, 'E', 10, '4DX', TRUE),
+(5, 'E', 1, 'FOUR_DX', TRUE), (5, 'E', 2, 'FOUR_DX', TRUE), (5, 'E', 3, 'FOUR_DX', TRUE), 
+(5, 'E', 4, 'FOUR_DX', TRUE), (5, 'E', 5, 'FOUR_DX', TRUE), (5, 'E', 6, 'FOUR_DX', TRUE), 
+(5, 'E', 7, 'FOUR_DX', TRUE), (5, 'E', 8, 'FOUR_DX', TRUE), (5, 'E', 9, 'FOUR_DX', TRUE), 
+(5, 'E', 10, 'FOUR_DX', TRUE),
 
-(5, 'F', 1, '4DX', TRUE), (5, 'F', 2, '4DX', TRUE), (5, 'F', 3, '4DX', TRUE), 
-(5, 'F', 4, '4DX', TRUE), (5, 'F', 5, '4DX', TRUE), (5, 'F', 6, '4DX', TRUE), 
-(5, 'F', 7, '4DX', TRUE), (5, 'F', 8, '4DX', TRUE), (5, 'F', 9, '4DX', TRUE), 
-(5, 'F', 10, '4DX', TRUE), 
+(5, 'F', 1, 'FOUR_DX', TRUE), (5, 'F', 2, 'FOUR_DX', TRUE), (5, 'F', 3, 'FOUR_DX', TRUE), 
+(5, 'F', 4, 'FOUR_DX', TRUE), (5, 'F', 5, 'FOUR_DX', TRUE), (5, 'F', 6, 'FOUR_DX', TRUE), 
+(5, 'F', 7, 'FOUR_DX', TRUE), (5, 'F', 8, 'FOUR_DX', TRUE), (5, 'F', 9, 'FOUR_DX', TRUE), 
+(5, 'F', 10, 'FOUR_DX', TRUE), 
 
-(5, 'G', 1, '4DX', TRUE), (5, 'G', 2, '4DX', TRUE), (5, 'G', 3, '4DX', TRUE), 
-(5, 'G', 4, '4DX', TRUE), (5, 'G', 5, '4DX', TRUE), (5, 'G', 6, '4DX', TRUE), 
-(5, 'G', 7, '4DX', TRUE), (5, 'G', 8, '4DX', TRUE),  (5, 'G', 9, '4DX', TRUE), 
-(5, 'G', 10, '4DX', TRUE),
+(5, 'G', 1, 'FOUR_DX', TRUE), (5, 'G', 2, 'FOUR_DX', TRUE), (5, 'G', 3, 'FOUR_DX', TRUE), 
+(5, 'G', 4, 'FOUR_DX', TRUE), (5, 'G', 5, 'FOUR_DX', TRUE), (5, 'G', 6, 'FOUR_DX', TRUE), 
+(5, 'G', 7, 'FOUR_DX', TRUE), (5, 'G', 8, 'FOUR_DX', TRUE),  (5, 'G', 9, 'FOUR_DX', TRUE), 
+(5, 'G', 10, 'FOUR_DX', TRUE),
 
-(5, 'H', 1, '4DX', TRUE), (5, 'H', 2, '4DX', TRUE), (5, 'H', 3, '4DX', TRUE), 
-(5, 'H', 4, '4DX', TRUE), 
-(5, 'H', 5, '4DX', TRUE), (5, 'H', 6, '4DX', TRUE), (5, 'H', 7, '4DX', TRUE), 
-(5, 'H', 8, '4DX', TRUE), (5, 'H', 9, '4DX', TRUE), (5, 'H', 10, '4DX', TRUE),
+(5, 'H', 1, 'FOUR_DX', TRUE), (5, 'H', 2, 'FOUR_DX', TRUE), (5, 'H', 3, 'FOUR_DX', TRUE), 
+(5, 'H', 4, 'FOUR_DX', TRUE), 
+(5, 'H', 5, 'FOUR_DX', TRUE), (5, 'H', 6, 'FOUR_DX', TRUE), (5, 'H', 7, 'FOUR_DX', TRUE), 
+(5, 'H', 8, 'FOUR_DX', TRUE), (5, 'H', 9, 'FOUR_DX', TRUE), (5, 'H', 10, 'FOUR_DX', TRUE),
 
-(5, 'I', 1, '4DX', TRUE), (5, 'I', 2, '4DX', TRUE), (5, 'I', 3, '4DX', TRUE), 
-(5, 'I', 4, '4DX', TRUE), (5, 'I', 5, '4DX', TRUE), (5, 'I', 6, '4DX', TRUE), 
-(5, 'I', 7, '4DX', TRUE), (5, 'I', 8, '4DX', TRUE), (5, 'I', 9, '4DX', TRUE), 
-(5, 'I', 10, '4DX', TRUE),
+(5, 'I', 1, 'FOUR_DX', TRUE), (5, 'I', 2, 'FOUR_DX', TRUE), (5, 'I', 3, 'FOUR_DX', TRUE), 
+(5, 'I', 4, 'FOUR_DX', TRUE), (5, 'I', 5, 'FOUR_DX', TRUE), (5, 'I', 6, 'FOUR_DX', TRUE), 
+(5, 'I', 7, 'FOUR_DX', TRUE), (5, 'I', 8, 'FOUR_DX', TRUE), (5, 'I', 9, 'FOUR_DX', TRUE), 
+(5, 'I', 10, 'FOUR_DX', TRUE),
 
-(5, 'J', 1, '4DX', TRUE), (5, 'J', 2, '4DX', TRUE), (5, 'J', 3, '4DX', TRUE), 
-(5, 'J', 4, '4DX', TRUE), (5, 'J', 5, '4DX', TRUE), (5, 'J', 6, '4DX', TRUE), 
-(5, 'J', 7, '4DX', TRUE), (5, 'J', 8, '4DX', TRUE), (5, 'J', 9, '4DX', TRUE), 
-(5, 'J', 10, '4DX', TRUE);
+(5, 'J', 1, 'FOUR_DX', TRUE), (5, 'J', 2, 'FOUR_DX', TRUE), (5, 'J', 3, 'FOUR_DX', TRUE), 
+(5, 'J', 4, 'FOUR_DX', TRUE), (5, 'J', 5, 'FOUR_DX', TRUE), (5, 'J', 6, 'FOUR_DX', TRUE), 
+(5, 'J', 7, 'FOUR_DX', TRUE), (5, 'J', 8, 'FOUR_DX', TRUE), (5, 'J', 9, 'FOUR_DX', TRUE), 
+(5, 'J', 10, 'FOUR_DX', TRUE);
 
 -- Rows K and L: 10 seats per row (20 seats total)
 INSERT INTO theater_seats (theater_id, seat_row, seat_number, seat_type, is_active) VALUES
-(5, 'K', 1, '4DX', TRUE), (5, 'K', 2, '4DX', TRUE), (5, 'K', 3, '4DX', TRUE), 
-(5, 'K', 4, '4DX', TRUE), (5, 'K', 5, '4DX', TRUE), (5, 'K', 6, '4DX', TRUE), 
-(5, 'K', 7, '4DX', TRUE), (5, 'K', 8, '4DX', TRUE), (5, 'K', 9, '4DX', TRUE), 
-(5, 'K', 10, '4DX', TRUE),
+(5, 'K', 1, 'FOUR_DX', TRUE), (5, 'K', 2, 'FOUR_DX', TRUE), (5, 'K', 3, 'FOUR_DX', TRUE), 
+(5, 'K', 4, 'FOUR_DX', TRUE), (5, 'K', 5, 'FOUR_DX', TRUE), (5, 'K', 6, 'FOUR_DX', TRUE), 
+(5, 'K', 7, 'FOUR_DX', TRUE), (5, 'K', 8, 'FOUR_DX', TRUE), (5, 'K', 9, 'FOUR_DX', TRUE), 
+(5, 'K', 10, 'FOUR_DX', TRUE),
 
-(5, 'L', 1, '4DX', TRUE), (5, 'L', 2, '4DX', TRUE), (5, 'L', 3, '4DX', TRUE), 
-(5, 'L', 4, '4DX', TRUE), (5, 'L', 5, '4DX', TRUE), (5, 'L', 6, '4DX', TRUE), 
-(5, 'L', 7, '4DX', TRUE), (5, 'L', 8, '4DX', TRUE), (5, 'L', 9, '4DX', TRUE), 
-(5, 'L', 10, '4DX', TRUE);
+(5, 'L', 1, 'FOUR_DX', TRUE), (5, 'L', 2, 'FOUR_DX', TRUE), (5, 'L', 3, 'FOUR_DX', TRUE), 
+(5, 'L', 4, 'FOUR_DX', TRUE), (5, 'L', 5, 'FOUR_DX', TRUE), (5, 'L', 6, 'FOUR_DX', TRUE), 
+(5, 'L', 7, 'FOUR_DX', TRUE), (5, 'L', 8, 'FOUR_DX', TRUE), (5, 'L', 9, 'FOUR_DX', TRUE), 
+(5, 'L', 10, 'FOUR_DX', TRUE);

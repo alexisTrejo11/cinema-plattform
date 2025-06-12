@@ -1,10 +1,10 @@
 from enum import Enum
 
 class TheaterType(str, Enum):
-    TWO_D = '2D'
-    THREE_D = '3D'
+    TWO_D = 'TWO_D'
+    THREE_D = 'THREE_D'
     IMAX = 'IMAX'
-    FOUR_DX = '4DX'
+    FOUR_DX = 'FOUR_DX'
     VIP = 'VIP'
 
 class SeatType(str, Enum):
@@ -14,6 +14,7 @@ class SeatType(str, Enum):
     """
     STANDARD = "STANDARD"
     VIP = "VIP"
+    FOUR_DX = 'FOUR_DX'
     ACCESSIBLE = "ACCESSIBLE" # For disabled access
     PREMIUM = "PREMIUM"
     LOVESEAT = "LOVESEAT"

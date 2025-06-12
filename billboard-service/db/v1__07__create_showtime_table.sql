@@ -24,7 +24,7 @@ CREATE TABLE showtimes (
     id SERIAL PRIMARY KEY,
     movie_id INT NOT NULL,
     theater_id INT NOT NULL,
-    cienema_id INT NOT NULL,
+    cinema_id INT NOT NULL,
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     end_time TIMESTAMP WITH TIME ZONE NOT NULL,
     price NUMERIC(6, 2) NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE showtimes (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT fk_cienama FOREIGN KEY (cinema_id) REFERENCES cinemas (id) ON DELETE CASCADE,
+    CONSTRAINT fk_cinema FOREIGN KEY (cinema_id) REFERENCES cinemas (id) ON DELETE CASCADE,
     CONSTRAINT fk_movie FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE,
     CONSTRAINT fk_theater FOREIGN KEY (theater_id) REFERENCES theaters (id) ON DELETE CASCADE
 );

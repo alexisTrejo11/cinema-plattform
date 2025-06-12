@@ -25,12 +25,12 @@ class SearchCinemasUseCase:
         return await self.repository.search(page_params, filter_params)
 
 
-class GetActiveCinemasUseCase:
+class ListActiveCinemasUseCase:
     def __init__(self, repository: CinemaRepository):
         self.repository = repository
     
     async def execute(self) -> List[Cinema]:
-        return await self.repository.get_active_cinemas()
+        return await self.repository.list_active()
 
 
 class CreateCinemaUseCase:

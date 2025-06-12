@@ -1,6 +1,6 @@
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'theater_type_enum') THEN
-        CREATE TYPE theater_type_enum AS ENUM ('2D', '3D', 'IMAX', '4DX', 'V');
+        CREATE TYPE theater_type_enum AS ENUM ('TWO_D', 'THREE_D', 'IMAX', 'FOUR_DX', 'VIP');
     END IF;
 END $$;
 
@@ -39,20 +39,39 @@ BEFORE UPDATE ON theaters
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
 
-INSERT INTO theaters (cinema_id, name, capacity, theater_type, is_active, maintenance_mode)
-VALUES
-(1, 'Room 1 - Main', 200, '2D', TRUE, FALSE),
-(1, 'Room 2 - 3D', 160, '3D', TRUE, FALSE),
-(2, 'Room 3 - IMAX', 300, 'IMAX', TRUE, FALSE),
-(2, 'Room 4 - VIP', 50, 'V', TRUE, FALSE),
-(3, 'Room 5 - 4DX', 120, '4DX', TRUE, FALSE), 
-(3, 'Room 6 - Standard', 160, '2D', FALSE, TRUE), -- No Seats
-(4, 'Room 7 - Premium 3D', 150, '3D', FALSE, TRUE), -- No Seats
-(4, 'Room 8 - Small', 80, '2D', FALSE, TRUE),
-(5, 'Room 9 - Great Format', 280, 'IMAX', FALSE, TRUE), -- No Seats
-(5, 'Room 10 - Experience', 120, '4DX', FALSE, TRUE), -- No Seats
-(6, 'Room 11 - Classic', 220, '2D', FALSE, TRUE), -- No Seats
-(7, 'Room 12 - Comfort', 160, '3D', FALSE, TRUE), -- No Seats
-(8, 'Room 13 - Exlusive', 70, 'V', FALSE, TRUE), -- No Seats
-(9, 'Room 14 - Futurist', 110, '4DX', FALSE, TRUE), -- No Seats
-(10, 'Room 15 - Familiar', 190, '2D', FALSE, TRUE); -- No Seats
+
+
+CREATE TYPE seat_type_enum AS ENUM (
+    'STANDARD',
+    'VIP',
+    'ACCESSIBLE', -- For disabled access
+    'PREMIUM',
+    'FOUR_DX',
+    'LOVESEAT'
+);
+
+CREATE TABLE theater_seats(
+    id SERIAL PRIMARY KEY,
+    theater_id int NOT NULL,
+    seat_row VARCHAR(5) NOT NULL,
+    seat_number INT NOT NULL,
+    seat_type seat_type_enum NOT NULL DEFAULT 'STANDARD',
+    need_maintenance BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT fk_theater
+        FOREIGN KEY (theater_id)
+        REFERENCES theaters (id)
+        ON DELETE CASCADE,
+        
+    CONSTRAINT uq_theater_seat_position
+        UNIQUE (theater_id, seat_row, seat_number)
+);
+
+CREATE INDEX idx_theater_seats_theater_id ON theater_seats (theater_id);
+CREATE INDEX idx_theater_seats_row_number ON theater_seats (theater_id, seat_row, seat_number);
+
+
+
