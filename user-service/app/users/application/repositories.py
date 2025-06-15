@@ -2,13 +2,14 @@ from typing import Optional, List
 from app.users.domain.entities import User
 from abc import abstractmethod, ABC
 
+
 class UserRepository(ABC):
     @abstractmethod
     async def create(self, user: User) -> User:
         pass
     
     @abstractmethod
-    async def get_by_id(self, user_id: str) -> Optional[User]:
+    async def get_by_id(self, user_id: int) -> Optional[User]:
         pass
     
     @abstractmethod
@@ -16,7 +17,7 @@ class UserRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_username(self, username: str) -> Optional[User]:
+    async def get_by_phone(self, phone: str) -> Optional[User]:
         pass
     
     @abstractmethod
@@ -24,9 +25,9 @@ class UserRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete(self, user_id: str) -> bool:
+    async def delete(self, user_id: int) -> bool:
         pass
     
     @abstractmethod
-    async def list_users(self, skip: int = 0, limit: int = 100) -> List[User]:
+    async def list_users(self, size: int = 0, number: int = 100) -> List[User]:
         pass

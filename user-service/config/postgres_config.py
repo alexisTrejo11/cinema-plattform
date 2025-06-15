@@ -5,7 +5,7 @@ from sqlalchemy.orm import DeclarativeBase
 class Base(DeclarativeBase):
     pass
 
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@db:5432/billboard"
+DATABASE_URL = "postgresql+asyncpg://postgres:postgres@db:5432/users"
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 
@@ -18,5 +18,3 @@ AsyncSessionLocal = sessionmaker(
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
-        
-

@@ -23,5 +23,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s \
     CMD python -c "import redis; redis.Redis(host='redis', port=6379).ping()" || exit 1
 
-    
+ENTRYPOINT ["/app/init_db.sh"]
+
 CMD ["uvicorn", "main:app", "--reload" ,"--host", "0.0.0.0", "--port", "8000"]

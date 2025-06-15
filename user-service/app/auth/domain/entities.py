@@ -1,17 +1,16 @@
 from typing import Optional
 from datetime import datetime, timezone
 
+
 class SessionToken:
     def __init__(
         self,
-        token_id: str,
-        user_id: str,
+        user_id: int,
         token: str,
         expires_at: datetime,
         is_revoked: bool = False,
         created_at: Optional[datetime] = None
     ):
-        self.token_id = token_id
         self.user_id = user_id
         self.token = token
         self.expires_at = expires_at

@@ -1,137 +1,76 @@
-from datetime import datetime
-import uuid
 from app.users.domain.entities import User
 from app.users.application.repositories import UserRepository
 from app.users.application.dtos import UserResponse
-from app.users.domain.exceptions import UserAlreadyExistsException, UserNotFoundException
-
-from app.auth.domain.exceptions import TokenExpiredException, InvalidCredentialsException
-from app.auth.domain.entities import SessionToken
-from .services import PasswordService, JWTService
+from .services import PasswordService
 from .dtos import SignUpRequest, LoginRequest, RefreshTokenRequest, TokenResponse
-from .repositories import SessionTokenRepository
+from .repositories import SessionRepository
+from app.shared.response import Result
+from app.auth.application.services import AuthValidationService, SessionService
 
 class SignUpUseCase:
-    def __init__(self,user_repository: UserRepository,password_service: PasswordService):
-        self.user_repository = user_repository
-        self.password_service = password_service
-    
-    async def execute(self, request: SignUpRequest) -> UserResponse:
-        existing_user = await self.user_repository.get_by_email(request.email)
-        if existing_user:
-            raise UserAlreadyExistsException("User with this email already exists")
-        
-        existing_username = await self.user_repository.get_by_username(request.username)
-        if existing_username:
-            raise UserAlreadyExistsException("User with this username already exists")
-        
-        hashed_password = self.password_service.hash_password(request.password)
-        user = User(
-            user_id=str(uuid.uuid4()),
-            email=request.email,
-            username=request.username,
-            hashed_password=hashed_password
-        )
-        
-        created_user = await self.user_repository.create(user)
-        
-        return UserResponse(
-            user_id=created_user.user_id,
-            email=created_user.email,
-            username=created_user.username,
-            role=created_user.role,
-            is_active=created_user.is_active,
-            created_at=created_user.created_at
-        )
-
-class LoginUseCase:
     def __init__(
-        self,
-        user_repository: UserRepository,
-        refresh_token_repository: SessionTokenRepository,
+        self,user_repository: UserRepository, 
         password_service: PasswordService,
-        jwt_service: JWTService
+        validation_service: AuthValidationService
     ):
         self.user_repository = user_repository
-        self.refresh_token_repository = refresh_token_repository
         self.password_service = password_service
-        self.jwt_service = jwt_service
+        self.validation_service = validation_service
     
-    async def execute(self, request: LoginRequest) -> TokenResponse:
-        user = await self.user_repository.get_by_email(request.email)
-        if not user or not self.password_service.verify_password(request.password, user.hashed_password):
-            raise InvalidCredentialsException("Invalid email or password")
+    async def execute(self, request: SignUpRequest) -> Result:
+        validation_result = await self.validation_service.validate_unique_fields(request.email, request.phone_number)
+        if not validation_result.is_success():
+            return validation_result
+        
+        hashed_password = self.password_service.hash_password(request.password)
+        new_user = User(hashed_password=hashed_password,**request.model_dump())
+        
+        created_user = await self.user_repository.create(new_user)
+        
+        user_response = UserResponse.from_domain(created_user)
+        return Result.success(user_response)
+
+
+class LoginUseCase:
+    def __init__(self, session_service: SessionService, validation_service: AuthValidationService):
+        self.session_service = session_service
+        self.validation_service = validation_service
+    
+    async def execute(self, request: LoginRequest) -> Result:
+        user = await self.validation_service.authenticate_user(request.identifier_field, request.password)
+        if not user:
+            return Result.error("User not found with given credentials")
         
         if not user.is_active:
-            raise InvalidCredentialsException("User account is deactivated")
+            return Result.error("User account is deactivated")
         
-        token_data = {"sub": user.user_id, "email": user.email, "role": user.role}
-        access_token = self.jwt_service.create_access_token(token_data)
-        refresh_token = self.jwt_service.create_refresh_token({"sub": user.user_id})
-        
-        refresh_token_entity = SessionToken(
-            token_id=str(uuid.uuid4()),
-            user_id=user.user_id,
-            token=refresh_token,
-            expires_at=datetime.utcnow() + timedelta(days=30)
-        )
-        await self.refresh_token_repository.create(refresh_token_entity)
-        
-        return TokenResponse(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            expires_in=self.jwt_service.access_token_expire_minutes * 60
-        )
+        session = await self.session_service.create_session(user)
+        return Result.success(session)
+
 
 class RefreshTokenUseCase:
     def __init__(
         self,
-        user_repository: UserRepository,
-        refresh_token_repository: SessionTokenRepository,
-        jwt_service: JWTService
+        session_service: SessionService
     ):
-        self.user_repository = user_repository
-        self.refresh_token_repository = refresh_token_repository
-        self.jwt_service = jwt_service
+        self.session_service = session_service
     
-    async def execute(self, request: RefreshTokenRequest) -> TokenResponse:
-        try:
-            payload = self.jwt_service.verify_token(request.refresh_token)
-        except InvalidCredentialsException:
-            raise TokenExpiredException("Invalid refresh token")
-        
-        if payload.get("type") != "refresh":
-            raise InvalidCredentialsException("Invalid token type")
-        
-        stored_token = await self.refresh_token_repository.get_by_token(request.refresh_token)
-        if not stored_token or not stored_token.is_valid():
-            raise TokenExpiredException("Refresh token expired or revoked")
-        
-        user = await self.user_repository.get_by_id(stored_token.user_id)
-        if not user or not user.is_active:
-            raise UserNotFoundException("User not found or inactive")
-        
-        token_data = {"sub": user.user_id, "email": user.email, "role": user.role}
-        access_token = self.jwt_service.create_access_token(token_data)
-        
-        return TokenResponse(
-            access_token=access_token,
-            refresh_token=request.refresh_token,
-            expires_in=self.jwt_service.access_token_expire_minutes * 60
-        )
-
+    async def execute(self, request: RefreshTokenRequest, user:User) -> TokenResponse:
+        token_response = await self.session_service.refresh_session(request, user)
+        return token_response
+       
 
 class LogoutUseCase:
-    def __init__(self, refresh_token_repository: SessionTokenRepository):
-        self.refresh_token_repository = refresh_token_repository
+    def __init__(self, session_repository: SessionRepository):
+        self.session_repository = session_repository
     
     async def execute(self, refresh_token: str) -> bool:
-        return await self.refresh_token_repository.revoke_token(refresh_token)
+        return await self.session_repository.revoke_user_token("1", refresh_token)
 
 
 class LogoutAllUseCase:
-    def __init__(self, refresh_token_repository: SessionTokenRepository):
-        self.refresh_token_repository = refresh_token_repository
+    def __init__(self, session_repository: SessionRepository):
+        self.session_repository = session_repository
     
-    async def execute(self, user_id: str) -> bool:
-        return await self.refresh_token_repository.revoke_all_user_tokens(user_id)
+    async def execute(self, user_id: int) -> bool:
+        return await self.session_repository.revoke_all_user_tokens(str(user_id))
