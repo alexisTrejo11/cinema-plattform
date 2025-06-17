@@ -6,6 +6,15 @@ from config.model_init import *
 from config.redis_config import get_redis_client
 from app.users.infrastructure.controller import user_controllers
 from app.auth.infrastructure.api import controllers as auth_controller
+from app.users.infrastructure.controller import profile_controllers 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+
+limiter = Limiter(
+    key_func=get_remote_address, 
+    default_limits=["30/minute"]
+    )
 
 app = FastAPI(
     title="Cinema Backend: User Service API",
@@ -13,9 +22,9 @@ app = FastAPI(
     exception_handlers=global_exception_handler,
     )
 
-@app.get("/home/")
-def home(request: Request): 
-    return {"home" : "Welcome to User Service" }
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
 
 @app.get("/health")
 def health_check():
@@ -30,11 +39,16 @@ def health_check():
 async def get_app_info(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
     return {
         "app_name": "Cinema Backend: User Service API",
-        "api_version": settings.api_version,
-        "debug_mode": settings.debug_mode,
-        "database_url_prefix": settings.database_url.split(":")[0]
+        "api_version": settings.API_VERSION,
+        "debug_mode": settings.DEBUG_MODE,
+        "database_url_prefix": settings.DATABASE_URL.split(":")[0]
     }
+
+@app.get("/home/")
+def read_home(request: Request) -> Any: 
+    return {"home" : "Welcome to User Service" }
 
 
 app.include_router(user_controllers.router)
 app.include_router(auth_controller.router)
+app.include_router(profile_controllers.router)
