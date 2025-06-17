@@ -1,28 +1,28 @@
 from typing import Optional, List
-from app.auth.domain.entities import SessionToken
+from app.auth.domain.entities import JWTToken, TokenType
 from abc import abstractmethod, ABC
 
 class SessionRepository(ABC):
     @abstractmethod
-    async def create(self, token: SessionToken) -> None:
+    def create(self, token: JWTToken) -> None:
         pass
     
     @abstractmethod
-    async def get_user_token(self, user_id: str, token: str) -> Optional[SessionToken]:
+    def get_user_token(self, user_id: str, token_code: str, token_type: TokenType) -> Optional[JWTToken]:
         pass
     
     @abstractmethod
-    async def list_by_user_id(self, user_id: str) -> List[SessionToken]:
+    def list_by_user_id(self, user_id: str) -> List[JWTToken]:
         pass
     
     @abstractmethod
-    async def revoke_user_token(self, user_id: str, token: str) -> bool:
+    def revoke_user_token(self, user_id: str, token_code: str, token_type: TokenType) -> bool:
         pass
     
     @abstractmethod
-    async def revoke_all_user_tokens(self, user_id: str) -> bool:
+    def revoke_all_user_tokens(self, user_id: str) -> bool:
         pass
     
     @abstractmethod
-    async def cleanup_expired_tokens(self) -> int:
+    def cleanup_expired_tokens(self) -> int:
         pass

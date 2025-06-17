@@ -1,7 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from config.postgres_config import get_db
-from app.users.infrastructure.persistence.sql_alchemy_user_repo import SQLAlchemyUserRepository
+from app.users.infrastructure.persistence.sqlalch_user_repo import SQLAlchemyUserRepository
 from app.users.application.use_cases import ListUserUseCase, GetUserUseCase, CreateUserUseCase, UpdateUserUseCase, DeleteUserUseCase
 from app.auth.application.services import PasswordService, AuthValidationService
 

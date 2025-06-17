@@ -6,6 +6,8 @@ from .dtos import SignUpRequest, LoginRequest, RefreshTokenRequest, TokenRespons
 from .repositories import SessionRepository
 from app.shared.response import Result
 from app.auth.application.services import AuthValidationService, SessionService
+from app.auth.domain.entities import TokenType
+
 
 class SignUpUseCase:
     def __init__(
@@ -55,22 +57,22 @@ class RefreshTokenUseCase:
     ):
         self.session_service = session_service
     
-    async def execute(self, request: RefreshTokenRequest, user:User) -> TokenResponse:
+    async def execute(self, request: RefreshTokenRequest, user: User) -> TokenResponse:
         token_response = await self.session_service.refresh_session(request, user)
         return token_response
-       
+
 
 class LogoutUseCase:
     def __init__(self, session_repository: SessionRepository):
         self.session_repository = session_repository
     
-    async def execute(self, refresh_token: str) -> bool:
-        return await self.session_repository.revoke_user_token("1", refresh_token)
+    def execute(self, refresh_token: str, user_id: int) :
+        return self.session_repository.revoke_user_token(str(user_id), refresh_token, TokenType.JWT_REFRESH)
 
 
 class LogoutAllUseCase:
     def __init__(self, session_repository: SessionRepository):
         self.session_repository = session_repository
     
-    async def execute(self, user_id: int) -> bool:
-        return await self.session_repository.revoke_all_user_tokens(str(user_id))
+    def execute(self, user_id: int) -> bool:
+        return self.session_repository.revoke_all_user_tokens(str(user_id))

@@ -1,27 +1,28 @@
+from enum import Enum
+from datetime import datetime
+from dataclasses import dataclass, field
 from typing import Optional
-from datetime import datetime, timezone
+
+class TokenType(Enum):
+    JWT_REFRESH = "refresh"
+    JWT_ACCESS = "access"
+    ACTIVATION = "activation"
 
 
-class SessionToken:
-    def __init__(
-        self,
-        user_id: int,
-        token: str,
-        expires_at: datetime,
-        is_revoked: bool = False,
-        created_at: Optional[datetime] = None
-    ):
-        self.user_id = user_id
-        self.token = token
-        self.expires_at = expires_at
-        self.is_revoked = is_revoked
-        self.created_at = created_at or datetime.now(timezone.utc)
-        
+@dataclass(kw_only=True)
+class BaseToken:
+    expires_at: datetime
+    user_id: str
+    type: TokenType
+    is_revoked: bool = False
+    created_at: datetime = field(default_factory=datetime.now)
+    code: str = field(default="")
+
+
     def revoke(self):
         self.is_revoked = True
     
-    def is_expired(self) -> bool:
-        return self.expires_at < datetime.now(timezone.utc)  
-    
-    def is_valid(self) -> bool:
-        return not self.is_revoked and not self.is_expired()
+@dataclass(kw_only=True)
+class JWTToken(BaseToken):
+    email: Optional[str] = None
+    role: Optional[str] = None
