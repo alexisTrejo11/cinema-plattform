@@ -10,7 +10,6 @@ from .repositories import SessionRepository
 from app.auth.infrastructure.jwt_service import JWTService #TODO: change
 from app.auth.domain.entities import TokenType
 
-
 class SessionService:
     def __init__(self, jwt_service: JWTService, session_repo: SessionRepository) -> None:
         self.jwt_service = jwt_service
@@ -20,10 +19,6 @@ class SessionService:
         access_token = self.jwt_service.create_token(str(user.id), is_access_token=True)
         refresh_token = self.jwt_service.create_token(str(user.id), user.email, user.role, is_access_token=False)
 
-        print("///////////////////////////////////////////////////////")
-        print(access_token)
-        print(refresh_token)
-        print("///////////////////////////////////////////////////////")
         self.session_repo.create(refresh_token)
         
         time_remaining = refresh_token.expires_at - datetime.now()

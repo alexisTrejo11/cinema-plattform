@@ -4,20 +4,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.users.application.repositories import UserRepository
 from app.users.domain.entities import User
 from app.users.domain.exceptions import *
-from app.users.domain.entities import User
 from .models import UserModel
 
 class SQLAlchemyUserRepository(UserRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
     
-    async def create(self, user: User) -> User:
-        user_model = UserModel.from_domain(user)
-
-        self.session.add(user_model)
-        await self.session.commit()
-               
-        return user_model.to_domain()
     
     async def get_by_id(self, user_id: int) -> Optional[User]:
         result = await self.session.execute(
@@ -39,6 +31,26 @@ class SQLAlchemyUserRepository(UserRepository):
         )
         user_model = result.scalar_one_or_none()
         return user_model.to_domain() if user_model else None
+    
+    async def save(self, user: User) -> User:
+        model = UserModel.from_domain(user)
+        
+        try:
+            if user.id is None:
+                self.session.add(model)
+                await self.session.flush()
+            else:
+                model = await self.session.merge(model)
+            
+            await self.session.commit()
+            
+            if model in self.session:
+                await self.session.refresh(model)
+                
+            return model.to_domain()    
+        except Exception as e:
+            await self.session.rollback()
+            raise RuntimeError(f"Failed to save theater: {str(e)}") from e
     
     async def update(self, user: User) -> User:
         result = await self.session.execute(select(UserModel).where(UserModel.id == user.id))

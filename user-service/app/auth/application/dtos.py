@@ -1,12 +1,13 @@
 from pydantic import BaseModel, EmailStr
-from app.users.domain.entities import UserBase
+from app.users.domain.entities import Profile
 
 
-class SignUpRequest(UserBase):
+class SignUpRequest(Profile):
+    email: EmailStr
     password: str    
 
 class LoginRequest(BaseModel):
-    identifier_field: EmailStr
+    identifier_field: str
     password: str
 
 

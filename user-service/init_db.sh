@@ -25,6 +25,12 @@ done
 
 echo "PostgreSQL connection successful"
 
+# Execute SQL files in order 
+cd /app/db
+for sql_file in v1__*.sql; do
+  echo "Executing $sql_file"
+  psql -h db -U postgres -d users -f "$sql_file"
+done
 
 echo "Database setup complete"
 

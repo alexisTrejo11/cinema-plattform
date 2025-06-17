@@ -1,24 +1,23 @@
 from pydantic import Field, BaseModel, EmailStr
-from app.users.domain.entities import User, UserBase, Gender
+from app.users.domain.entities import User, Profile, Gender
 from typing import Optional
 from datetime import date
 
-class UserCreate(UserBase):
+class UserCreate(Profile):
     password: str = Field(..., min_length=8)
-
+    email: EmailStr
+    phone_number: str = Field(..., min_length=6)
+    
     def to_domain(self, hashed_password: str) -> 'User':
         return User(hashed_password=hashed_password, **self.model_dump())
     
-class UserResponse(UserBase):
+class UserResponse(Profile):
     id: int
     
     @staticmethod
     def from_domain(entity: User) -> 'UserResponse':
         return UserResponse(**entity.model_dump())
     
-
-class Profile(UserBase):
-    pass
 
 class UserUpdate(BaseModel):
     password: str
@@ -41,3 +40,14 @@ class UserUpdate(BaseModel):
             entity.hashed_password = hashed_password
         
         return entity
+    
+
+class ProfileResponse(Profile):
+    pass
+
+
+class ProfileUpdate(BaseModel):
+    gender: Optional[Gender] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    date_of_birth: Optional[date] = None

@@ -26,3 +26,4 @@ class SessionRepository(ABC):
     @abstractmethod
     def cleanup_expired_tokens(self) -> int:
         pass
+    

@@ -27,7 +27,7 @@ class SignUpUseCase:
         hashed_password = self.password_service.hash_password(request.password)
         new_user = User(hashed_password=hashed_password,**request.model_dump())
         
-        created_user = await self.user_repository.create(new_user)
+        created_user = await self.user_repository.save(new_user)
         
         user_response = UserResponse.from_domain(created_user)
         return Result.success(user_response)

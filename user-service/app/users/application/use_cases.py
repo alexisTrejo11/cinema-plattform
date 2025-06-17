@@ -1,9 +1,10 @@
-from app.users.application.dtos import UserResponse, UserCreate, UserUpdate
-from app.auth.application.services import PasswordService, AuthValidationService
 from typing import List, Dict
-from app.users.application.repositories import UserRepository
-from app.shared.exceptions import NotFoundException
 from app.shared.response import Result
+from app.users.application.dtos import UserResponse, UserCreate, UserUpdate, ProfileUpdate, Profile
+from app.auth.application.services import PasswordService, AuthValidationService
+from app.users.application.repositories import UserRepository
+from app.users.domain.entities import User
+from app.shared.exceptions import NotFoundException
 
 class ListUserUseCase:
     def __init__(self, repository: UserRepository) -> None:
@@ -43,7 +44,7 @@ class CreateUserUseCase:
         hashed_password = self.password_service.hash_password(user_data.password)
         user = user_data.to_domain(hashed_password) 
 
-        user_created = await self.repository.create(user)
+        user_created = await self.repository.save(user)
         
         return Result.success(UserResponse.from_domain(user_created)) 
 
@@ -66,7 +67,7 @@ class UpdateUserUseCase:
         hashed_password =  self.password_service.hash_password(update_data.password) if update_data.password else None
         user_updated = update_data.update_user_fields(user, hashed_password)
         
-        user = await self.repository.update(user_updated)
+        user = await self.repository.save(user_updated)
         
         return Result.success(UserResponse.from_domain(user))
     
@@ -81,3 +82,21 @@ class DeleteUserUseCase:
             raise NotFoundException("User", user_id)
         
         return await self.repository.delete(user_id)
+
+
+class GetProfileUseCase:
+    def __init__(self) -> None:
+        pass
+    
+    def execute(self, user: User) -> Profile:
+        return Profile(**user.model_dump())
+    
+    
+class UpdateProfileUseCase:
+    def __init__(self, repository: UserRepository) -> None:
+        self.repository = repository
+    
+    async def execute(self, user: User, update_data: ProfileUpdate) -> Profile:
+        user.update_profile(**update_data.model_dump(exclude_unset=True)) 
+        user_update = await self.repository.save(user)
+        return Profile(**user_update.model_dump())
