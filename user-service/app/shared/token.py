@@ -1,7 +1,6 @@
 from enum import Enum
 from datetime import datetime
 
-
 class TokenType(Enum,str):
     JWT_REFRESH = "JWT_REFRESH"
     JWT_ACCESS = "JWT_REFRESH"

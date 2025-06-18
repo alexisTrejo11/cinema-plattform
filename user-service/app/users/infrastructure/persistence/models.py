@@ -1,7 +1,8 @@
 from datetime import datetime, date
-from sqlalchemy import Integer, String, Boolean, Date, DateTime, Enum as SqlEnum
+from typing import Optional
+from sqlalchemy import Integer, String, Date, DateTime, Enum as SqlEnum
 from sqlalchemy.orm import mapped_column, Mapped
-from app.users.domain.enums import UserRole, Gender
+from app.users.domain.enums import UserRole, Gender, Status
 from app.users.domain.entities import User
 from config.postgres_config import Base
 
@@ -13,11 +14,11 @@ class UserModel(Base):
     date_of_birth: Mapped[date] = mapped_column(Date)
     password: Mapped[str] = mapped_column(String(255))
     first_name: Mapped[str] = mapped_column(String(255))
-    last_name: Mapped[str] = mapped_column(String(255))
-    phone_number: Mapped[str] = mapped_column(String(255))
+    last_name: Mapped[Optional[str]] = mapped_column(String(255))
+    phone_number: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     role: Mapped[UserRole] = mapped_column(SqlEnum(UserRole, name='role_enum', create_type=False), default=UserRole.CUSTOMER, nullable=False)
     gender: Mapped[Gender] = mapped_column(SqlEnum(Gender, name='gender_enum', create_type=False), default=Gender.OTHER,  nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    status: Mapped[Status] = mapped_column(SqlEnum(Status, name='user_status_enum', create_type=False), default=Status.PENDING,  nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(), nullable=False)
     
@@ -37,8 +38,8 @@ class UserModel(Base):
             gender=self.gender,
             role=self.role,
             date_of_birth=self.date_of_birth,
-            hashed_password=self.password,
-            is_active=self.is_active,
+            password=self.password,
+            status=self.status,
             created_at=created_at,
             updated_at=updated_at,
         )
@@ -50,13 +51,13 @@ class UserModel(Base):
             id=user.id if user.id != 0 else None,
             email=user.email,
             date_of_birth=user.date_of_birth,
-            password=user.hashed_password,
+            password=user.password,
             phone_number=user.phone_number,
             first_name=user.first_name,
             last_name=user.last_name,
             gender=user.gender,
             role=user.role,
-            is_active=user.is_active,
+            status=user.status,
             created_at=user.created_at,
             updated_at=user.updated_at
         )
@@ -65,8 +66,8 @@ class UserModel(Base):
         """Update SQLAlchemy model from domain entity"""
         self.email = user.email
         self.date_of_birth = user.date_of_birth
-        self.password = user.hashed_password
+        self.password = user.password
         self.role = user.role
-        self.is_active = user.is_active
+        self.status = user.status
         self.created_at = user.created_at
         self.updated_at = user.updated_at

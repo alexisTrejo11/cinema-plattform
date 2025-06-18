@@ -18,9 +18,9 @@ class BaseToken:
     created_at: datetime = field(default_factory=datetime.now)
     code: str = field(default="")
 
-
     def revoke(self):
         self.is_revoked = True
+    
     
 @dataclass(kw_only=True)
 class JWTToken(BaseToken):

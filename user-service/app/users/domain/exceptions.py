@@ -1,9 +1,10 @@
-class DomainException(Exception):
+from app.shared.exceptions import NotFoundException, ValidationException
+
+class UserAlreadyExistsException(ValidationException):
     pass
 
-class UserAlreadyExistsException(DomainException):
+class UserNotFoundException(NotFoundException):
     pass
 
-class UserNotFoundException(DomainException):
+class PasswordValidationError(ValidationException):
     pass
-

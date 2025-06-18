@@ -25,5 +25,5 @@ class UserRepository(ABC):
         pass
     
     @abstractmethod
-    async def list_users(self, size: int = 0, number: int = 100) -> List[User]:
+    async def list_users(self, offset: int = 0, limit: int = 100) -> List[User]:
         pass

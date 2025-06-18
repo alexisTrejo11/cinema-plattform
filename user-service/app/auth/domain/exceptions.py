@@ -1,12 +1,12 @@
-from app.users.domain.exceptions import DomainException
+from app.shared.exceptions import AuthorizationException
 
-class InvalidCredentialsException(DomainException):
+class InvalidCredentialsException(AuthorizationException):
     pass
 
 
-class TokenExpiredException(DomainException):
+class TokenExpiredException(AuthorizationException):
     pass
 
 
-class TokenRevokedException(DomainException):
+class TokenRevokedException(AuthorizationException):
     pass

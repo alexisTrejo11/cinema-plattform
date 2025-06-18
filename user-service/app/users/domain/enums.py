@@ -11,4 +11,9 @@ class Gender(str, Enum):
     FEMALE = "FEMALE"
     OTHER = "OTHER"
     
+class Status(str, Enum):
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+    BANNED = "BANNED"
     

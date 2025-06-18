@@ -54,3 +54,19 @@ class ValidationException(DomainException):
 
 class DatabaseException(ApplicationException):
     status_code = HTTPStatus.SERVICE_UNAVAILABLE
+    
+    
+class AuthorizationException(Exception):
+    """Base class for all auth-specific exceptions."""
+    status_code = HTTPStatus.UNAUTHORIZED
+    
+    def __init__(
+        self,
+        message: str = "A auth-specific error occurred.",
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None
+    ):
+        self.message = message
+        self.error_code = error_code or self.__class__.__name__
+        self.details = details
+        super().__init__(self.message)

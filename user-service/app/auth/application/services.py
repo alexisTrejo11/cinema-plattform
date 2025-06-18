@@ -7,17 +7,17 @@ from app.users.domain.entities import User
 from app.auth.domain.exceptions import TokenExpiredException, InvalidCredentialsException
 from .dtos import RefreshTokenRequest, TokenResponse
 from .repositories import SessionRepository
-from app.auth.infrastructure.jwt_service import JWTService #TODO: change
+from .token_service import TokenService
 from app.auth.domain.entities import TokenType
 
 class SessionService:
-    def __init__(self, jwt_service: JWTService, session_repo: SessionRepository) -> None:
-        self.jwt_service = jwt_service
+    def __init__(self, token_service: TokenService, session_repo: SessionRepository) -> None:
+        self.token_service = token_service
         self.session_repo = session_repo
 
     async def create_session(self, user: User) -> TokenResponse:
-        access_token = self.jwt_service.create_token(str(user.id), is_access_token=True)
-        refresh_token = self.jwt_service.create_token(str(user.id), user.email, user.role, is_access_token=False)
+        access_token = self.token_service.create_token(str(user.id), is_access_token=True)
+        refresh_token = self.token_service.create_token(str(user.id), user.email, user.role, is_access_token=False)
 
         self.session_repo.create(refresh_token)
         
@@ -36,7 +36,7 @@ class SessionService:
         if not stored_token or stored_token.is_revoked:
             raise TokenExpiredException("Refresh token expired or revoked")
         
-        access_token = self.jwt_service.create_token(user_id=str(user.id), is_access_token=True)
+        access_token = self.token_service.create_token(user_id=str(user.id), is_access_token=True)
         
         time_remaining = stored_token.expires_at - datetime.now()
         expires_in_minutes = max(0, int(time_remaining.total_seconds() / 60))
@@ -48,23 +48,12 @@ class SessionService:
         
     def _valdiate_refresh_token(self, refresh_token: str):
         try:
-            payload = self.jwt_service.verify_token(refresh_token)
+            payload = self.token_service.verify_token(refresh_token)
         except InvalidCredentialsException as e:
             raise TokenExpiredException("Invalid refresh token")
         
         if payload.get("type") != "refresh":
             raise InvalidCredentialsException("Invalid token type")
-
-
-class PasswordService:
-    def __init__(self):
-        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    
-    def hash_password(self, password: str) -> str:
-        return self.pwd_context.hash(password)
-    
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return self.pwd_context.verify(plain_password, hashed_password)
 
 
 class AuthValidationService:
@@ -90,7 +79,7 @@ class AuthValidationService:
         if not user: 
             return None
             
-        is_password_correct = self.password_service.verify_password(password, user.hashed_password)
+        is_password_correct = self.password_service.verify_password(password, user.password)
         if not is_password_correct:    
             return None
             
@@ -106,4 +95,14 @@ class AuthValidationService:
             return user
         
         return None        
+
+
+class PasswordService:
+    def __init__(self):
+        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     
+    def hash_password(self, password: str) -> str:
+        return self.pwd_context.hash(password)
+    
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+        return self.pwd_context.verify(plain_password, hashed_password)

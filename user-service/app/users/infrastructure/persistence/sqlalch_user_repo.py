@@ -10,7 +10,6 @@ class SQLAlchemyUserRepository(UserRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
     
-    
     async def get_by_id(self, user_id: int) -> Optional[User]:
         result = await self.session.execute(
             select(UserModel).where(UserModel.id == user_id)
@@ -34,7 +33,6 @@ class SQLAlchemyUserRepository(UserRepository):
     
     async def save(self, user: User) -> User:
         model = UserModel.from_domain(user)
-        
         try:
             if user.id is None:
                 self.session.add(model)
@@ -57,7 +55,7 @@ class SQLAlchemyUserRepository(UserRepository):
         
         user_model = result.scalar_one_or_none()
         if not user_model:
-            raise UserNotFoundException("User not found")
+            raise UserNotFoundException("User", user.id)
         
         user_model.update_from_domain(user)
         await self.session.commit()
@@ -76,8 +74,8 @@ class SQLAlchemyUserRepository(UserRepository):
         
         return True
     
-    async def list_users(self, size: int = 0, number: int = 100) -> List[User]:
-        result = await self.session.execute(select(UserModel).offset(size).limit(number))
+    async def list_users(self, offset: int = 0, limit: int = 100) -> List[User]:
+        result = await self.session.execute(select(UserModel).offset(offset).limit(limit))
         user_models = result.scalars().all()
         
         return [user_model.to_domain() for user_model in user_models]

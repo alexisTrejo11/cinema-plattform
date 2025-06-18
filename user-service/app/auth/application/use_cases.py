@@ -24,8 +24,9 @@ class SignUpUseCase:
         if not validation_result.is_success():
             return validation_result
         
+        new_user = User(**request.model_dump())
         hashed_password = self.password_service.hash_password(request.password)
-        new_user = User(hashed_password=hashed_password,**request.model_dump())
+        new_user.password = hashed_password
         
         created_user = await self.user_repository.save(new_user)
         
@@ -43,8 +44,10 @@ class LoginUseCase:
         if not user:
             return Result.error("User not found with given credentials")
         
-        if not user.is_active:
-            return Result.error("User account is deactivated")
+        if user.status.value != 'ACTIVE':
+            return Result.error("User account is not active")
+        
+        # ADD MFA VALIDATION
         
         session = await self.session_service.create_session(user)
         return Result.success(session)

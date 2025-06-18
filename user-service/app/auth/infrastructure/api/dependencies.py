@@ -13,8 +13,9 @@ from app.users.domain.entities import User, UserRole
 from app.auth.infrastructure.persistence.redis_session_repo import RedisSessionRepository
 from app.auth.application.repositories import SessionRepository
 from app.auth.application.use_cases import SignUpUseCase, LoginUseCase, LogoutAllUseCase, LogoutUseCase, RefreshTokenUseCase
-from app.auth.application.services import JWTService, PasswordService, AuthValidationService, SessionService
+from app.auth.application.services import TokenService, PasswordService, AuthValidationService, SessionService
 from app.auth.domain.exceptions import InvalidCredentialsException
+from app.auth.infrastructure.jwt_service import JwtTokenService as JWTService
 
 security = HTTPBearer()
 
@@ -29,7 +30,7 @@ def get_refresh_token_repository(redis_client: redis.Redis = Depends(get_redis_c
 def get_password_service() -> PasswordService:
     return PasswordService()
 
-def get_jwt_service(settings: Settings = Depends(get_settings)) -> JWTService:
+def get_jwt_service(settings: Settings = Depends(get_settings)) -> TokenService:
     """
     Dependency that provides an instance of JWTService,
     initialized with the secret key from your application settings.
@@ -46,7 +47,7 @@ def get_auth_validation_service(
     return AuthValidationService(user_repo, password_service)
 
 def get_session_service(
-    jwt_service: JWTService = Depends(get_jwt_service),
+    jwt_service: TokenService = Depends(get_jwt_service),
     session_repo: SessionRepository = Depends(get_refresh_token_repository)
 ) -> SessionService:
     """

@@ -1,5 +1,6 @@
 CREATE TYPE gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
 CREATE TYPE role_enum AS ENUM ('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN');
+CREATE TYPE user_status_enum AS ENUM ('PENDING', 'ACTIVE', 'INACTIVE', 'BANNED');
 
 
 CREATE TABLE users (
@@ -11,8 +12,8 @@ CREATE TABLE users (
     last_name VARCHAR(255),
     role role_enum NOT NULL,
     gender gender_enum NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT false,
-    date_of_birth TIMESTAMP,
+    status user_status_enum NOT NULL DEFAULT 'PENDING',
+    date_of_birth TIMESTAMP NOT NULL,
     last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
