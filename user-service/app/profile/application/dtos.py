@@ -1,22 +1,104 @@
 from pydantic import BaseModel, Field, PastDate
 from app.users.domain.enums import Gender
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 
-class Profile(BaseModel):
-    gender: Gender
-    first_name: str = Field(..., min_length=3)
-    last_name:  Optional[str] = Field(None, min_length=3)
-    date_of_birth: PastDate
-    #joined_date: datetime = Field(default=datetime.now())
+class BaseProfile(BaseModel):
+    """
+    Represents a user's detailed  base profile information.
+    """
+    gender: Gender = Field(
+        ...,
+        description="The gender of the user.",
+        examples=[Gender.MALE]
+    )
+    first_name: str = Field(
+        ...,
+        min_length=3,
+        description="The first name of the user.",
+        examples=["John", "Jane"]
+    )
+    last_name: Optional[str] = Field(
+        None,
+        min_length=3,
+        description="The last name of the user. Optional.",
+        examples=["Doe", "Smith"]
+    )
+    date_of_birth: PastDate = Field(
+        ...,
+        description="The user's date of birth. Must be a past date.",
+        examples=["1990-01-15", "1985-07-22"]
+    )
+    joined_date: datetime = Field(
+        ...,
+        description="The date and time when the user joined the system.",
+        examples=["2023-04-01T10:30:00Z"]
+    )   
 
+
+class Profile(BaseProfile):
+    """
+    Represents a user's detailed profile information.
+    """
+    
 
 class ProfileResponse(Profile):
+    """
+    Represents the full profile data returned in API responses.
+    Inherits all fields and documentation from the Profile base model.
+    """
     pass
+    
+    class Config:
+        """
+        Pydantic configuration for the Profile model.
+        """
+        json_schema_extra = {
+            "example": {
+                "gender": "MALE",
+                "first_name": "Alice",
+                "last_name": "Johnson",
+                "date_of_birth": "1992-05-20",
+                "joined_date": "2024-01-10T14:00:00Z"
+            }
+        }
 
 
 class ProfileUpdate(BaseModel):
-    gender: Optional[Gender] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    date_of_birth: Optional[date] = None
+    """
+    Represents the data for updating a user's profile.
+    All fields are optional, allowing for partial updates.
+    """
+    gender: Optional[Gender] = Field(
+        None,
+        description="Optional: The updated gender of the user.",
+        examples=[Gender.FEMALE]
+    )
+    first_name: Optional[str] = Field(
+        None,
+        min_length=3,
+        description="Optional: The updated first name of the user.",
+        examples=["Robert"]
+    )
+    last_name: Optional[str] = Field(
+        None,
+        min_length=3,
+        description="Optional: The updated last name of the user.",
+        examples=["Brown"]
+    )
+    date_of_birth: Optional[date] = Field(
+        None,
+        description="Optional: The updated date of birth for the user.",
+        examples=["1988-11-01"]
+    )
+
+    class Config:
+        """
+        Pydantic configuration for the ProfileUpdate model.
+        """
+        json_schema_extra = {
+            "example": {
+                "first_name": "Bob",
+                "date_of_birth": "1995-03-25"
+            }
+        }

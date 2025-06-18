@@ -1,37 +1,151 @@
 from pydantic import Field, BaseModel, EmailStr
 from app.users.domain.entities import User
 from app.users.domain.enums import Gender
-from app.profile.application.dtos import Profile 
+from app.profile.application.dtos import BaseProfile
 from typing import Optional
 from datetime import date
 
-class UserCreate(Profile):
-    password: str = Field(..., min_length=8)
-    email: EmailStr
-    phone_number: str = Field(..., min_length=6)
+class UserCreate(BaseProfile):
+    """
+    Represents the data required to create a new user.
+    It inherits profile-related fields from the `Profile` DTO.
+    """
+    password: str = Field(
+        ...,
+        min_length=8,
+        description="The user's password. Must be at least 8 characters long.",
+        examples=["SecureP@ss123"]
+    )
+    email: EmailStr = Field(
+        ...,
+        description="The user's unique email address.",
+        examples=["john.doe@example.com"]
+    )
+    phone_number: str = Field(
+        ...,
+        min_length=6,
+        description="The user's phone number.",
+        examples=["+1234567890", "5512345678"]
+    )
+
+    class Config:
+        """
+        Pydantic configuration for the UserCreate model.
+        """
+        json_schema_extra = {
+            "example": {
+                "gender": "MALE",
+                "first_name": "John",
+                "last_name": "Doe",
+                "date_of_birth": "1990-01-15",
+                "password": "MySuperSecretPassword1!",
+                "email": "john.doe@example.com",
+                "phone_number": "+1234567890"
+            }
+        }
     
     def to_domain(self) -> 'User':
+        """
+        Converts the UserCreate DTO to a User domain entity.
+        """
         return User(**self.model_dump())
     
-    
-class UserResponse(Profile):
-    id: int
+class UserResponse(BaseProfile):
+    """
+    Represents the full user data returned in API responses, including their ID.
+    It inherits profile-related fields from the `Profile` DTO.
+    """
+    id: int = Field(
+        ...,
+        description="The unique identifier of the user.",
+        examples=[1, 101]
+    )
+
+    class Config:
+        """
+        Pydantic configuration for the UserResponse model.
+        """
+        json_schema_extra = {
+            "example": {
+                "id": 123,
+                "gender": "FEMALE",
+                "first_name": "Jane",
+                "last_name": "Smith",
+                "date_of_birth": "1992-03-20",
+                "joined_date": "2024-06-18T10:00:00Z"
+            }
+        }
     
     @staticmethod
     def from_domain(entity: User) -> 'UserResponse':
+        """
+        Creates a UserResponse DTO from a User domain entity.
+        """
         return UserResponse(**entity.model_dump())
     
 
 class UserUpdate(BaseModel):
-    password: str
-    email: EmailStr
-    gender: Gender
-    phone_number: str
-    first_name: str 
-    last_name: str
-    date_of_birth: date
+    """
+    Represents the data available for updating an existing user's details.
+    All fields are optional, allowing for partial updates.
+    """
+    password: Optional[str] = Field(
+        None,
+        min_length=8,
+        description="Optional: The new password for the user. Must be at least 8 characters long if provided.",
+        examples=["NewP@ssword!"]
+    )
+    email: Optional[EmailStr] = Field(
+        None,
+        description="Optional: The new email address for the user.",
+        examples=["new.email@example.com"]
+    )
+    gender: Optional[Gender] = Field(
+        None,
+        description="Optional: The new gender for the user.",
+        examples=[Gender.FEMALE]
+    )
+    phone_number: Optional[str] = Field(
+        None,
+        min_length=6,
+        description="Optional: The new phone number for the user.",
+        examples=["+1987654321"]
+    )
+    first_name: Optional[str] = Field(
+        None,
+        min_length=3,
+        description="Optional: The new first name for the user.",
+        examples=["Robert"]
+    )
+    last_name: Optional[str] = Field(
+        None,
+        min_length=3,
+        description="Optional: The new last name for the user.",
+        examples=["Johnson"]
+    )
+    date_of_birth: Optional[date] = Field(
+        None,
+        description="Optional: The new date of birth for the user.",
+        examples=["1985-11-20"]
+    )
     
+    class Config:
+        """
+        Pydantic configuration for the UserUpdate model.
+        """
+        json_schema_extra = {
+            "example": {
+                "email": "updated.email@example.com",
+                "first_name": "Roberto",
+                "phone_number": "9987654321"
+            }
+        }
+
     def update_user_fields(self, entity: User, hashed_password: Optional[str] = None) -> User:
+        """
+        Updates the fields of a User domain entity with the provided data.
+        Only fields that are set in the UserUpdate DTO will be updated.
+        """
         update_data = self.model_dump(exclude_unset=True)
         
         for key, value in update_data.items():
@@ -42,4 +156,3 @@ class UserUpdate(BaseModel):
             entity.password = hashed_password
         
         return entity
-    
