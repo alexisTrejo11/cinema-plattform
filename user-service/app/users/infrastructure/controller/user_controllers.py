@@ -202,3 +202,13 @@ async def delete_user(
     except Exception as e:
         logger.error(f"DELETE user failed | user_id:{user_id} | error:{str(e)}")
         raise
+    
+    
+@router.patch("/activate", response_model=User)
+def activate_user(user: User):
+    return user
+
+
+@router.patch("/ban", response_model=User)
+def ban_user(user: User):
+    return user

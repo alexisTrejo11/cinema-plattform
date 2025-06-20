@@ -2,7 +2,7 @@ from typing import Optional, List
 from app.auth.domain.entities import JWTToken, TokenType
 from abc import abstractmethod, ABC
 
-class SessionRepository(ABC):
+class TokenRepository(ABC):
     @abstractmethod
     def create(self, token: JWTToken) -> None:
         pass

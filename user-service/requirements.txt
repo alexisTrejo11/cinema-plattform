@@ -16,3 +16,6 @@ python-multipart
 email-validator
 redis[hiredis]
 pydantic-settings
+
+aio-pika
+pika==1.3.2

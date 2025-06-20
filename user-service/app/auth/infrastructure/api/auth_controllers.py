@@ -4,7 +4,7 @@ from app.users.domain.exceptions import *
 from app.auth.domain.exceptions import *
 from app.users.domain.entities import User
 from app.users.application.dtos import UserResponse
-from app.auth.application.dtos import SignUpRequest, LoginRequest, TokenResponse, RefreshTokenRequest
+from app.auth.application.dtos import SignUpRequest, LoginRequest, RefreshTokenRequest, SessionResponse
 from app.auth.application.use_cases import SignUpUseCase, LoginUseCase, RefreshTokenUseCase, LogoutAllUseCase, LogoutUseCase
 from .dependencies import get_logged_user, signup_use_case, login_use_case, logout_use_case, logout_all_use_case, refresh_token_use_case
 import logging
@@ -56,12 +56,12 @@ async def signup(
 
 @router.post(
     "/login",
-    response_model=ApiResponse[TokenResponse],
+    response_model=ApiResponse[SessionResponse],
     status_code=status.HTTP_200_OK,
     summary="Authenticate user and get tokens",
     description="Authenticates a user with their credentials and returns access and refresh tokens.",
     responses={
-        200: {"model": ApiResponse[TokenResponse], "description": "Successfully authenticated and tokens issued."},
+        200: {"model": ApiResponse[SessionResponse], "description": "Successfully authenticated and tokens issued."},
         400: {"model": ApiResponse[ErrorResponse], "description": "Bad Request - Invalid credentials provided."},
         401: {"model": ApiResponse[ErrorResponse], "description": "Unauthorized - Invalid identifier or password."},
         **common_auth_error_responses
@@ -155,18 +155,18 @@ async def logout_all(
 
 @router.post(
     "/refresh",
-    response_model=ApiResponse[TokenResponse],
+    response_model=ApiResponse[SessionResponse],
     status_code=status.HTTP_200_OK,
     summary="Refresh access token",
     description="Exchanges a valid refresh token for a new access token and refresh token pair.",
     responses={
-        200: {"model": ApiResponse[TokenResponse], "description": "Successfully refreshed tokens."},
+        200: {"model": ApiResponse[SessionResponse], "description": "Successfully refreshed tokens."},
         400: {"model": ApiResponse[ErrorResponse], "description": "Bad Request - Invalid or expired refresh token."},
         401: {"model": ApiResponse[ErrorResponse], "description": "Unauthorized - Missing or invalid access token."},
         **common_auth_error_responses
     }
 )
-async def refresh_token(
+async def refresh_session_token(
     request_body: RefreshTokenRequest,
     request: Request,
     current_user: User = Depends(get_logged_user),
@@ -183,3 +183,9 @@ async def refresh_token(
     except Exception as e:
         logger.error(f"POST refresh failed | user_id:{current_user.id} | error:{str(e)}")
         raise
+    
+    
+@router.post("/send-token", response_model=User)
+def send_verification_token(user: User):
+    return user
+

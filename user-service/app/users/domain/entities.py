@@ -11,10 +11,10 @@ class Account(Profile):
     phone_number: Optional[str] = Field(None, min_length=6)
     password: str = Field(..., min_length=8)
     role: UserRole = UserRole.CUSTOMER
+    status: Status = Field(default=Status.PENDING)
+    is_2fa_enabled: bool = False 
     created_at: datetime = Field(default=datetime.now())
     updated_at: datetime = Field(default=datetime.now())
-    status: Status = Field(default=Status.PENDING)
-    is_two_fa_auth: bool = False 
 
     
 class User(Account):

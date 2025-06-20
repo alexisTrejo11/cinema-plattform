@@ -3,17 +3,14 @@ from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Optional
 
-class TokenType(Enum):
-    JWT_REFRESH = "refresh"
-    JWT_ACCESS = "access"
-    ACTIVATION = "activation"
+
 
 
 @dataclass(kw_only=True)
 class BaseToken:
     expires_at: datetime
     user_id: str
-    type: TokenType
+    type: str
     is_revoked: bool = False
     created_at: datetime = field(default_factory=datetime.now)
     code: str = field(default="")
@@ -26,3 +23,12 @@ class BaseToken:
 class JWTToken(BaseToken):
     email: Optional[str] = None
     role: Optional[str] = None
+    
+    
+@dataclass
+class TwoFactorToken(BaseToken):
+    pass
+
+@dataclass
+class ActivationToken(BaseToken):
+    pass

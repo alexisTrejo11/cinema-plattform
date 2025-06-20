@@ -7,19 +7,19 @@ class SignUpRequest(Profile):
     phone_number: Optional[str] = Field(None, min_length=6)
     password: str
 
+
 class LoginRequest(BaseModel):
     identifier_field: str
     password: str
+    twoFACode: Optional[str] = None
 
-class TokenResponse(BaseModel):
+
+class SessionResponse(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
     expires_in_minutes: int
+    token_type: str = "bearer"
 
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
-
-
-

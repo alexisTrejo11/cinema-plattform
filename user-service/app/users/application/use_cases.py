@@ -2,7 +2,7 @@ from typing import List, Dict
 from app.shared.response import Result
 from app.shared.pagintation import PaginationParams as PageParams
 from app.users.application.dtos import UserResponse, UserCreate, UserUpdate
-from app.auth.application.services import PasswordService, AuthValidationService
+from app.auth.application.services import PasswordService, AuthValidationService, TokenService
 from app.users.application.repositories import UserRepository
 from app.users.domain.entities import User
 from app.users.domain.exceptions import UserNotFoundException
@@ -32,12 +32,7 @@ class GetUserUseCase:
 
 
 class CreateUserUseCase:
-    def __init__(
-        self, 
-        repository: UserRepository, 
-        password_service: PasswordService, 
-        validation_service: AuthValidationService
-    ) -> None:
+    def __init__(self,  repository: UserRepository, password_service: PasswordService, validation_service: AuthValidationService) -> None:
         self.repository = repository
         self.password_service = password_service
         self.validation_service = validation_service
@@ -59,11 +54,7 @@ class CreateUserUseCase:
 
     
 class UpdateUserUseCase:
-    def __init__(
-        self, repository: UserRepository, 
-        validation_service: AuthValidationService,  
-        password_service: PasswordService
-    ) -> None:
+    def __init__(self, repository: UserRepository, validation_service: AuthValidationService, password_service: PasswordService) -> None:
         self.repository = repository
         self.password_service = password_service
         self.validation_service = validation_service
@@ -101,3 +92,32 @@ class DeleteUserUseCase:
         return await self.repository.delete(user_id)
 
 
+class ActivateUser:
+    def __init__(self, repository: UserRepository, token_service: TokenService) -> None:
+        self.repository = repository
+        self.token_service = token_service
+        
+    
+    async def execute(self, user_id: int, activation_token: str) -> None:
+        user = await self.repository.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundException("User", user_id)
+        
+        self.token_service.verify_token(activation_token)
+        
+        user.activate()
+        await self.repository.save(user)
+
+
+class BanUser:
+    def __init__(self, repository: UserRepository) -> None:
+        self.repository = repository
+
+    async def execute(self, user_id: int, activation_token: str) -> None:
+        user = await self.repository.get_by_id(user_id)
+        if not user:
+            raise UserNotFoundException("User", user_id)
+                
+        user.ban()
+        await self.repository.save(user)
+        

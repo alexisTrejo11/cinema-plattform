@@ -5,9 +5,7 @@ from typing import Any, Dict, Optional, List
 from dataclasses import asdict
 import logging
 from redis import Redis
-from app.auth.application.repositories import SessionRepository
-from app.auth.domain.entities import JWTToken, TokenType
-
+from app.token.domain.token import Token, TokenType
 logger = logging.getLogger(__name__)
 
 def json_serializer(obj):
@@ -18,7 +16,7 @@ def json_serializer(obj):
     logger.debug(f"json_serializer encountered unhandled type: {type(obj)} with value: {obj}")
     raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
-class RedisSessionRepository(SessionRepository):
+class TokenRepository:
     def __init__(self, redis_conn: Redis) -> None:
         self.redis_conn = redis_conn
         super().__init__()
@@ -27,8 +25,8 @@ class RedisSessionRepository(SessionRepository):
         """Generates a unique key for the Redis entry, including token type."""
         return f"session:{user_id}:{token_type.value}:{token_code}"
 
-    def _dict_to_jwt_token(self, session_data: Dict[str, Any]) -> Optional[JWTToken]:
-        """Convert dictionary to JWTToken object."""
+    def _dict_to_jwt_token(self, session_data: Dict[str, Any]) -> Optional[Token]:
+        """Convert dictionary to Token object."""
         try:
             expires_at = session_data.get('expires_at')
             if expires_at and isinstance(expires_at, str):
@@ -47,7 +45,7 @@ class RedisSessionRepository(SessionRepository):
                     logger.warning(f"Invalid TokenType value '{token_type_str}' in session data for user_id: {session_data.get('user_id')}. Returning None.")
                     return None
 
-            return JWTToken(
+            return Token(
                 user_id=session_data['user_id'],
                 code=session_data['code'],
                 expires_at=expires_at,
@@ -56,10 +54,10 @@ class RedisSessionRepository(SessionRepository):
                 created_at=created_at
             )
         except (KeyError, TypeError, ValueError) as e:
-            logger.error(f"Error converting dict to JWTToken: {e} - Data: {session_data}")
+            logger.error(f"Error converting dict to Token: {e} - Data: {session_data}")
             return None
 
-    def create(self, token: JWTToken) -> None:
+    def create(self, token: Token) -> None:
         key = self._generate_key(str(token.user_id), token.code, token.type)
 
         expires_in_seconds = 0
@@ -68,7 +66,7 @@ class RedisSessionRepository(SessionRepository):
             expires_in_seconds = int(time_difference.total_seconds())
 
         # Synchronous call
-        self.redis_conn.set(key, json.dumps(asdict(token), default=json_serializer))
+        self.redis_conn.set(key, json.dumps(token.__dict__, default=json_serializer))
 
         if expires_in_seconds > 0:
             # Synchronous call
@@ -76,9 +74,9 @@ class RedisSessionRepository(SessionRepository):
         else:
             logger.warning(f"Token for user {token.user_id} expires in the past or is non-expiring. Not setting expiration.")
 
-    def get_user_token(self, user_id: str, token_code: str, token_type: TokenType) -> Optional[JWTToken]:
+    def get_user_token(self, user_id: str, token_code: str, token_type: TokenType) -> Optional[Token]:
         key = self._generate_key(user_id, token_code, token_type)
-        session_data_json = self.redis_conn.get(key) # Synchronous call
+        session_data_json = self.redis_conn.get(key)
 
         if not session_data_json:
             return None
@@ -90,7 +88,7 @@ class RedisSessionRepository(SessionRepository):
             logger.error(f"Error loading or parsing session data for key {key}: {e}")
             return None
 
-    def list_by_user_id(self, user_id: str, token_type: Optional[TokenType] = None) -> List[JWTToken]:
+    def list_by_user_id(self, user_id: str, token_type: Optional[TokenType] = None) -> List[Token]:
         pattern = f"session:{user_id}:{token_type.value if token_type else '*'}:*"
         
         all_keys = []
@@ -115,7 +113,7 @@ class RedisSessionRepository(SessionRepository):
         
         results = pipe.execute() # Synchronous execute
 
-        sessions: List[JWTToken] = []
+        sessions: List[Token] = []
         for result in results:
             if result:
                 try:
