@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     API_VERSION: str = "1.0"
     DEBUG_MODE: bool = False
     SECRET_KEY: str
+    ALGORITHM: str
     
     DATABASE_URL: str
     POSTGRES_USER: str

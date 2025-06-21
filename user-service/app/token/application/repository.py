@@ -1,18 +1,18 @@
 from typing import Optional, List
-from app.auth.domain.entities import JWTToken, TokenType
+from app.token.domain.token import Token, TokenType
 from abc import abstractmethod, ABC
 
 class TokenRepository(ABC):
     @abstractmethod
-    def create(self, token: JWTToken) -> None:
+    def create(self, token: Token) -> None:
         pass
     
     @abstractmethod
-    def get_user_token(self, user_id: str, token_code: str, token_type: TokenType) -> Optional[JWTToken]:
+    def get_user_token(self, user_id: str, token_code: str, token_type: TokenType) -> Optional[Token]:
         pass
     
     @abstractmethod
-    def list_by_user_id(self, user_id: str) -> List[JWTToken]:
+    def list_by_user_id(self, user_id: str) -> List[Token]:
         pass
     
     @abstractmethod

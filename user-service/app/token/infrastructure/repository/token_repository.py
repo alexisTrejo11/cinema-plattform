@@ -6,6 +6,9 @@ from dataclasses import asdict
 import logging
 from redis import Redis
 from app.token.domain.token import Token, TokenType
+from app.token.application.repository import TokenRepository
+
+
 logger = logging.getLogger(__name__)
 
 def json_serializer(obj):
@@ -16,7 +19,7 @@ def json_serializer(obj):
     logger.debug(f"json_serializer encountered unhandled type: {type(obj)} with value: {obj}")
     raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
-class TokenRepository:
+class TokenRepositoryImpl(TokenRepository):
     def __init__(self, redis_conn: Redis) -> None:
         self.redis_conn = redis_conn
         super().__init__()

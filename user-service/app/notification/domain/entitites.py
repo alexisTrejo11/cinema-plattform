@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from datetime import datetime
 from enum import Enum
+from app.users.domain.entities import User
 
 class NotificationType(str, Enum):
     EMAIL = "EMAIL"
@@ -10,7 +11,7 @@ class NotificationType(str, Enum):
 
 @dataclass
 class Notification:
-    user_id: str
-    data: Dict[str, Any]
+    user: User
+    token: str
     notification_type: NotificationType
     created_at: datetime = datetime.now()

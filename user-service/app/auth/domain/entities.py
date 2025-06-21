@@ -4,8 +4,6 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 
-
-
 @dataclass(kw_only=True)
 class BaseToken:
     expires_at: datetime

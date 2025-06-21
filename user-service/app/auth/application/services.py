@@ -3,7 +3,7 @@ from datetime import datetime
 from passlib.context import CryptContext
 from app.shared.response import Result
 from app.users.application.repositories import UserRepository
-from app.users.domain.entities import User
+from app.users.domain.entities import User, Status
 from app.auth.domain.exceptions import TokenExpiredException, InvalidCredentialsException
 from .dtos import RefreshTokenRequest, SessionResponse
 from app.token.application.service import TokenService
@@ -50,11 +50,17 @@ class SessionService:
 
     def revoke_user_sessions(self, user_id: int) -> None:
         self.token_service.revoke_all_refresh_by_user(str(user_id))
+        
+    
+    def revoke_session(self, user_id: int, token: str) -> None:
+        self.token_service.revoke(str(user_id), TokenType.JWT_REFRESH, token)
+
 
 class AuthValidationService:
-    def __init__(self, repository: UserRepository, password_service: 'PasswordService') -> None:
+    def __init__(self, repository: UserRepository, password_service: 'PasswordService', token_service: TokenService) -> None:
         self.repository =  repository
         self.password_service =  password_service
+        self.token_service = token_service
                 
     async def validate_unique_fields(self, email: Optional[str], phone: Optional[str]) -> Result:
         if email:
@@ -90,6 +96,23 @@ class AuthValidationService:
             return user
         
         return None        
+    
+    
+    def validate_account_status_for_login(self, user: User):
+        if user.status == Status.BANNED:
+            raise ValueError("User account is banned")
+        elif user.status == Status.PENDING:
+            raise ValueError("User account is not activated. Request an activate code to activate your account")
+        elif user.status == Status.INACTIVE:
+            user.status = Status.ACTIVE
+            return
+
+    def validate_2FA_Access(self, user_id: int, twoFAToken):
+        valid_token = self.token_service.verify_token(twoFAToken, TokenType.VERIFICATION, user_id)
+        if not valid_token:
+            raise ValueError("Invalid or Expired Token")
+        
+        
 
 
 class PasswordService:

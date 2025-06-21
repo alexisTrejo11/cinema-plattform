@@ -1,8 +1,12 @@
-from typing import List, Dict
+from typing import List
+
 from app.shared.response import Result
 from app.shared.pagintation import PaginationParams as PageParams
-from app.users.application.dtos import UserResponse, UserCreate, UserUpdate
+from app.token.domain.token import TokenType
 from app.auth.application.services import PasswordService, AuthValidationService, TokenService
+
+
+from app.users.application.dtos import UserResponse, UserCreate, UserUpdate
 from app.users.application.repositories import UserRepository
 from app.users.domain.entities import User
 from app.users.domain.exceptions import UserNotFoundException
@@ -103,17 +107,19 @@ class ActivateUser:
         if not user:
             raise UserNotFoundException("User", user_id)
         
-        self.token_service.verify_token(activation_token)
+        is_token_valid = self.token_service.verify_token(activation_token, TokenType.VERIFICATION, user_id)
+        if not is_token_valid:
+            raise ValueError("Invalid or Expired Token")
         
         user.activate()
         await self.repository.save(user)
 
 
-class BanUser:
+class BanUserUseCase:
     def __init__(self, repository: UserRepository) -> None:
         self.repository = repository
 
-    async def execute(self, user_id: int, activation_token: str) -> None:
+    async def execute(self, user_id: int) -> None:
         user = await self.repository.get_by_id(user_id)
         if not user:
             raise UserNotFoundException("User", user_id)

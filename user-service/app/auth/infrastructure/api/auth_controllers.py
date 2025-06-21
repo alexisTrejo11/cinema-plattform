@@ -5,7 +5,9 @@ from app.auth.domain.exceptions import *
 from app.users.domain.entities import User
 from app.users.application.dtos import UserResponse
 from app.auth.application.dtos import SignUpRequest, LoginRequest, RefreshTokenRequest, SessionResponse
-from app.auth.application.use_cases import SignUpUseCase, LoginUseCase, RefreshTokenUseCase, LogoutAllUseCase, LogoutUseCase
+from app.auth.application.usecases.singup_usecase import SignUpUseCase
+from app.auth.application.usecases.login_usecase import  LoginUseCase, RefreshTokenUseCase
+from app.auth.application.usecases.logout_usecase import LogoutAllUseCase, LogoutUseCase
 from .dependencies import get_logged_user, signup_use_case, login_use_case, logout_use_case, logout_all_use_case, refresh_token_use_case
 import logging
 
@@ -186,6 +188,24 @@ async def refresh_session_token(
     
     
 @router.post("/send-token", response_model=User)
-def send_verification_token(user: User):
+def resend_verification_token(user: User):
     return user
+
+
+async def activate_account(
+    request: Request,
+    user_id: int, 
+    use_case,
+    logged_user: User = Depends(get_logged_user)
+):
+    """
+    Activate a user by their ID.
+    """
+    logger.info(f"PATCH user ban started | user_id:{user_id} | client:{request.client.host if request.client else None}")
+
+    await use_case.execute(user_id)
+
+    logger.info(f"PATCH user banned | user_id:{user_id}")
+    
+    return ApiResponse.success(None, f"User with ID {user_id} banned successfully.")
 

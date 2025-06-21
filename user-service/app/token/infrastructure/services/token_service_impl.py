@@ -1,23 +1,25 @@
 from typing import Dict, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
+
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError, JWTError 
+
 from app.auth.domain.exceptions import InvalidCredentialsException
 from app.token.application.service import TokenService
 from app.token.domain.token import TokenType, Token
+
 from ..repository.token_repository import TokenRepository
 from ..strategy_token import TokenAccessJWT, TokenVerification, TokenRefreshJWT, CreateToken
-import os
 import logging
 
 logger = logging.getLogger("app")
 
-
 class TokenServiceImpl(TokenService):
-    def __init__(self, token_repository: TokenRepository) -> None:
+    def __init__(self, token_repository: TokenRepository, secret_key : str, algorithm : str) -> None:
         self.token_repository = token_repository
+        self.secret_key = secret_key
+        self.algorithm = algorithm
         super().__init__()
-        
 
     def create(self, token_type: TokenType , **kwargs) -> Token:
         if token_type == TokenType.JWT_ACCESS:
@@ -40,7 +42,7 @@ class TokenServiceImpl(TokenService):
 
     def verify_token(self, token_string: str, token_type: TokenType, user_id: int) -> bool:
         if token_type in [TokenAccessJWT, TokenAccessJWT]:
-            self._validate_jwt_token(token_string)
+            self.validate_jwt_token(token_string)
         
         if token_type not in [TokenAccessJWT, TokenVerification]:
             token = self.token_repository.get_user_token(str(user_id), token_string, token_type)
@@ -52,11 +54,10 @@ class TokenServiceImpl(TokenService):
             
         return True
     
-
-    def _validate_jwt_token(self, token_str : str):
+    def verify_jwt_token(self, token_string : str) -> Dict[str, Any]:
         try:
-            payload = jwt.decode(token_str, os.getenv("SECRET_KEY", ""), algorithms=[os.getenv("ALGORITHM", "")])
-            return True
+            payload = jwt.decode(token_string, self.secret_key, algorithms=[self.algorithm])
+            return payload
         except ExpiredSignatureError as e:
             logger.error(f"(verify_token): Token expired: {e}")
             raise InvalidCredentialsException("Token has expired")
@@ -67,7 +68,6 @@ class TokenServiceImpl(TokenService):
             logger.error(f"(verify_token): Unexpected error during token verification: {type(e).__name__}: {e}")
             raise InvalidCredentialsException(f"Token verification failed unexpectedly: {e}")
         
-
     def get_by_code_user_and_type(self, user_id: str, token_string: str, token_type: TokenType) -> Optional[Token]:
         token = self.token_repository.get_user_token(user_id, token_string, token_type)
         if token and not token.is_revoked:

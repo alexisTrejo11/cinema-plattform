@@ -1,13 +1,18 @@
 from app.notification.application.services import NotificationService
 from app.notification.domain.entitites import Notification
-from config.app_config import Settings
+from app.queue.rabbitmq import rabbitmq_publisher
 
-#TODO: Inject
-class NotificationServiceImpl(NotificationService):
-    def __init__(self, settings: Settings) -> None:
-        self.smtp_host = settings.rabbitmq_url
-        super().__init__()
-        
-    
+class NotificationServiceImpl(NotificationService):    
     async def send_notification(self, notification: Notification):
-        pass
+        await rabbitmq_publisher.connect()
+        
+        user = notification.user
+        await rabbitmq_publisher.publish_token_request(
+            user_email=user.email,
+            token=notification.token,
+            notification_type=notification.notification_type.value
+        )
+        
+        await rabbitmq_publisher.close()
+        
+        

@@ -5,8 +5,8 @@ from app.shared.pagintation import PaginationParams as PageParams
 from app.auth.infrastructure.api.dependencies import get_logged_admin_user
 from app.users.application.dtos import UserResponse, UserCreate, UserUpdate
 from app.users.domain.entities import  User
-from app.users.application.use_cases import ListUsersUseCase, GetUserUseCase, CreateUserUseCase, UpdateUserUseCase, DeleteUserUseCase
-from .dependecies import get_user_use_case, list_user_use_case, create_user_use_case, update_user_use_case, delete_user_use_case
+from app.users.application.use_cases import ListUsersUseCase, GetUserUseCase, CreateUserUseCase, UpdateUserUseCase, DeleteUserUseCase, BanUserUseCase
+from .dependecies import get_user_use_case, list_user_use_case, create_user_use_case, update_user_use_case, delete_user_use_case, ban_user_use_case
 import logging
 
 logger = logging.getLogger("app")
@@ -202,13 +202,34 @@ async def delete_user(
     except Exception as e:
         logger.error(f"DELETE user failed | user_id:{user_id} | error:{str(e)}")
         raise
-    
-    
-@router.patch("/activate", response_model=User)
-def activate_user(user: User):
-    return user
 
 
-@router.patch("/ban", response_model=User)
-def ban_user(user: User):
-    return user
+@router.patch(
+    "{user_id}/activate", 
+    status_code=status.HTTP_200_OK,
+    response_model=ApiResponse[None],
+)
+
+    
+@router.patch(
+    "{user_id}/ban", 
+    status_code=status.HTTP_200_OK,
+    response_model=ApiResponse[None],
+)
+async def ban_user(
+    request: Request,
+    user_id: int, 
+    use_case: BanUserUseCase = Depends(ban_user_use_case),
+    
+    admin_user: User = Depends(get_logged_admin_user)
+):
+    """
+    Bans a user by their ID.
+    """
+    logger.info(f"PATCH user ban started | user_id:{user_id} | admin:{admin_user.id} | client:{request.client.host if request.client else None}")
+
+    await use_case.execute(user_id)
+
+    logger.info(f"PATCH user banned | user_id:{user_id}")
+    
+    return ApiResponse.success(None, f"User with ID {user_id} banned successfully.")

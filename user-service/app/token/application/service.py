@@ -1,5 +1,4 @@
-from typing import Generic, Optional, TypeVar
-from datetime import datetime
+from typing import Any, Dict, Optional
 from abc import abstractmethod, ABC
 from app.token.domain.token import TokenType, Token
 
@@ -23,3 +22,8 @@ class TokenService(ABC):
     @abstractmethod
     def verify_token(self, token_string: str, token_type: TokenType, user_id: int) -> bool:
         pass
+    
+    @abstractmethod
+    def verify_jwt_token(self, token_string: str) -> Dict[str, Any]:
+        pass
+    
