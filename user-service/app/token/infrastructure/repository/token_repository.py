@@ -1,13 +1,11 @@
 import json
+from typing import Any, Dict, Optional, List
 from datetime import datetime, date
 from enum import Enum
-from typing import Any, Dict, Optional, List
-from dataclasses import asdict
-import logging
 from redis import Redis
 from app.token.domain.token import Token, TokenType
 from app.token.application.repository import TokenRepository
-
+import logging
 
 logger = logging.getLogger(__name__)
 

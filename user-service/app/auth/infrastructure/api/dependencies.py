@@ -4,8 +4,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config.postgres_config import get_db
-from config.redis_config import get_redis_client, redis
-from config.app_config import Settings, get_settings
+from config.redis_config import get_redis_client, Redis
+from config.app_config import settings
 
 from app.users.infrastructure.persistence.sqlalch_user_repo import SQLAlchemyUserRepository
 from app.users.application.repositories import UserRepository
@@ -30,7 +30,7 @@ security = HTTPBearer()
 def get_user_repository(session: AsyncSession = Depends(get_db)) -> UserRepository:
     return SQLAlchemyUserRepository(session)
 
-def get_token_repository(redis_client: redis.Redis = Depends(get_redis_client)) -> TokenRepository:
+def get_token_repository(redis_client: Redis = Depends(get_redis_client)) -> TokenRepository:
     return TokenRepositoryImpl(redis_client)
 
 
@@ -38,7 +38,7 @@ def get_token_repository(redis_client: redis.Redis = Depends(get_redis_client)) 
 def get_password_service() -> PasswordService:
     return PasswordService()
 
-def get_token_service(token_repo: TokenRepository = Depends(get_token_repository), settings: Settings = Depends(get_settings)) -> TokenService:
+def get_token_service(token_repo: TokenRepository = Depends(get_token_repository)) -> TokenService:
     """
     Dependency that provides an instance of TokenService,
     initialized with the secret key from your application settings.
@@ -68,12 +68,20 @@ def get_notification_service() -> NotificationService:
 def signup_use_case(
     user_repo: UserRepository = Depends(get_user_repository),
     password_service: PasswordService = Depends(get_password_service),
-    validation_service: AuthValidationService = Depends(get_auth_validation_service)
+    validation_service: AuthValidationService = Depends(get_auth_validation_service),
+    token_service: TokenService = Depends(get_token_service),
+    notification_service: NotificationService = Depends(get_notification_service)
 ) -> SignUpUseCase:
     """
     Provides an instance of SignUpUseCase.
     """
-    return SignUpUseCase(user_repo, validation_service, password_service)
+    return SignUpUseCase(
+        user_repository=user_repo, 
+        validation_service=validation_service,
+        password_service=password_service,
+        token_service=token_service,
+        notification_service=notification_service
+    )
 
 def login_use_case(
     session_service: SessionService = Depends(get_session_service),

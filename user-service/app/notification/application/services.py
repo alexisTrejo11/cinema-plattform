@@ -6,3 +6,4 @@ class NotificationService(ABC):
     async def send_notification(self, notification: Notification) -> None:
         pass
     
+    

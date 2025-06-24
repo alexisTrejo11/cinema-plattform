@@ -1,77 +1,69 @@
-import pika
-import json
-import asyncio
-from typing import Dict, Any
-from aio_pika import connect_robust, RobustConnection, RobustChannel, ExchangeType, Message
-from aio_pika.abc import AbstractRobustConnection, AbstractRobustChannel
-from config.app_config import get_settings
+import aio_pika
 import logging
+from aio_pika import Connection, Channel
+from config.app_config import settings
 
-settings = get_settings()
 logger = logging.getLogger("app")
 
 class RabbitMQPublisher:
-    def __init__(self):
-        self.connection: AbstractRobustConnection
-        self.channel: AbstractRobustChannel
-        
+    _connection: Connection | None = None
+    _channel: Channel | None = None
+    _is_connected: bool = False
+
+    def __init__(self, amqp_url: str):
+        self.amqp_url = amqp_url
+
     async def connect(self):
-        """Establishes a robust connection to RabbitMQ and declares exchanges/queues."""
+        """
+        Attempts to establish a robust connection to RabbitMQ.
+        If already connected and the connection is valid, it does nothing.
+        Logs the connection status (success/failure).
+        """
+        if self._is_connected and self._connection and not self._connection.is_closed:
+            logger.info("RabbitMQ: Connection is already established.")
+            return
+
+        logger.info(f"RabbitMQ: Attempting to connect to {self.amqp_url}...")
         try:
-            self.connection = await connect_robust(settings.rabbitmq_url)
-            self.channel = await self.connection.channel()
-
-            # Declare exchanges
-            await self.channel.declare_exchange('notifications', ExchangeType.TOPIC, durable=True)
-            # Declare queues
-            user_queue = await self.channel.declare_queue('user_service_notifications', durable=True)
-            
-            # Bind
-            exchange = await self.channel.get_exchange('notifications')
-            await user_queue.bind(exchange=exchange, routing_key='user_service.*')
-
-            logger.info("Successfully connected to RabbitMQ and declared exchanges/queues.")
+            self._connection = await aio_pika.connect_robust(self.amqp_url)
+            self._channel = await self._connection.channel()
+            self._is_connected = True
+            logger.info("RabbitMQ: Connection established successfully!")
         except Exception as e:
-            logger.error(f"Error connecting to RabbitMQ: {e}", exc_info=True)
-            raise
+            self._is_connected = False
+            self._connection = None
+            self._channel = None
+            logger.error(f"RabbitMQ: Error connecting! Details: {e}", exc_info=True)
+            raise ConnectionError(f"Could not connect to RabbitMQ: {e}")
 
     async def close(self):
-        """Closes the RabbitMQ connection."""
-        if self.connection and not self.connection.is_closed:
-            await self.connection.close()
-            logger.info("RabbitMQ connection closed.")
+        """
+        Closes the RabbitMQ connection if it's open.
+        """
+        if self._connection and not self._connection.is_closed:
+            await self._connection.close()
+            self._is_connected = False
+            self._connection = None
+            self._channel = None
+            logger.info("RabbitMQ: Connection closed.")
+        else:
+            logger.info("RabbitMQ: No active connection to close.")
 
+    def is_connected(self) -> bool:
+        """
+        Returns the current connection status.
+        """
+        return self._is_connected and self._connection and not self._connection.is_closed
 
-    async def publish_token_request(self, user_email: str, token: str, notification_type: str = "email"):
-        """Publishes a Token request message to RabbitMQ."""
-        if not self.channel:
-            logger.error("RabbitMQ channel is not established. Cannot publish message.")
-            raise ConnectionError("RabbitMQ channel not available.")
+    async def publish_token_request(self, user_email: str, token: str, notification_type: str):
+        """
+        Publishes a token request to RabbitMQ.
+        Checks if the connection is active before publishing.
+        """
+        if not self.is_connected() or not self._channel:
+            logger.error("RabbitMQ: Not connected. Failed to publish token request.")
+            raise ConnectionError("RabbitMQ is not connected. Could not publish the message.")
 
-        message_body = {
-            "type": "token_request",
-            "user_email": user_email,
-            "token": token,
-            "notification_type": notification_type,
-            "timestamp": asyncio.get_event_loop().time()
-        }
+        logger.info(f"RabbitMQ: Published message for {user_email} (type: {notification_type})")
 
-        try:
-            message = Message(
-                body=json.dumps(message_body).encode('utf-8'),
-                content_type='application/json',
-                delivery_mode=2 # Make message persistent
-            )
-            routing_key = f'2fa.{notification_type}'
-            exchange = await self.channel.get_exchange('notifications')
-            await exchange.publish(
-                message,
-                routing_key=routing_key
-            )
-            logger.info(f"2FA request sent for user: {user_email} with routing key: {routing_key}")
-        except Exception as e:
-            logger.error(f"Error publishing 2FA request for {user_email}: {e}", exc_info=True)
-            raise
-
-# Singleton 
-rabbitmq_publisher = RabbitMQPublisher()
+rabbitmq_publisher = RabbitMQPublisher(amqp_url=settings.RABBITMQ_URL)

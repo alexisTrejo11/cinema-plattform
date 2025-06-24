@@ -4,10 +4,11 @@ from passlib.context import CryptContext
 from app.shared.response import Result
 from app.users.application.repositories import UserRepository
 from app.users.domain.entities import User, Status
-from app.auth.domain.exceptions import TokenExpiredException, InvalidCredentialsException
-from .dtos import RefreshTokenRequest, SessionResponse
+from app.auth.domain.exceptions import TokenExpiredException
 from app.token.application.service import TokenService
 from app.token.domain.token import TokenType
+from .dtos import RefreshTokenRequest, SessionResponse
+from .exceptions import UserBannedError, UserNotActivatedError, InvalidAuthToken
 
 class SessionService:
     def __init__(self, token_service: TokenService) -> None:
@@ -100,9 +101,9 @@ class AuthValidationService:
     
     def validate_account_status_for_login(self, user: User):
         if user.status == Status.BANNED:
-            raise ValueError("User account is banned")
+            raise UserBannedError()
         elif user.status == Status.PENDING:
-            raise ValueError("User account is not activated. Request an activate code to activate your account")
+            raise UserNotActivatedError()
         elif user.status == Status.INACTIVE:
             user.status = Status.ACTIVE
             return
@@ -110,11 +111,9 @@ class AuthValidationService:
     def validate_2FA_Access(self, user_id: int, twoFAToken):
         valid_token = self.token_service.verify_token(twoFAToken, TokenType.VERIFICATION, user_id)
         if not valid_token:
-            raise ValueError("Invalid or Expired Token")
+            raise InvalidAuthToken("TwoFaToken" ,"Invalid or Expired Token")
         
         
-
-
 class PasswordService:
     def __init__(self):
         self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

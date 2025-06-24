@@ -1,12 +1,12 @@
 from typing import Any, Dict
 
-from fastapi import Depends, FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 
 from config import exception_handlers as global_exception_handler
-from config.app_config import Settings, get_settings
+from config.app_config import settings
 from config.model_init import *
 from config.redis_config import get_redis_client
 
@@ -39,7 +39,7 @@ def health_check():
         raise HTTPException(status_code=503, detail=f"Service unhealthy: {e}")
 
 @app.get("/info")
-async def get_app_info(settings: Settings = Depends(get_settings)) -> Dict[str, Any]:
+async def get_app_info() -> Dict[str, Any]:
     return {
         "app_name": "Cinema Backend: User Service API",
         "api_version": settings.API_VERSION,

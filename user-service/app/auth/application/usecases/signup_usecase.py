@@ -1,37 +1,54 @@
-from app.users.domain.entities import User
+from app.users.domain.entities import User, Status as UserStatus
 from app.users.application.repositories import UserRepository
 from app.users.application.dtos import UserResponse
 from app.shared.response import Result
-from ..services import PasswordService, AuthValidationService
+from app.token.application.service import TokenService
+from app.token.domain.token import  TokenType
 from ..dtos import SignUpRequest
-
+from ..services import PasswordService, AuthValidationService
+from app.notification.application.services import NotificationService
+from app.notification.domain.entitites import Notification,NotificationType
+import asyncio
 
 class SignUpUseCase:
     def __init__(
         self, 
         user_repository: UserRepository, 
         validation_service: AuthValidationService,
-        password_service: PasswordService
+        password_service: PasswordService,
+        token_service: TokenService,
+        notification_service : NotificationService
     ):
         self.user_repository = user_repository
         self.validation_service = validation_service
         self.password_service = password_service
+        self.token_service = token_service
+        self.notification_service = notification_service
 
     async def execute(self, request: SignUpRequest) -> Result[UserResponse]:
         validation_result = await self.validation_service.validate_unique_fields(request.email, request.phone_number)
         if not validation_result.is_success():
             return validation_result
         
-        new_user = self._create_user(request)
-        created_user = await self.user_repository.save(new_user)
+        new_user = await self._create_user(request)
+        asyncio.create_task(self._send_activation_notification(new_user))
         
-        user_response = UserResponse.from_domain(created_user)
+        user_response = UserResponse.from_domain(new_user)
         return Result.success(user_response)
 
-    def _create_user(self, request: SignUpRequest) -> User:
+    async def _create_user(self, request: SignUpRequest) -> User:
         new_user = User(**request.model_dump())
+        new_user.status = UserStatus.PENDING
         
         hashed_password = self.password_service.hash_password(request.password)
         new_user.password = hashed_password
         
-        return new_user
+        created_user = await self.user_repository.save(new_user)
+        
+        return created_user
+    
+    async def _send_activation_notification(self, user: User) -> None:
+        token = self.token_service.create(TokenType.VERIFICATION, **user.model_dump())
+        notification = Notification(user, token.code, NotificationType.EMAIL)
+        await self.notification_service.send_notification(notification)
+        

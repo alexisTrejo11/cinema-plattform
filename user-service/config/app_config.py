@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_DB: str
     
-    rabbitmq_url: str 
+    RABBITMQ_URL: str 
     
     model_config = SettingsConfigDict(
         env_file="./.env",       
@@ -23,9 +23,11 @@ class Settings(BaseSettings):
     )
 
 @lru_cache()
-def get_settings():
+def get_settings_cached_instance():
     """
     Returns a cached instance of the Settings.
     This ensures the .env file is read only once.
     """
     return Settings()
+
+settings = get_settings_cached_instance()

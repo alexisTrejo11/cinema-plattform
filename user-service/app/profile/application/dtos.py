@@ -29,12 +29,6 @@ class BaseProfile(BaseModel):
         description="The user's date of birth. Must be a past date.",
         examples=["1990-01-15", "1985-07-22"]
     )
-    joined_date: datetime = Field(
-        ...,
-        description="The date and time when the user joined the system.",
-        examples=["2023-04-01T10:30:00Z"]
-    )   
-
 
 class Profile(BaseProfile):
     """
@@ -59,7 +53,6 @@ class ProfileResponse(Profile):
                 "first_name": "Alice",
                 "last_name": "Johnson",
                 "date_of_birth": "1992-05-20",
-                "joined_date": "2024-01-10T14:00:00Z"
             }
         }
 

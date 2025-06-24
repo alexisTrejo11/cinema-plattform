@@ -84,9 +84,9 @@ class TokenVerification(StrategyToken):
     expire_minutes: int = 60
     
     def generate(self, **kwargs) -> Token:
-        user_id = kwargs.get('user_id')
+        user_id = kwargs.get('id') #User Id
         if not user_id:
-            raise ValueError("user id required to creation activation token")
+            raise ValueError("id required to creation activation token")
         
         token_code = ""
         for _ in range(6):

@@ -5,11 +5,13 @@ from app.auth.domain.exceptions import *
 from app.users.domain.entities import User
 from app.users.application.dtos import UserResponse
 from app.auth.application.dtos import SignUpRequest, LoginRequest, RefreshTokenRequest, SessionResponse
-from app.auth.application.usecases.singup_usecase import SignUpUseCase
+from app.auth.application.usecases.signup_usecase import SignUpUseCase
 from app.auth.application.usecases.login_usecase import  LoginUseCase, RefreshTokenUseCase
 from app.auth.application.usecases.logout_usecase import LogoutAllUseCase, LogoutUseCase
 from .dependencies import get_logged_user, signup_use_case, login_use_case, logout_use_case, logout_all_use_case, refresh_token_use_case
 import logging
+import asyncio
+
 
 logger = logging.getLogger("app")
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -51,7 +53,8 @@ async def signup(
         
         user = result.get_data()
         logger.info(f"POST signup success | user_id:{user.id} | email:{request_body.email}")
-        return ApiResponse.success(user, "User successfully registered.")
+        
+        return ApiResponse.success(user, "User registered. An Email Will be send it to provide email to activate the account")
     except Exception as e:
         logger.error(f"POST signup failed | email:{request_body.email} | error:{str(e)}")
         raise

@@ -1,4 +1,4 @@
-import redis
+from redis import Redis
 from redis.backoff import ExponentialBackoff
 from redis.retry import Retry
 from redis.exceptions import ConnectionError, TimeoutError
@@ -12,7 +12,7 @@ retry = Retry(
     retries=5
 )
 
-def get_redis_client() -> redis.Redis:
+def get_redis_client() -> Redis:
     """
     Create and return a Redis client with basic robust connection handling.
     This version uses minimal parameters to avoid compatibility issues.
@@ -25,7 +25,7 @@ def get_redis_client() -> redis.Redis:
             attempt += 1
             logger.info(f"Attempting to connect to Redis (attempt {attempt}/{max_attempts})")
             
-            client = redis.Redis(
+            client = Redis(
                 host='redis',
                 port=6379,
                 decode_responses=True,
@@ -34,7 +34,6 @@ def get_redis_client() -> redis.Redis:
                 health_check_interval=30
             )
             
-            # Test the connection with a simple ping
             logger.info("Testing Redis connection with ping...")
             client.ping()
             logger.info("Successfully connected and pinged Redis.")
