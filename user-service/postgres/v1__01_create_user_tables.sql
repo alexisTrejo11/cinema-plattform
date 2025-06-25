@@ -1,16 +1,18 @@
-CREATE TYPE gender_enum IF NOT EXISTS AS ENUM ('MALE', 'FEMALE', 'OTHER');
-CREATE TYPE role_enum IF NOT EXISTS AS ENUM ('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN');
-CREATE TYPE user_status_enum IF NOT EXISTS AS ENUM ('PENDING', 'ACTIVE', 'INACTIVE', 'BANNED');
+CREATE TYPE gender_enum AS ENUM ('MALE', 'FEMALE', 'OTHER');
+CREATE TYPE role_enum AS ENUM ('CUSTOMER', 'EMPLOYEE', 'MANAGER', 'ADMIN');
+CREATE TYPE user_status_enum AS ENUM ('PENDING', 'ACTIVE', 'INACTIVE', 'BANNED');
 
-CREATE TABLE users IF NOT EXISTS (
+CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE,
     password VARCHAR(255),
     phone_number VARCHAR(20) UNIQUE,
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255),
-    role gender_enum NOT NULL,
+    role role_enum NOT NULL,
     gender gender_enum NOT NULL,
+    is_2fa_enabled BOOLEAN DEFAULT false,
+    totp_secret VARCHAR(255),
     status user_status_enum NOT NULL DEFAULT 'PENDING',
     date_of_birth TIMESTAMP NOT NULL,
     last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

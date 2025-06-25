@@ -61,7 +61,7 @@ async def signup(
 
 @router.post(
     "/login",
-    response_model=ApiResponse[SessionResponse],
+    response_model=ApiResponse,
     status_code=status.HTTP_200_OK,
     summary="Authenticate user and get tokens",
     description="Authenticates a user with their credentials and returns access and refresh tokens.",
@@ -89,7 +89,7 @@ async def login(
         
         token_response = result.get_data()
         logger.info(f"POST login success | identifier_field:{request_body.identifier_field}")
-        return ApiResponse.success(token_response, "Login successful.")
+        return ApiResponse.success(token_response, "Login successfully proccesed.")
     except Exception as e:
         logger.error(f"POST login failed | identifier_field:{request_body.identifier_field} | error:{str(e)}")
         raise

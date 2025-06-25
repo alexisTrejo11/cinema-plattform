@@ -13,8 +13,8 @@ class TwoFaAlreadyConfiguredError(ApplicationException):
         super().__init__(message, error_code, details)
 
 
-class UserDontHave2FAError(ApplicationException):
-    def __init__(self, message: str = "User don't have 2fa activated", error_code: str | None = None, details: Dict[str, Any] | None = None):
+class User2FaAuthError(ApplicationException):
+    def __init__(self, message: str = "User 2FA error", error_code: str | None = None, details: Dict[str, Any] | None = None):
         super().__init__(message, error_code, details)
 
 

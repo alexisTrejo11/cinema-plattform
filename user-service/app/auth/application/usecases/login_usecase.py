@@ -8,8 +8,6 @@ from app.notification.domain.entitites import Notification, NotificationType
 from ..services import SessionService, AuthValidationService
 from ..dtos import LoginRequest, RefreshTokenRequest, SessionResponse
 from app.shared.qr import generate_QR
-import pyotp
-
 
 class LoginUseCase:
     def __init__(
@@ -28,11 +26,24 @@ class LoginUseCase:
         if not user:
             return Result.error("User not found with given credentials")
         
+        if user.is_2fa_enabled:
+            qr_code = await self._request_2FA_access(request, user)
+            return Result.success({"QR" : qr_code })
+        else:
+            session = await self._proccess_login(user)
+            return Result.success(session)
+            
+    async def _proccess_login(self, user:User):
         self.validation_service.validate_account_status_for_login(user)
-        session = await self.session_service.create_session(user)
+        return await self.session_service.create_session(user)
+            
+    async def _request_2FA_access(self, request: LoginRequest, user:User):
+        if not user.totp_secret:
+            raise ValueError("User dont have 2FA secret")
+                
+        token = self.token_service.create(TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret})
         
-        return Result.success(session)
-    
+        return generate_QR(token.code)
 
 class TwoFALoginUseCase:
     def __init__(
@@ -54,11 +65,22 @@ class TwoFALoginUseCase:
             return Result.error("User not found with given credentials")
         
         if not request.twoFACode:
-            return await self._send_qr(request, user)
+            return await self._request_2FA_access(user)
     
-        return await self._verify_qr(request, user)
+        self.validation_service.validate_2FA_Access(user, request.twoFACode) 
+        session = await self.session_service.create_session(user)
+        return Result.success(session)    
 
-    async def _send_qr(self, request: LoginRequest, user:User):
+    async def _request_2FA_access(self, user: User):
+        if not user.totp_secret:
+            raise ValueError("User dont have 2FA secret")
+                
+        token = self.token_service.create(TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret})
+        
+        qr = generate_QR(token.code)
+        return Result.success(qr)
+
+    async def _send_qr(self, user:User):
         if not user.totp_secret:
             raise ValueError("User dont have 2FA secret")
                 
@@ -67,11 +89,6 @@ class TwoFALoginUseCase:
         qr = generate_QR(token.code)
         return Result.success(qr)
     
-    async def _verify_qr(self, request: LoginRequest, user: User):
-        assert self.validation_service.validate_2FA_Access(user.id, request.twoFACode) 
-        session = await self.session_service.create_session(user)
-        
-        return Result.success(session)
 
 
 class RefreshTokenUseCase:

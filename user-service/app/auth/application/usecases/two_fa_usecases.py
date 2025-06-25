@@ -1,5 +1,5 @@
 from app.users.application.repositories import UserRepository, User
-from app.users.domain.exceptions import UserDontHave2FAError, TwoFaAlreadyConfiguredError, InvalidTokenError
+from app.users.domain.exceptions import User2FaAuthError, TwoFaAlreadyConfiguredError, InvalidTokenError
 from app.token.application.service import TokenService
 from app.token.domain.token import TokenType
 
@@ -42,11 +42,4 @@ class Disable2FaUseCase:
         
     async def _validate_user(self, user: User):
         if not user.is_2fa_enabled:
-            raise UserDontHave2FAError(message="2FA auth already configured")
-
-
-class Send2FaAccessUseCase:
-    pass
-
-
-
+            raise User2FaAuthError(message="User don't have 2FA enable")

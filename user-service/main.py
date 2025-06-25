@@ -11,7 +11,7 @@ from config.model_init import *
 from config.redis_config import get_redis_client
 
 from app.users.infrastructure.controller import user_controllers
-from app.auth.infrastructure.api import auth_controllers 
+from app.auth.infrastructure.api import auth_controllers, two_fa_controllers
 from app.profile.infrastructure import controllers as profile_controllers
 from app.shared.logging import setup_logging 
 
@@ -54,4 +54,5 @@ def read_home(request: Request) -> Any:
 # Routing
 app.include_router(user_controllers.router)
 app.include_router(auth_controllers.router)
+app.include_router(two_fa_controllers.router)
 app.include_router(profile_controllers.router)

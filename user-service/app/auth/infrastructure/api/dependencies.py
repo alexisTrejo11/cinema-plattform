@@ -15,8 +15,9 @@ from app.token.application.repository import TokenRepository
 from app.token.infrastructure.repository.token_repository import TokenRepositoryImpl 
 from app.token.infrastructure.services.token_service_impl import TokenServiceImpl
 
+from app.auth.application.usecases.two_fa_usecases import Disable2FaUseCase, Enable2FAUseCase
 from app.auth.application.usecases.signup_usecase import SignUpUseCase
-from app.auth.application.usecases.login_usecase import  LoginUseCase, RefreshTokenUseCase
+from app.auth.application.usecases.login_usecase import  LoginUseCase, RefreshTokenUseCase, TwoFALoginUseCase
 from app.auth.application.usecases.logout_usecase import LogoutAllUseCase, LogoutUseCase
 from app.auth.application.services import TokenService, PasswordService, AuthValidationService, SessionService
 from app.auth.domain.exceptions import InvalidCredentialsException
@@ -64,7 +65,7 @@ def get_session_service(token_service: TokenService = Depends(get_token_service)
 def get_notification_service() -> NotificationService:
     return NotificationServiceImpl()
 
-# --- Use Case Dependencies ---
+# --- Auth Use Case Dependencies ---
 def signup_use_case(
     user_repo: UserRepository = Depends(get_user_repository),
     password_service: PasswordService = Depends(get_password_service),
@@ -87,12 +88,11 @@ def login_use_case(
     session_service: SessionService = Depends(get_session_service),
     token_service: TokenService = Depends(get_token_service),
     validation_service: AuthValidationService = Depends(get_auth_validation_service),
-    notification_service : NotificationService = Depends(get_notification_service)
 ) -> LoginUseCase:
     """
     Provides an instance of LoginUseCase.
     """
-    return LoginUseCase(session_service, validation_service, token_service, notification_service)
+    return LoginUseCase(session_service, validation_service, token_service)
 
 def logout_use_case(
     session_service: SessionService = Depends(get_session_service)
@@ -117,6 +117,35 @@ def refresh_token_use_case(
     Provides an instance of RefreshTokenUseCase.
     """
     return RefreshTokenUseCase(session_service)
+
+
+# --- 2FA Use Case Dependencies ---
+async def enable_2FA_use_case(
+    user_repo: UserRepository = Depends(get_user_repository),
+    token_service: TokenService = Depends(get_token_service)
+) -> Enable2FAUseCase:
+    """
+    Provides an instance of Enable2FAUseCase.
+    """
+    return Enable2FAUseCase(user_repo, token_service)
+
+async def disable_2FA_use_case(
+    user_repo: UserRepository = Depends(get_user_repository),
+    token_service: TokenService = Depends(get_token_service)
+) -> Disable2FaUseCase:
+    """
+    Provides an instance of Disable2FaUseCase.
+    """
+    return Disable2FaUseCase(user_repo, token_service)
+
+
+async def two_fa_login_use_case(
+    token_service: TokenService = Depends(get_token_service),
+    notification_service: NotificationService = Depends(get_notification_service),
+    validation_service: AuthValidationService = Depends(get_auth_validation_service),
+    session_service: SessionService = Depends(get_session_service)
+) -> TwoFALoginUseCase:
+    return TwoFALoginUseCase(token_service, notification_service, validation_service, session_service)
 
 
 # --- User Authorization Dependency ---

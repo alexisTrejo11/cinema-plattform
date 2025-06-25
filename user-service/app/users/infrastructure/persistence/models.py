@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from typing import Optional
-from sqlalchemy import Integer, String, Date, DateTime, Enum as SqlEnum
+from sqlalchemy import Integer, String, Date, DateTime, Enum as SqlEnum, BOOLEAN
 from sqlalchemy.orm import mapped_column, Mapped
 from app.users.domain.enums import UserRole, Gender, Status
 from app.users.domain.entities import User
@@ -14,6 +14,8 @@ class UserModel(Base):
     date_of_birth: Mapped[date] = mapped_column(Date)
     password: Mapped[str] = mapped_column(String(255))
     first_name: Mapped[str] = mapped_column(String(255))
+    totp_secret: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    is_2fa_enabled: Mapped[bool] = mapped_column(BOOLEAN, default=False) 
     last_name: Mapped[Optional[str]] = mapped_column(String(255))
     phone_number: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     role: Mapped[UserRole] = mapped_column(SqlEnum(UserRole, name='role_enum', create_type=False), default=UserRole.CUSTOMER, nullable=False)
@@ -28,7 +30,6 @@ class UserModel(Base):
         created_at = self.created_at
         updated_at = self.updated_at
         
-
         return User(
             id=self.id,
             email=self.email,
@@ -38,6 +39,8 @@ class UserModel(Base):
             gender=self.gender,
             role=self.role,
             date_of_birth=self.date_of_birth,
+            is_2fa_enabled=self.is_2fa_enabled,
+            totp_secret=self.totp_secret,
             password=self.password,
             status=self.status,
             created_at=created_at,
@@ -52,6 +55,8 @@ class UserModel(Base):
             email=user.email,
             date_of_birth=user.date_of_birth,
             password=user.password,
+            is_2fa_enabled=user.is_2fa_enabled,
+            totp_secret=user.totp_secret,
             phone_number=user.phone_number,
             first_name=user.first_name,
             last_name=user.last_name,
@@ -69,5 +74,7 @@ class UserModel(Base):
         self.password = user.password
         self.role = user.role
         self.status = user.status
+        self.is_2fa_enabled = user.is_2fa_enabled
+        self.totp_secret=user.totp_secret
         self.created_at = user.created_at
         self.updated_at = user.updated_at

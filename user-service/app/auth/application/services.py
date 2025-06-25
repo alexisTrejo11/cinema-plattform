@@ -95,7 +95,6 @@ class AuthValidationService:
         user = await self.repository.get_by_phone(identifier_field)
         if user:
             return user
-        
         return None        
     
     
@@ -108,10 +107,11 @@ class AuthValidationService:
             user.status = Status.ACTIVE
             return
 
-    def validate_2FA_Access(self, user_id: int, twoFAToken):
-        valid_token = self.token_service.verify_token(twoFAToken, TokenType.VERIFICATION, user_id)
-        if not valid_token:
-            raise InvalidAuthToken("TwoFaToken" ,"Invalid or Expired Token")
+    def validate_2FA_Access(self, user: User, twoFAToken: str):
+        #valid_token = self.token_service.verify_token(twoFAToken, TokenType.VERIFICATION, user_id)
+        #if not valid_token:
+        if twoFAToken != user.totp_secret:
+            raise InvalidAuthToken("TwoFaToken", "Invalid Token")
         
         
 class PasswordService:
