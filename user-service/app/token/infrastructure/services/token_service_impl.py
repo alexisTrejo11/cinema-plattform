@@ -1,15 +1,12 @@
 from typing import Dict, Any, Optional
 from datetime import datetime
-
 from jose import JWTError, jwt
 from jose.exceptions import ExpiredSignatureError, JWTError 
-
 from app.auth.domain.exceptions import InvalidCredentialsException
 from app.token.application.service import TokenService
 from app.token.domain.token import TokenType, Token
-
 from ..repository.token_repository import TokenRepository
-from ..strategy_token import TokenAccessJWT, TokenVerification, TokenRefreshJWT, CreateToken
+from .token_factory import TokenFactory,  TokenAccessJWT, TokenVerification
 import logging
 
 logger = logging.getLogger("app")
@@ -22,21 +19,8 @@ class TokenServiceImpl(TokenService):
         super().__init__()
 
     def create(self, token_type: TokenType , **kwargs) -> Token:
-        if token_type == TokenType.JWT_ACCESS:
-            token_strategy = CreateToken(TokenAccessJWT())
-            
-            token = token_strategy.create(**kwargs)
-        elif token_type == TokenType.JWT_REFRESH:
-            token_strategy = CreateToken(TokenRefreshJWT())
-            
-            token = token_strategy.create(**kwargs)           
-        elif token_type == TokenType.VERIFICATION:
-            token_strategy = CreateToken(TokenVerification())
-            
-            token = token_strategy.create(**kwargs)       
-        else:
-            raise ValueError("Token type not supported")
-        
+        token = TokenFactory().create(token_type, **kwargs)
+                    
         self.token_repository.create(token)
         return token
 

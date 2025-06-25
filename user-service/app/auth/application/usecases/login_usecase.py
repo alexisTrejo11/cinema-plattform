@@ -7,6 +7,9 @@ from app.notification.application.services import NotificationService
 from app.notification.domain.entitites import Notification, NotificationType
 from ..services import SessionService, AuthValidationService
 from ..dtos import LoginRequest, RefreshTokenRequest, SessionResponse
+from app.shared.qr import generate_QR
+import pyotp
+
 
 class LoginUseCase:
     def __init__(
@@ -14,12 +17,10 @@ class LoginUseCase:
         session_service: SessionService, 
         validation_service: AuthValidationService, 
         token_service: TokenService,
-        notification_service: NotificationService
     ):
         self.session_service = session_service
         self.token_service = token_service
         self.validation_service = validation_service
-        self.notification_service = notification_service
     
     
     async def execute(self, request: LoginRequest) -> Result[Any]:
@@ -28,34 +29,49 @@ class LoginUseCase:
             return Result.error("User not found with given credentials")
         
         self.validation_service.validate_account_status_for_login(user)
-                
-        if user.is_2fa_enabled:
-            return await self._proccess_2fa_login(user, request)
-        else:
-            return await self.proccess_login(user)
-      
-            
-    async def proccess_login(self, user) -> Result:
         session = await self.session_service.create_session(user)
+        
         return Result.success(session)
     
-    
-    async def _proccess_2fa_login(self, user: User, request: LoginRequest) -> Result:
+
+class TwoFALoginUseCase:
+    def __init__(
+        self, 
+        token_service: TokenService, 
+        notification_service: NotificationService, 
+        validation_service: AuthValidationService,
+        session_service: SessionService, 
+
+    ) -> None:
+        self.session_service = session_service
+        self.token_service = token_service
+        self.notification_service = notification_service
+        self.validation_service = validation_service
+
+    async def execute(self, request: LoginRequest) -> Result:
+        user = await self.validation_service.authenticate_user(request.identifier_field, request.password)
+        if not user:
+            return Result.error("User not found with given credentials")
+        
         if not request.twoFACode:
-            token = self.token_service.create(TokenType.VERIFICATION, **{"user_id" : user.id})
-            
-            notification = Notification(user=user, token=token.code, notification_type=NotificationType.EMAIL)
-            await self.notification_service.send_notification(notification)
-            
-            return Result.success()
-        else:
-            self.validation_service.validate_2FA_Access(user.id, request.twoFACode) 
-            
-            self.token_service.revoke(str(user.id), TokenType.VERIFICATION, request.twoFACode)
-            session = await self.session_service.create_session(user)
-            
-            return Result.success(session)
+            return await self._send_qr(request, user)
     
+        return await self._verify_qr(request, user)
+
+    async def _send_qr(self, request: LoginRequest, user:User):
+        if not user.totp_secret:
+            raise ValueError("User dont have 2FA secret")
+                
+        token = self.token_service.create(TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret})
+        
+        qr = generate_QR(token.code)
+        return Result.success(qr)
+    
+    async def _verify_qr(self, request: LoginRequest, user: User):
+        assert self.validation_service.validate_2FA_Access(user.id, request.twoFACode) 
+        session = await self.session_service.create_session(user)
+        
+        return Result.success(session)
 
 
 class RefreshTokenUseCase:

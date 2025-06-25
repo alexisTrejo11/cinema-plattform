@@ -12,6 +12,7 @@ class Account(Profile):
     password: str = Field(..., min_length=8)
     role: UserRole = UserRole.CUSTOMER
     status: Status = Field(default=Status.PENDING)
+    totp_secret: Optional[str] = Field(None, min_length=6)
     is_2fa_enabled: bool = False 
     created_at: datetime = Field(default=datetime.now())
     updated_at: datetime = Field(default=datetime.now())
@@ -34,6 +35,14 @@ class User(Account):
                 setattr(self, field_name, new_value)
 
         self.updated_at = datetime.now()
+    
+    def add_2FA_config(self, secret: str):
+        self.is_2fa_enabled = True
+        self.totp_secret = secret
+        
+    def disable_2FA_config(self):
+        self.is_2fa_enabled = False
+        self.totp_secret = None
     
     def update_password(self, new_password: str):
         self.password = new_password

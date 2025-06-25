@@ -6,7 +6,8 @@ class TokenType(str, Enum):
     JWT_REFRESH = "refresh"
     JWT_ACCESS = "access"
     VERIFICATION = "verification"
-    TWO_FACTOR = "two-factor"
+    TWO_FA = "two-fa-auth"
+    TWO_FACTOR_SECRET = "two-factor-secret"
 
 
 class Token:

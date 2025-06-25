@@ -3,7 +3,9 @@ from app.token.domain.token import TokenType, Token
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import random
+import pyotp
 import os
+
 
 class StrategyToken(ABC):
     @abstractmethod
@@ -76,7 +78,6 @@ class TokenAccessJWT(StrategyToken):
             type=token_type, 
             expires_at=expiration_date
         )
-         
         return new_token
 
 
@@ -84,10 +85,7 @@ class TokenVerification(StrategyToken):
     expire_minutes: int = 60
     
     def generate(self, **kwargs) -> Token:
-        user_id = kwargs.get('id') #User Id
-        if not user_id:
-            raise ValueError("id required to creation activation token")
-        
+        user_id = kwargs.get('id', "") #User Id
         token_code = ""
         for _ in range(6):
           token_code += f"{random.randint(1,9)}"
@@ -100,9 +98,46 @@ class TokenVerification(StrategyToken):
             expires_at=expiration_date,
             type=TokenType.VERIFICATION
         )
-    
         
-class CreateToken:
+
+class Token2FASecret(StrategyToken):
+    expire_minutes: int = 30
+    
+    def generate(self, **kwargs) -> Token:
+        user_email = kwargs.get('email', "")
+
+        totp_secret = pyotp.random_base32()
+        return Token(
+            code=totp_secret,
+            expires_at= datetime.now() + timedelta(minutes=self.expire_minutes),
+            user_id=user_email,
+            type=TokenType.TWO_FACTOR_SECRET
+        )
+
+    
+class Token2FAAccess(StrategyToken):
+    expire_minutes: int = 30
+    issuer_name: str = "ATCinema"
+    def generate(self, **kwargs) -> Token:
+        user_email = kwargs.get('email')
+        totp_secret = kwargs.get('totp_secret')
+
+        if not user_email:
+            raise ValueError("user email is required to generate 2FA access")
+
+        if not totp_secret:
+            raise ValueError("secret key is required to generate 2FA access")
+            
+        otp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(name=user_email, issuer_name=self.issuer_name)
+        return Token(
+            code=otp_uri,
+            expires_at= datetime.now() + timedelta(minutes=self.expire_minutes),
+            user_id=user_email,
+            type=TokenType.TWO_FACTOR_SECRET
+        )
+    
+
+class CreateTokenStrategy:
     def __init__(self, strategy: StrategyToken) -> None:
         self.strategy = strategy
         
@@ -111,3 +146,24 @@ class CreateToken:
     
     def create(self, **kwargs):
         return self.strategy.generate(**kwargs)
+    
+    
+    
+class TokenFactory:
+    def create(self, token_type: TokenType, **kwargs) -> Token:
+        match token_type:
+            case TokenType.JWT_ACCESS:
+                token_strategy = CreateTokenStrategy(TokenAccessJWT())
+            case TokenType.JWT_REFRESH:
+                token_strategy = CreateTokenStrategy(TokenRefreshJWT())
+            case TokenType.VERIFICATION:
+                token_strategy = CreateTokenStrategy(TokenVerification())
+            case TokenType.TWO_FACTOR_SECRET:
+                token_strategy = CreateTokenStrategy(Token2FASecret())
+            case TokenType.TWO_FA:
+                token_strategy = CreateTokenStrategy(Token2FAAccess())
+            case _:
+                raise ValueError("Token type not supported")
+
+        token = token_strategy.create(**kwargs)
+        return token
