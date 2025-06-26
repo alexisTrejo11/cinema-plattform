@@ -13,4 +13,4 @@ python-jose[cryptography]
 redis[hiredis]
 pydantic-settings
 aio-pika
-
+psycopg2

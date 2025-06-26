@@ -1,36 +1,46 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, ForeignKey
+from sqlalchemy import  Integer, String, Float, Boolean, DateTime, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, mapped_column, Mapped
 from datetime import datetime
+from app.food.domain.entities import FoodCategory
 
 Base = declarative_base()
 
 class FoodCategoryModel(Base):
     __tablename__ = "food_categories"
     
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False, unique=True)
-    description = Column(Text)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(Text)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     
+    products = relationship("FoodProductModel", back_populates="category")
 
-    products = relationship("FoodProduct", back_populates="category")
+    def to_domain(self) -> FoodCategory:
+        return FoodCategory(
+            id=self.id, 
+            name=self.name, 
+            description=self.description, 
+            is_active=self.is_active,
+            created_at=self.created_at,
+        )
+        
 
-class FoodProduct(Base):
+class FoodProductModel(Base):
     __tablename__ = "food_products"
     
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(200), nullable=False)
-    description = Column(Text)
-    price = Column(Float, nullable=False)
-    image_url = Column(String(500))
-    is_available = Column(Boolean, default=True)
-    preparation_time_mins = Column(Integer)
-    calories = Column(Integer)
-    category_id = Column(Integer, ForeignKey("food_categories.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: Mapped[str] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text)
+    price: Mapped[str] = mapped_column(Float, nullable=False)
+    image_url: Mapped[str] = mapped_column(String(500))
+    is_available: Mapped[str] = mapped_column(Boolean, default=True)
+    preparation_time_mins: Mapped[str] = mapped_column(Integer)
+    calories: Mapped[str] = mapped_column(Integer)
+    category_id: Mapped[str] = mapped_column(Integer, ForeignKey("food_categories.id"), nullable=False)
+    created_at: Mapped[str] = mapped_column(DateTime, default=datetime.now())
+    updated_at: Mapped[str] = mapped_column(DateTime, default=datetime.now(), onupdate=datetime.now())
     
-    category = relationship("FoodCategory", back_populates="products")
-    combo_items = relationship("ComboItem", back_populates="product")
+    category = relationship("FoodCategoryModel", back_populates="products")
+    #combo_items = relationship("ComboItem", back_populates="product")
