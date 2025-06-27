@@ -26,51 +26,54 @@ class SearchFoodUseCase:
 
 
 class CreateFoodUseCase:
-    def __init__(self, food_repository: FoodRepository, category_repo: FoodCategoryRepository) -> None:
+    def __init__(self, food_repository: FoodRepository, product_repo: FoodCategoryRepository) -> None:
         self.food_repository = food_repository
-        self.category_repo = category_repo
+        self.product_repo = product_repo
     
     def execute(self, create_data: FoodProductCreate) -> FoodProductResponse:
-        new_category = FoodProduct(**create_data.model_dump())
-        category_created = self.food_repository.save(new_category)
+        self._validate_cateogry(create_data)
+        
+        new_product = FoodProduct(**create_data.model_dump())
+        product_created = self.food_repository.save(new_product)
     
-        return FoodProductResponse(**category_created.model_dump())
+        return FoodProductResponse(**product_created.model_dump())
 
-    def _validate_category(self, create_data: FoodProductCreate):
-        exists = self.category_repo.exists_by_id(create_data.category_id)
+    def _validate_cateogry(self, create_data: FoodProductCreate):
+        exists = self.product_repo.exists_by_id(create_data.category_id)
         if not exists:
-            raise InvalidCategoryError("category_id", "cateogry must be valid")
+            raise InvalidCategoryError("product_id", "cateogry must be valid")
     
     
 class UpdateFoodUseCase:
-    def __init__(self, food_repository: FoodRepository, category_repo: FoodCategoryRepository) -> None:
+    def __init__(self, food_repository: FoodRepository, product_repo: FoodCategoryRepository) -> None:
         self.food_repository = food_repository
-        self.category_repo = category_repo
+        self.product_repo = product_repo
 
     
-    def execute(self, category_id: int, update_data: FoodProductUpdate) -> FoodProductResponse:
-        category = self.food_repository.get_by_id(category_id)
-        if not category:
-            raise ProductNotFoundError("Product", category_id)
+    def execute(self, product_id: int, update_data: FoodProductUpdate) -> FoodProductResponse:
+        product = self.food_repository.get_by_id(product_id)
+        if not product:
+            raise ProductNotFoundError("Product", product_id)
 
-        if update_data.category_id and update_data.category_id != category_id:
+        if update_data.category_id and update_data.category_id != product_id:
             self._validate_category(update_data.category_id)
 
-        self._update_fields(update_data, update_data)
-        self.food_repository.save(category)
+        self._update_fields(product, update_data)
+        self.food_repository.save(product)
 
-        return FoodProductResponse(**category.model_dump())
+        return FoodProductResponse(**product.model_dump())
 
-    def _update_fields(self, category: FoodProductUpdate, category_data: FoodProductUpdate):
-          update_data = category_data.model_dump(exclude_unset=True)
+    def _update_fields(self, product: FoodProduct, update_data: FoodProductUpdate):
+          data = update_data.model_dump(exclude_unset=True)
           
-          for k, v in update_data.items():
-            setattr(category, k,v)
+          for k, v in data.items():
+            setattr(product, k,v)
 
     def _validate_category(self, category_id: int):
-        exists = self.category_repo.exists_by_id(category_id)
+        exists = self.product_repo.exists_by_id(category_id)
         if not exists:
             raise InvalidCategoryError("category_id", "cateogry must be valid")
+
 
 class DeleteFoodUseCase:
     def __init__(self, food_repository: FoodRepository) -> None:

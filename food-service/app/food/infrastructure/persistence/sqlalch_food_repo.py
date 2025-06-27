@@ -14,7 +14,7 @@ class SqlAlchFoodRepository(FoodRepository):
     def get_by_id(self, product_id: int) -> Optional[FoodProduct]:
         model = self.session.query(FoodProductModel).filter(
             FoodProductModel.id == product_id,
-            FoodProductModel.is_active == True,
+            FoodProductModel.is_available == True,
         ).first()
 
         return model.to_domain() if model else None

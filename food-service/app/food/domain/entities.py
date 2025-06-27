@@ -8,7 +8,7 @@ class FoodProductBase(BaseModel):
     price: float = Field(..., gt=0)
     image_url: Optional[str] = None
     is_available: bool = True
-    preparation_time: Optional[int] = Field(None, ge=0)
+    preparation_time_mins: Optional[int] = Field(None, ge=0)
     calories: Optional[int] = Field(None, ge=0)
     category_id: int
 
@@ -46,7 +46,7 @@ class FoodProduct(FoodProductBase):
             raise ValueError("Price must have at most two decimal places.")
         return v
 
-    @field_validator('preparation_time')
+    @field_validator('preparation_time_mins')
     @classmethod
     def validate_preparation_time_limit(cls, v: Optional[int]) -> Optional[int]:
         """

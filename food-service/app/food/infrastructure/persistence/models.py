@@ -36,7 +36,7 @@ class FoodProductModel(Base):
     price: Mapped[float] = mapped_column(Float, nullable=False)
     image_url: Mapped[str] = mapped_column(String(500))
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
-    preparation_time_mins: Mapped[str] = mapped_column(Integer)
+    preparation_time_mins: Mapped[int] = mapped_column(Integer)
     calories: Mapped[int] = mapped_column(Integer)
     category_id: Mapped[int] = mapped_column(Integer, ForeignKey("food_categories.id"), nullable=False)
     created_at: Mapped[str] = mapped_column(DateTime, default=datetime.now())
@@ -49,10 +49,11 @@ class FoodProductModel(Base):
         return FoodProduct(
             id=self.id,
             name=self.name,
+            image_url=self.image_url,
             description=self.description,
             price=self.price,
             is_available=self.is_available,
-            preparation_time=self.preparation_time,
+            preparation_time_mins=self.preparation_time_mins,
             calories=self.calories,
             category_id=self.category_id,
         )

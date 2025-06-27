@@ -21,10 +21,7 @@ class FoodProductUpdate(BaseModel):
 
 
 class FoodProductResponse(FoodProductBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    category: 'FoodCategoryResponse'
+    id: int = Field(0) #Default
     
     class Config:
         from_attributes = True
@@ -44,10 +41,10 @@ class FoodCategoryInsert(FoodCategoryBase):
 class SearchFoodParams:
     offset: int
     limit: int
-    min_price: Decimal
-    max_price: Decimal
-    name: str
-    category: int 
+    min_price: Optional[Decimal]
+    max_price: Optional[Decimal]
+    name: Optional[str]
+    category: Optional[int] 
     active_only: bool
     
     
