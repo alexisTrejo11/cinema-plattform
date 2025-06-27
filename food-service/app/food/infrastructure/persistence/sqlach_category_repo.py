@@ -9,12 +9,17 @@ class SQLAlchemyCategoryRepository(FoodCategoryRepository):
         self.session = session
     
     def get_by_id(self, category_id: int) -> Optional[FoodCategory]:
-        category_model = self.session.query(FoodCategoryModel).filter(FoodCategoryModel.id == category_id).first()
+        category_model = self.session.query(FoodCategoryModel).filter(
+            FoodCategoryModel.id == category_id,
+            FoodCategoryModel.is_active == True,
+        ).first()
+        
         if category_model:
             return category_model.to_domain()
         
     def list(self) -> List[FoodCategory]:
-        categories = self.session.query(FoodCategoryModel).all()
+        categories = self.session.query(FoodCategoryModel).filter(FoodCategoryModel.is_active == True).all()
+
         return [category.to_domain() for category in categories]
 
     def save(self, category: FoodCategory) -> FoodCategory:
@@ -43,3 +48,11 @@ class SQLAlchemyCategoryRepository(FoodCategoryRepository):
         self.session.commit()
         
         return True
+    
+    
+    def exists_by_id(self, category_id: int) -> bool:
+        return self.session.query(FoodCategoryModel).filter(FoodCategoryModel.id == category_id).first() is not None
+    
+    def exists_by_name(self, category_name: str) -> bool:
+        return self.session.query(FoodCategoryModel).filter(FoodCategoryModel.name == category_name).first() is not None
+      

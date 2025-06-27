@@ -1,11 +1,13 @@
 from fastapi import FastAPI
 from app.food.infrastructure.api import category_controller, food_controller
+from config import exception_handlers
 
 app = FastAPI(
     title="Cinema Backend: Food Service API",
     debug=True,
     summary="Food Service for Cinema API that includes all food catalog and combos offers and all related to food directly",
-    version="1.0.0"
+    version="1.0.0",
+    exception_handlers=exception_handlers
 )
 
 

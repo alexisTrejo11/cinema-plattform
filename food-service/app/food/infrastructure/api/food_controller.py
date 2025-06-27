@@ -13,8 +13,6 @@ def create_product(
     usecase: CreateFoodUseCase = Depends(create_category_use_case)
 ):
     product = usecase.execute(product_data)
-    if not product:
-        raise HTTPException(status_code=400, detail="Invalid category_id")
     return product
 
 @router.get("/{product_id}", response_model=FoodProductResponse)
@@ -23,8 +21,6 @@ def search_product(
     usecase: GetFoodByIdUseCase = Depends(get_food_by_id_use_case)
 ):
     product = usecase.execute(product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
     return product
 
 @router.get("/", response_model=List[FoodProductResponse])
@@ -57,8 +53,6 @@ def update_product(
     usecase: UpdateFoodUseCase = Depends(update_category_use_case)
 ):
     product = usecase.execute(product_id, update_data)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found or invalid category_id")
     return product
 
 @router.delete("/{product_id}", status_code=204)
@@ -66,5 +60,4 @@ def delete_product(
     product_id: int,
     usecase: DeleteFoodUseCase = Depends(delete_category_use_case)
 ):
-    if not usecase.execute(product_id):
-        raise HTTPException(status_code=404, detail="Product not found")
+    usecase.execute(product_id)

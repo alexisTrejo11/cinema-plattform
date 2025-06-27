@@ -38,11 +38,11 @@ def search_food_use_case(food_repo : FoodRepository = Depends(get_food_repositor
 def get_food_by_id_use_case(food_repo : FoodRepository = Depends(get_food_repository)) -> GetFoodByIdUseCase:
     return GetFoodByIdUseCase(food_repo)
 
-def create_food_use_case(food_repo : FoodRepository = Depends(get_food_repository)) -> CreateFoodUseCase:
-    return CreateFoodUseCase(food_repo)
+def create_food_use_case(food_repo : FoodRepository = Depends(get_food_repository), category_repo : FoodCategoryRepository = Depends(get_category_repository)) -> CreateFoodUseCase:
+    return CreateFoodUseCase(food_repo, category_repo)
 
-def update_food_use_case(food_repo : FoodRepository = Depends(get_food_repository)) -> UpdateFoodUseCase:
-    return UpdateFoodUseCase(food_repo)
+def update_food_use_case(food_repo : FoodRepository = Depends(get_food_repository),  category_repo : FoodCategoryRepository = Depends(get_category_repository)) -> UpdateFoodUseCase:
+    return UpdateFoodUseCase(food_repo, category_repo)
 
 def delete_food_use_case(food_repo : FoodRepository = Depends(get_food_repository)) -> DeleteFoodUseCase:
     return DeleteFoodUseCase(food_repo)
