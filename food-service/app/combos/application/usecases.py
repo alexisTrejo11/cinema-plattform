@@ -1,6 +1,6 @@
 from typing import List
 from .repository import ComboRepository
-from .dtos import  ComboResponse, ComboCreate, ComboItemCreate
+from .dtos import  ComboResponse, ComboCreate, ComboItemCreate, ComboItemResponse
 from .exceptions import ComboNotFoundError, ComboItemValidationError, ProductValidationError
 from app.products.application.repositories import FoodRepository
 from app.combos.domain.combo import Combo, ComboItem
@@ -10,34 +10,35 @@ class ListActiveComboUseCase:
         self.combo_repository = combo_repository
     
     def execute(self):
-        combos = self.combo_repository.list_all(active_only=True)    
-        return [ComboResponse(**combo.to_dict()) for combo in combos]
+        combos = self.combo_repository.list_all(active_only=False)    
+        return [ComboResponse.from_domain(combo) for combo in combos]
 
 
 class GetComboByIdUseCase:
     def __init__(self, combo_repository: ComboRepository) -> None:
         self.combo_repository = combo_repository
     
-    def execute(self, combo_id: int, include_items : bool = True):
+    def execute(self, combo_id: int, include_items : bool):
         combo = self.combo_repository.get_by_id(combo_id, include_items)    
         if not combo:
             raise ComboNotFoundError(combo_id)
 
-        return ComboResponse(**combo.to_dict())
+        return ComboResponse.from_domain(combo)
     
     
+# TODO:
 class GetCombosByProductUseCase:
     def __init__(self, combo_repository: ComboRepository, product_repository: FoodRepository) -> None:
         self.combo_repository = combo_repository
         self.product_repository = product_repository
     
-    def execute(self, product_id: int, include_items: bool = True) -> List[ComboResponse]:
+    def execute(self, product_id: int, include_items: bool) -> List[ComboResponse]:
         product = self.product_repository.get_by_id(product_id)
         if not product:
             raise ProductValidationError()
 
         combos = self.combo_repository.list_by_product(product_id, include_items)
-        return [ComboResponse(**combo.to_dict()) for combo in combos]
+        return [ComboResponse.from_domain(combo) for combo in combos]
 
 
 class CreateComboUseCase:

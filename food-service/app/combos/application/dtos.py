@@ -3,6 +3,7 @@ from datetime import datetime
 from app.products.application.dtos import FoodProductResponse
 from pydantic import BaseModel, Field
 from decimal import Decimal
+from app.combos.domain.combo import Combo, ComboItem
 
 class ComboBase(BaseModel):
     """Base model for combo meals with common attributes"""
@@ -90,8 +91,8 @@ class ComboResponse(ComboBase):
         json_schema_extra={"example": 1}
     )
     
-    items: List['ComboItemResponse'] = Field(
-        ...,
+    combo_items: List['ComboItemResponse'] = Field(
+        [],
         description="Detailed information about items in the combo",
         json_schema_extra={"example": [{"product_id": 1, "quantity": 2}]}
     )
@@ -122,6 +123,11 @@ class ComboResponse(ComboBase):
             }]
         }
 
+    @classmethod
+    def from_domain(cls, combo: Combo):
+        """Convert domain model to DTO"""
+        items = [ComboItemResponse(id=item.id, product_id=item.product.id, quantity=item.quantity) for item in combo.items]
+        return cls(combo_items=items, **combo.to_dict())
 
 class ComboItemCreate(ComboItemBase):
     """Schema for creating combo items"""
@@ -137,12 +143,6 @@ class ComboItemResponse(ComboItemBase):
         json_schema_extra={"example": 1}
     )
     
-    product: FoodProductResponse = Field(
-        ...,
-        description="Detailed information about the product",
-        json_schema_extra={"example": {"id": 1, "name": "Pizza", "price": 9.99}}
-    )
-
     class Config:
         from_attributes = True
         json_schema_extra = {
@@ -150,7 +150,6 @@ class ComboItemResponse(ComboItemBase):
             "examples": [{
                 "id": 1,
                 "product_id": 1,
-                "product": {"id": 1, "name": "Pizza", "price": 9.99},
                 "quantity": 2
             }]
         }

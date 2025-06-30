@@ -31,7 +31,7 @@ class Combo:
         discount_percentage: Decimal = Decimal('0'),
         image_url: Optional[str] = None,
         is_available: bool = True,
-        items: Optional[List['ComboItem']] = None,
+        items: List['ComboItem'] = [],
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None  
     ):
@@ -67,7 +67,7 @@ class Combo:
         self.is_available = is_available
         self.created_at = created_at if created_at else datetime.now()
         self.updated_at = updated_at if updated_at else datetime.now()
-        self.items = items if items is not None else [] 
+        self.items = items
         
         
     def validate_business_logic(self):
@@ -191,7 +191,7 @@ class ComboItem:
         quantity: Quantity of this product in the combo (1-10)
     """
     
-    def __init__(self, product: FoodProduct, quantity: int = 1):
+    def __init__(self,  product: FoodProduct,  id: int = 0, quantity: int = 1):
         """Initializes a ComboItem with validation.
         
         Args:
@@ -201,11 +201,14 @@ class ComboItem:
         Raises:
             TypeError: If product is not a FoodProduct or quantity is not an integer
         """
+        if not isinstance(id, int):
+            raise TypeError("id must be an integer")
         if not isinstance(product, FoodProduct):
             raise TypeError("product must be an instance of FoodProduct")
         if not isinstance(quantity, int):
             raise TypeError("quantity must be an integer")
 
+        self.id = id
         self.product = product
         self.quantity = quantity
 

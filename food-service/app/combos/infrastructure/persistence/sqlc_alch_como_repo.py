@@ -2,16 +2,16 @@ from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_
 from app.combos.application.repository import ComboRepository
-from app.combos.domain.combo import Combo
+from app.combos.domain.combo import Combo, ComboItem
 from .models import ComboModel, ComboItemModel
 
 class SqlAlchemyComboRepository(ComboRepository):
     def __init__(self, session: Session) -> None:
         self.session = session
     
-    def get_by_id(self, combo_id: int, include_items: bool = True) -> Optional[Combo]:
+    def get_by_id(self, combo_id: int, include_items: bool = False) -> Optional[Combo]:
         query = self.session.query(ComboModel)
-        
+
         if include_items:
             query = query.options(
                 joinedload(ComboModel.items)
@@ -23,9 +23,9 @@ class SqlAlchemyComboRepository(ComboRepository):
         if not combo_model:
             return None
             
-        return self._to_domain(combo_model)
+        return self._to_domain(combo_model, include_items)
     
-    def list_by_product(self, product_id: int, include_items: bool = True) -> List[Combo]:
+    def list_by_product(self, product_id: int, include_items: bool = False) -> List[Combo]:
         query = self.session.query(ComboModel).join(ComboItemModel)
         
         if include_items:
@@ -41,7 +41,7 @@ class SqlAlchemyComboRepository(ComboRepository):
             )
         ).all()
         
-        return [self._to_domain(combo) for combo in combo_models]
+        return [self._to_domain(combo, include_items) for combo in combo_models]
     
     def list_all(self, active_only: bool = True) -> List[Combo]:
         query = self.session.query(ComboModel).options(
@@ -53,7 +53,7 @@ class SqlAlchemyComboRepository(ComboRepository):
             query = query.filter(ComboModel.is_available == True)
         
         combo_models = query.all()
-        return [self._to_domain(combo) for combo in combo_models]
+        return [self._to_domain(combo, True) for combo in combo_models]
     
     def save(self, combo: Combo) -> Combo:
         if combo.id:
@@ -95,8 +95,8 @@ class SqlAlchemyComboRepository(ComboRepository):
             )
             self.session.add(item_model)
         
-        self.session.flush()
-        return self._to_domain(combo_model)
+        self.session.commit()
+        return self._to_domain(combo_model, True)
     
     def soft_delete(self, combo_id: int) -> None:
         combo = self.session.get(ComboModel, combo_id)
@@ -104,8 +104,15 @@ class SqlAlchemyComboRepository(ComboRepository):
             combo.is_available = False
             self.session.add(combo)
     
-    def _to_domain(self, combo_model: ComboModel) -> Combo:
+    def _to_domain(self, combo_model: ComboModel, include_items: bool) -> Combo:
         """Convert SQLAlchemy model to domain model"""
+        items = []
+        if include_items:
+            items = [
+                ComboItem(item.product.to_domain(), item.id ,item.quantity) 
+                for item in combo_model.items if combo_model.items
+            ]
+
         return Combo(
             id=combo_model.id,
             name=combo_model.name,
@@ -116,5 +123,8 @@ class SqlAlchemyComboRepository(ComboRepository):
             is_available=combo_model.is_available,
             created_at=combo_model.created_at,
             updated_at=combo_model.updated_at,
-            items=[]
+            items=items
         )
+       
+        
+        
