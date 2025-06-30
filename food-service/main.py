@@ -1,5 +1,7 @@
 from fastapi import FastAPI
-from app.food.infrastructure.api import category_controller, food_controller
+from app.products.infrastructure.api import category_controller, food_controller
+from app.combos.infrastructure.api import combo_controllers
+from config.model_init import *
 from config import exception_handlers
 
 app = FastAPI(
@@ -10,10 +12,10 @@ app = FastAPI(
     exception_handlers=exception_handlers
 )
 
-
 @app.get("/ping")
 def ping():
     return "pong"
 
 app.include_router(category_controller.router)
 app.include_router(food_controller.router)
+app.include_router(combo_controllers.router)
