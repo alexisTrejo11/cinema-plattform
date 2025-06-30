@@ -24,9 +24,9 @@ class Combo:
     
     def __init__(
         self,
-        id: Optional[int],
         name: str,
         price: Decimal,
+        id: Optional[int] = None,
         description: Optional[str] = None,
         discount_percentage: Decimal = Decimal('0'),
         image_url: Optional[str] = None,
@@ -57,9 +57,7 @@ class Combo:
             raise ValueError("price must be a Decimal greater than 0.")
         if not isinstance(discount_percentage, Decimal) or not (Decimal('0') <= discount_percentage <= Decimal('100')):
             raise ValueError("discount_percentage must be a Decimal between 0 and 100.")
-        if items is not None and not all(isinstance(item, ComboItem) for item in items):
-            raise TypeError("items must be a list of ComboItem instances.")
-            
+
         self.id = id
         self.name = name
         self.description = description
@@ -112,7 +110,7 @@ class Combo:
 
     def _validate_price_range(self):
         """Validates that combo price is within allowed range (10-2000)."""
-        min_price = Decimal('10')
+        min_price = Decimal('1')
         max_price = Decimal('2000')
         if not (min_price <= self.price <= max_price):
             raise PriceRangeException(min_price, max_price)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
-from typing import List, Optional
-from decimal import Decimal
+from typing import List
+from app.utils.response import ApiResponse
 from app.combos.application.dtos import ComboCreate, ComboResponse
 from app.combos.application.usecases import (
     ListActiveComboUseCase,
@@ -31,7 +31,7 @@ router = APIRouter(
 
 @router.post(
     "/",
-    response_model=ComboResponse,
+    response_model=ApiResponse[ComboResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new combo",
     description="Creates a new combo meal with the provided details",
@@ -74,21 +74,19 @@ def create_combo(
     """
     try:
         combo = usecase.execute(combo_data)
-        return combo
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+        return ApiResponse.success(
+            data=combo,
+            message="Combo created successfully"
         )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail=str(e)
         )
 
 @router.get(
     "/{combo_id}",
-    response_model=ComboResponse,
+    response_model=ApiResponse[ComboResponse],
     summary="Get combo by ID",
     description="Retrieve detailed information about a specific combo",
     responses={
@@ -134,12 +132,7 @@ def get_combo_by_id(
     """
     try:
         combo = usecase.execute(combo_id, include_items)
-        return combo
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        return ApiResponse.success(data=combo, message="Combo successfully retrieved")        
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -148,7 +141,7 @@ def get_combo_by_id(
 
 @router.get(
     "/",
-    response_model=List[ComboResponse],
+    response_model=ApiResponse[List[ComboResponse]],
     summary="List all active combos",
     description="Retrieve a list of all currently available combos",
     responses={
@@ -171,7 +164,8 @@ def list_active_combos(
 ):
     """Retrieve all combos that are currently marked as available"""
     try:
-        return usecase.execute()
+        combo_list = usecase.execute()
+        return ApiResponse.success(data=combo_list, message="Active Combos successfully retrieved")        
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -180,7 +174,7 @@ def list_active_combos(
 
 @router.get(
     "/by-product/{product_id}",
-    response_model=List[ComboResponse],
+    response_model=ApiResponse[List[ComboResponse]],
     summary="Get combos containing a product",
     description="Find all combos that include the specified product",
     responses={
@@ -237,11 +231,12 @@ def get_combos_by_product(
 
 @router.delete(
     "/{combo_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_200_OK,
     summary="Delete a combo",
     description="Permanently remove a combo from the system",
+    response_model=ApiResponse[None],
     responses={
-        status.HTTP_204_NO_CONTENT: {
+        status.HTTP_200_OK: {
             "description": "Combo deleted successfully"
         },
         status.HTTP_404_NOT_FOUND: {
@@ -265,11 +260,7 @@ def delete_combo(
     """
     try:
         usecase.execute(combo_id)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        ApiResponse.success(data=None, message="combo successfuly deleted")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -101,6 +101,9 @@ class FoodProduct:
             "price": str(self.price),
             "image_url": self.image_url,
             "is_available": self.is_available,
+            "preparation_time_mins": self.preparation_time_mins,
+            "calories": self.calories,
+            "category_id": self.category_id,
         } 
 
 class FoodCategory:

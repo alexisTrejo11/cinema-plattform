@@ -1,21 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from typing import List, Optional
 from decimal import Decimal
+from app.utils.response import ApiResponse
 from app.products.application.dtos import FoodProductCreate, FoodProductUpdate, FoodProductResponse, SearchFoodParams
-from app.products.application.food_usecases import (
-    GetFoodByIdUseCase,
-    SearchFoodUseCase,
-    CreateFoodUseCase,
-    UpdateFoodUseCase,
-    DeleteFoodUseCase
-)
-from .depedencies import (
-    get_food_by_id_use_case,
-    search_food_use_case,
-    create_food_use_case,
-    update_food_use_case,
-    delete_food_use_case
-)
+from app.products.application.food_usecases import GetFoodByIdUseCase, SearchFoodUseCase, CreateFoodUseCase, UpdateFoodUseCase, DeleteFoodUseCase
+from .depedencies import get_food_by_id_use_case, search_food_use_case, create_food_use_case, update_food_use_case, delete_food_use_case
 
 router = APIRouter(
     prefix="/api/v2/products",
@@ -29,7 +18,7 @@ router = APIRouter(
 
 @router.post(
     "/",
-    response_model=FoodProductResponse,
+    response_model=ApiResponse[FoodProductResponse],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new food product",
     description="Creates a new food product with the provided details",
@@ -74,12 +63,7 @@ def create_product(
     """
     try:
         product = usecase.execute(product_data)
-        return product
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        return ApiResponse.success(product) 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -88,7 +72,7 @@ def create_product(
 
 @router.get(
     "/{product_id}",
-    response_model=FoodProductResponse,
+    response_model=ApiResponse[FoodProductResponse],
     summary="Get product by ID",
     description="Retrieve detailed information about a specific food product",
     responses={
@@ -127,12 +111,7 @@ def get_product_by_id(
     """
     try:
         product = usecase.execute(product_id)
-        return product
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        return ApiResponse.success(product, "Food product successfully retrieved")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -141,7 +120,7 @@ def get_product_by_id(
 
 @router.get(
     "/",
-    response_model=List[FoodProductResponse],
+    response_model=ApiResponse[List[FoodProductResponse]],
     summary="Search food products",
     description="Search and filter food products with pagination",
     responses={
@@ -222,7 +201,8 @@ def search_products(
             name=name_like, 
             active_only=available_only
         )
-        return usecase.execute(params)
+        products = usecase.execute(params)
+        return ApiResponse.success(products, "Food products successfully retrieved")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -231,7 +211,7 @@ def search_products(
 
 @router.patch(
     "/{product_id}",
-    response_model=FoodProductResponse,
+    response_model=ApiResponse[FoodProductResponse],
     summary="Update a food product",
     description="Update details of an existing food product",
     responses={
@@ -270,12 +250,7 @@ def update_product(
     """
     try:
         product = usecase.execute(product_id, update_data)
-        return product
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        return ApiResponse.success(product) 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -284,11 +259,12 @@ def update_product(
 
 @router.delete(
     "/{product_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=ApiResponse[None],
+    status_code=status.HTTP_200_OK,
     summary="Delete a food product",
     description="Permanently remove a food product from the system",
     responses={
-        status.HTTP_204_NO_CONTENT: {
+        status.HTTP_200_OK: {
             "description": "Product deleted successfully"
         },
         status.HTTP_404_NOT_FOUND: {
@@ -312,11 +288,7 @@ def delete_product(
     """
     try:
         usecase.execute(product_id)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        return ApiResponse.success(None, "Product successfully deleted")
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

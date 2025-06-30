@@ -63,7 +63,7 @@ class SqlAlchFoodRepository(FoodRepository):
 
 
     def save(self, product: FoodProduct) -> FoodProduct:
-        model = FoodProductModel(**product.model_dump())
+        model = FoodProductModel(**product.to_dict())
         if product.id == 0:
             model.id = None # type: ignore
             self.session.add(model)

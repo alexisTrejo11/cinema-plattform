@@ -13,7 +13,7 @@ class GetCategoryByIdUseCase:
         if not category:
             raise CategoryNotFoundError("ProductCategory", category_id)
 
-        return CategoryResponse(**category.model_dump())
+        return CategoryResponse(**category.to_dict())
    
     
 class ListCategoryUseCase:
@@ -22,7 +22,7 @@ class ListCategoryUseCase:
     
     def execute(self) -> List[CategoryResponse]:
         category_list = self.category_repo.list()
-        return [CategoryResponse(**category.model_dump()) for category in category_list]
+        return [CategoryResponse(**category.to_dict()) for category in category_list]
  
     
 class CreateCategoryUseCase:
@@ -35,7 +35,7 @@ class CreateCategoryUseCase:
         new_category = FoodCategory(**create_data.model_dump())
         category_created = self.category_repo.save(new_category)
     
-        return CategoryResponse(**category_created.model_dump())
+        return CategoryResponse(**category_created.to_dict())
     
     def _validate_name(self, name: str):
         if self.category_repo.exists_by_name(name.strip()):
@@ -57,7 +57,7 @@ class UpdateCategoryUseCase:
         self._update_fields(category, update_data)
         self.category_repo.save(category)
 
-        return CategoryResponse(**category.model_dump())
+        return CategoryResponse(**category.to_dict())
 
     def _update_fields(self, category: FoodCategory, category_data: FoodCategoryInsert):
           update_data = category_data.model_dump()
