@@ -102,14 +102,8 @@ def get_category(
     
     - **category_id**: The ID of the category to retrieve
     """
-    try:
-        category = useCase.execute(category_id)
-        return ApiResponse.success(category,  "Category succesfully retrieved")
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e)
-        )
+    category = useCase.execute(category_id)
+    return ApiResponse.success(category,  "Category succesfully retrieved")
 
 @router.get(
     "/",

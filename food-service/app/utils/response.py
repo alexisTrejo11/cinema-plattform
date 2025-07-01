@@ -1,4 +1,4 @@
-from typing import Any, Optional, TypeVar, Generic
+from typing import Any, Dict, Optional, TypeVar, Generic
 from pydantic import BaseModel, Field
 
 T = TypeVar('T')
@@ -21,10 +21,10 @@ class ErrorResponse(BaseModel):
         description="An optional, human-readable type or category of the error (e.g., 'AuthenticationError', 'ValidationError', 'NotFoundError').",
         examples=["ValidationError", "AuthenticationError"]
     )
-    message: Optional[str] = Field(
+    details: Optional[Dict[str, Any]] = Field(
         None,
-        description="A human-readable message describing the error. This message is usually displayed to the end-user.",
-        examples=["Invalid email format.", "User with this email already exists.", "Invalid credentials."]
+        description="A human-readable dict describing the errors. This dict is usually displayed to the front end developer.",
+        examples=[ { "field" : "Invalid email format.", "reason" : "User with this email already exists.", "message" : "Invalid credentials."}]
     )
 
     class Config:

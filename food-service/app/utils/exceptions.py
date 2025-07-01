@@ -32,7 +32,7 @@ class ApplicationException(Exception):
         super().__init__(self.message)
 
 
-class NotFoundException(DomainException):
+class NotFoundException(ApplicationException):
     status_code = HTTPStatus.NOT_FOUND
     
     def __init__(self, entity: str, entity_id: Any):

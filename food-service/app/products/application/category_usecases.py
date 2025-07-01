@@ -11,7 +11,7 @@ class GetCategoryByIdUseCase:
     def execute(self, category_id: int) -> CategoryResponse:
         category = self.category_repo.get_by_id(category_id)
         if not category:
-            raise CategoryNotFoundError("ProductCategory", category_id)
+            raise CategoryNotFoundError("Product_Category", category_id)
 
         return CategoryResponse(**category.to_dict())
    
