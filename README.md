@@ -17,19 +17,20 @@ A robust FastAPI microservice for managing cinema ticket operations using Clean 
 
 ```
 app/
-├── domain/
-│   ├── entities/          # Pure business logic
-│   └── repositories/      # Abstract interfaces
-├── application/
-│   ├── dtos/             # Data transfer objects
-│   └── use_cases/        # Application business rules
-├── infrastructure/
-│   ├── database.py       # Database configuration
-│   ├── models/           # SQLAlchemy models
-│   ├── repositories/     # Repository implementations
-│   └── container.py      # DI container
-└── presentation/
-    └── controllers/      # FastAPI controllers
+├──ticket/
+    ├── domain/
+    │   ├── entities/          # Pure business logic
+    │   └── value_objects/     # Helping Classes for Tickets
+    ├── application/
+    │   ├── dtos/             # Data transfer objects
+    │   └── use_cases/        # Application business rules
+    │   └── repositories/     # Abstract interfaces
+    ├── infrastructure/
+    │   ├── models/           # SQLAlchemy models
+    │   ├── repositories/     # Repository implementations
+    │   └── container.py      # DI container
+    └── presentation/
+        └── controllers/      # FastAPI controllers
 ```
 
 ## API Endpoints
