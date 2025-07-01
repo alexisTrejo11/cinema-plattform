@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "type": "python",
+            "name": "debug jwt_service.py",
+            "request": "launch",
+            "justMyCode": false,
+            "args": [],
+            "program": "d:\\Users\\Alexis\\python\\cinema_api\\user-service\\app\\token\\infrastructure\\jwt_service.py"
+        }
+    ]
+}
