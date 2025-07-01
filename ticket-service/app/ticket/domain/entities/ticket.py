@@ -1,18 +1,21 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
-from .helping_classes import Showtime, CustomerDetails, PaymentDetails
+from .helping_classes import CustomerDetails, PaymentDetails, PriceDetails
 from ..valueobjects.enums import TicketStatus
-        
+from app.showtime.domain.entities.showtime import Showtime
+from app.showtime.domain.entities.theather_seat import TheaterSeat as Seat
+
+
 class Ticket:
     def __init__(
         self,
-        showtime: Showtime,
-        price: Decimal,
-        currency : str,
+        id: int,
+        seat : Seat,
+        showtime : Showtime,
         customer_details: CustomerDetails,
         payment_details: Optional[PaymentDetails],
-        id: Optional[int] = None,
+        price_details: PriceDetails,
         status: TicketStatus = TicketStatus.RESERVED,
         reservation_time: Optional[datetime] = None,
         confirmation_time: Optional[datetime] = None,
@@ -21,12 +24,12 @@ class Ticket:
     ) -> None:
         self.id = id
         self.showtime = showtime
-        self.price = price
+        self.price_details = price_details
+        self.seat = seat
         self.customer_details = customer_details
         self.status = status
         self.reservation_time = reservation_time
         self.confirmation_time = confirmation_time
-        self.currency : str = currency
         self.payment_details = payment_details
         self.created_at = created_at or datetime.now(timezone.utc)
         self.updated_at = updated_at or datetime.now(timezone.utc)
