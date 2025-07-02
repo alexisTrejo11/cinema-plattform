@@ -96,3 +96,18 @@ class Showtime:
         return (f"Showtime(id={self.__id}, movie_id={self.__movie_id}, "
                 f"cinema_id={self.__cinema_id}, start_time={self.__start_time.strftime('%Y-%m-%d %H:%M')}, "
                 f"type={self.__type.value}, language={self.__language.value})")
+        
+        
+    def to_dict(self) -> dict:
+        return {
+            "id": self.__id,
+            "movie_id": self.__movie_id,
+            "cinema_id": self.__cinema_id,
+            "theater_id": self.__theater_id,
+            "price": str(self.__price),
+            "start_time": self.__start_time.isoformat(),
+            "type": self.__type.value,
+            "language": self.__language.value,
+            "created_at": self.__created_at.isoformat(),
+            "updated_at": self.__updated_at.isoformat() if self.__updated_at else None
+        }

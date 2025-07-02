@@ -1,11 +1,12 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Dict, Optional
 from ..enums.theather_enum import SeatType
 
 
 class TheaterSeat:
     def __init__(
         self, 
+        seat_id : int, 
         theater_id: int, 
         seat_row: str, 
         seat_number: int,
@@ -16,6 +17,10 @@ class TheaterSeat:
     ):    
         if not isinstance(theater_id, int) or theater_id <= 0:
             raise ValueError("Theater ID must be a positive integer.")
+        
+        if not isinstance(seat_id, int) or theater_id <= 0:
+            raise ValueError("Seat ID must be a positive integer.")
+        
         
         if not isinstance(seat_row, str) or not (1 <= len(seat_row) <= 5):
             raise ValueError("Seat row must be a string between 1 and 5 characters.")
@@ -34,6 +39,7 @@ class TheaterSeat:
         if updated_at is not None and not isinstance(updated_at, datetime):
             raise ValueError("Updated at must be a datetime object or None.")
 
+        self.__seat_id = seat_id
         self.__theater_id = theater_id
         self.__seat_row = seat_row
         self.__seat_number = seat_number
@@ -70,4 +76,14 @@ class TheaterSeat:
 
 
     
-    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "seat_id": self.__seat_id,
+            "theater_id": self.__theater_id,
+            "seat_row": self.__seat_row,
+            "seat_number": self.__seat_number,
+            "seat_type": self.__seat_type.value,
+            "is_active": self.__is_active,
+            "created_at": self.__created_at,
+            "updated_at": self.__updated_at,
+        }

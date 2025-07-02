@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     app_debug: bool = True
     app_summary: str = "Microservice that manages tickets operation for showtimes"
     
-    MONGO_DB_NAME: Optional[str] = None
+    atlas_uri : str
+    mongo_db_name: Optional[str] = None
     POSTGRES_CONNECTION_STRING: Optional[str] = None
     
     JWT_SECRET_KEY: Optional[str] = None
@@ -25,4 +26,4 @@ class Settings(BaseSettings):
     JWT_EXPIRATION_TIME: int = 3600
 
 
-settings = Settings()
+settings = Settings() # type: ignore

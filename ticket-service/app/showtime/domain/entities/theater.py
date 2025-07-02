@@ -1,11 +1,12 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from ..enums.theather_enum import TheaterType
 from .theather_seat import TheaterSeat
 
 class Theater:
     def __init__(
-        self, id: int, 
+        self,
+        theater_id: int, 
         cinema_id: int, 
         name: str, 
         capacity: int,
@@ -13,13 +14,13 @@ class Theater:
         seats: List[TheaterSeat],
         is_active: bool = True,
         maintenance_mode: bool = False,
-        created_at: Optional[datetime] = None,
-        updated_at: Optional[datetime] = None,
+        created_at = None,
+        updated_at = None,
     ):    
-        if not isinstance(id, int) or id <= 0:
+        if not isinstance(theater_id, int) or theater_id <= 0:
             raise ValueError("ID must be a positive integer.")
         
-        if not isinstance(cinema_id, int) or cinema_id <= 0:
+        if not isinstance(theater_id, int) or theater_id <= 0:
             raise ValueError("Cinema ID must be a positive integer.")
             
         if not isinstance(name, str) or not (1 <= len(name) <= 50):
@@ -36,13 +37,9 @@ class Theater:
             
         if not isinstance(maintenance_mode, bool):
             raise ValueError("Maintenance mode must be a boolean.")
-        
-        if created_at is not None and not isinstance(created_at, datetime):
-            raise ValueError("Created at must be a datetime object or None.")
-        if updated_at is not None and not isinstance(updated_at, datetime):
-            raise ValueError("Updated at must be a datetime object or None.")
 
-        self.__id = id
+
+        self.__theater_id = theater_id
         self.__cinema_id = cinema_id
         self.__name = name
         self.__capacity = capacity
@@ -53,8 +50,8 @@ class Theater:
         self.__updated_at = updated_at
         self.__seats = seats
         
-    def get_id(self) -> int:
-        return self.__id
+    def get_theater_id(self) -> int:
+        return self.__theater_id
 
     def get_cinema_id(self) -> int:
         return self.__cinema_id
@@ -84,6 +81,21 @@ class Theater:
         return self.__seats
 
     def __repr__(self):
-        return (f"Theater(id={self.__id}, name='{self.__name}', cinema_id={self.__cinema_id}, "
+        return (f"Theater(name='{self.__name}', cinema_id={self.__cinema_id}, "
                 f"capacity={self.__capacity}, type={self.__theater_type.value}, "
                 f"active={self.__is_active}, maintenance={self.__maintenance_mode})")
+        
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "theater_id": self.__theater_id,
+            "cinema_id": self.__cinema_id,
+            "name": self.__name,
+            "capacity": self.__capacity,
+            "theater_type": self.__theater_type.value,
+            "seats": [seat.to_dict() for seat in self.__seats],
+            "is_active": self.__is_active,
+            "maintenance_mode": self.__maintenance_mode,
+            "created_at": self.__created_at.isoformat(),
+            "updated_at": self.__updated_at.isoformat() if self.__updated_at else None,
+        }
