@@ -19,10 +19,6 @@ class TicketRepository(ABC):
     async def search(self, **kwargs) -> List[Ticket]:
             pass
 
-    #@abstractmethod
-    #async def list_by_status(self, status: TicketStatus) -> List[Ticket]:
-    #    pass
-
     @abstractmethod
     async def save(self, ticket: Ticket) -> Ticket:
         pass

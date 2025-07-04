@@ -35,7 +35,7 @@ class UseTicketUseCase:
     def __init__(self, ticket_service: TicketService) -> None:
         self.ticket_service = ticket_service
     
-    async def execute(self, ticket_id, reason: str):
+    async def execute(self, ticket_id):
         ticket = await self.ticket_service.get_ticket_by_id(ticket_id)
         if not ticket:
             raise ValueError("invalid ticket")

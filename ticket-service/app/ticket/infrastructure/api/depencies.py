@@ -30,8 +30,8 @@ def get_ticket_service(ticket_repo = Depends(get_ticket_repository), theater_rep
     return TicketService(ticket_repo, theater_repo)
 
 # Services
-def get_showtime_seat_service(repo: SqlAlchemySeatRepository = Depends(get_seat_repository)) -> ShowtimeSeatService:
-    return ShowtimeSeatService(repo)
+def get_showtime_seat_service(repo: SqlAlchemySeatRepository = Depends(get_seat_repository), theater_repo = Depends(get_theater_repository)) -> ShowtimeSeatService:
+    return ShowtimeSeatService(repo, theater_repo)
 
 # QUERY UC
 def get_ticket_by_id_uc(ticket_service: TicketService = Depends(get_ticket_service)) -> GetTicketByIdUseCase:

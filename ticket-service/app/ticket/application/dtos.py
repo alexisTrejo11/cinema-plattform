@@ -26,7 +26,7 @@ class BuyTicketsRequest(BaseModel):
     
 
 
-class TicketResponse(BaseModel):
+class TicketDetailResponse(BaseModel):
     id: int
     user_id: int
     movie_id: int
@@ -62,7 +62,7 @@ class TicketBuyedResponse(BaseModel):
         
 
 class TicketListResponst(BaseModel):
-    tickets: List['TicketResponse']
+    tickets: List['TicketDetailResponse']
     total: int
     page: int
     per_page: int

@@ -10,6 +10,9 @@ class SQLAlchemyTicketRepository(TicketRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    async def search(self, **kwargs) -> List[Ticket]:
+            return []
+    
     async def save(self, ticket: Ticket) -> Ticket:
         if not ticket.id:
             model = self._entity_to_model(ticket)
