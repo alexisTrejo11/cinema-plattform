@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     app_summary: str = "Microservice that manages tickets operation for showtimes"
     
     atlas_uri : str
+    postgres_uri: str
     mongo_db_name: Optional[str] = None
-    POSTGRES_CONNECTION_STRING: Optional[str] = None
     
     JWT_SECRET_KEY: Optional[str] = None
     JWT_ALGORITHM: str = "HS256"

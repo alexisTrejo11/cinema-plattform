@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 class ShowtimeRepository(ABC):
     @abstractmethod
-    async def get_by_id(self, showtime_id: int) -> Optional[Showtime]:
+    async def get_by_id(self, showtime_id: int, raise_exception=True) -> Showtime:
         pass
     
     @abstractmethod

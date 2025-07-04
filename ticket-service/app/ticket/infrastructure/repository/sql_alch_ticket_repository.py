@@ -1,69 +1,105 @@
 from typing import List, Optional
-from sqlalchemy.orm import Session
-from sqlalchemy import and_
-from app.ticket.domain.entities.ticket import Ticket, TicketStatus
-from app.ticket.application.repositories import TicketRepository
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import and_, select, update, delete
+
+from app.ticket.domain.entities.ticket import Ticket, TicketStatus, PriceDetails, CustomerDetails
+from app.ticket.application.repository import TicketRepository
 from ..models.ticket_model import TicketModel
 
 class SQLAlchemyTicketRepository(TicketRepository):
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
     async def save(self, ticket: Ticket) -> Ticket:
         if not ticket.id:
             model = self._entity_to_model(ticket)
             self.session.add(model)
-            self.session.commit()
-            self.session.refresh(model)
+            await self.session.commit()
+            await self.session.refresh(model)
             return self._model_to_entity(model)
         else:
-            model = self.session.query(TicketModel).filter(TicketModel.id == ticket.id).first()
-            if not model:
-                raise ValueError("Ticket not found")
+            stmt = select(TicketModel).where(TicketModel.id == ticket.id)
+            result = await self.session.execute(stmt)
+            model = result.scalar_one_or_none()
 
-            self.session.commit()
-            self.session.refresh(model)
+            if not model:
+                raise ValueError(f"Ticket with ID {ticket.id} not found")
+
+            model = self._entity_to_model(ticket)
+            await self.session.commit()
+            await self.session.refresh(model)
             return self._model_to_entity(model)
             
     async def get_by_id(self, ticket_id: int) -> Optional[Ticket]:
-        model = self.session.query(TicketModel).filter(TicketModel.id == ticket_id).first()
+        stmt = select(TicketModel).where(TicketModel.id == ticket_id)
+        
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()       
+        
         return self._model_to_entity(model) if model else None
 
-    async def get_by_user_id(self, user_id: int) -> List[Ticket]:
-        models = self.session.query(TicketModel).filter(TicketModel.user_id == user_id).all()
+    async def list_by_user_id(self, user_id: int) -> List[Ticket]:
+        stmt = select(TicketModel).where(TicketModel.user_id == user_id)
+        
+        result = await self.session.execute(stmt)
+        models = result.scalars().all()       
+        
         return [self._model_to_entity(model) for model in models]
 
-    async def get_by_showtime_id(self, showtime_id: int) -> List[Ticket]:
-        models = self.session.query(TicketModel).filter(TicketModel.showtime_id == showtime_id).all()
+    async def list_by_showtime_id(self, showtime_id: int) -> List[Ticket]:
+        stmt = select(TicketModel).where(TicketModel.showtime_id == showtime_id)
+        result = await self.session.execute(stmt)
+        models = result.scalars().all()
         return [self._model_to_entity(model) for model in models]        
 
     async def delete(self, ticket_id: int) -> bool:
-        model = self.session.query(TicketModel).filter(TicketModel.id == ticket_id).first()
+        stmt_select = select(TicketModel).where(TicketModel.id == ticket_id)
+        result = await self.session.execute(stmt_select)
+        model = result.scalar_one_or_none()
+
         if not model:
             return False
 
-        self.session.delete(model)
-        self.session.commit()
+        await self.session.delete(model)
+        await self.session.commit()
         return True
 
-    async def get_reserved_seats(self, showtime_id: int) -> List[str]:
-        models = self.session.query(TicketModel).filter(
-            and_(
-                TicketModel.showtime_id == showtime_id,
-                TicketModel.status.in_([TicketStatus.RESERVED, TicketStatus.CONFIRMED])
-            )
-        ).all()
-        return [model.seat_number for model in models]
 
     async def get_by_status(self, status: TicketStatus) -> List[Ticket]:
-        models = self.session.query(TicketModel).filter(TicketModel.status == status).all()
+        stmt = select(TicketModel).where(TicketModel.status == status)
+        result = await self.session.execute(stmt)
+        models = result.scalars().all()
         return [self._model_to_entity(model) for model in models]
     
     
     def _model_to_entity(self, model: TicketModel) -> Ticket:
-        """Convert SQLAlchemy model to domain entity"""
-        return Ticket()
+        price_details = PriceDetails(model.price, model.price_currency)
+        customer_details = CustomerDetails(model.customer_email, model.user_id, model.customer_ip)
+        return Ticket(
+            id=model.id,
+            showtime_id=model.showtime_id,
+            price_details=price_details,
+            ticket_type=model.ticket_type,
+            status=model.status,
+            customer_details=customer_details,
+            created_at=model.created_at,
+            updated_at=model.updated_at
+        )
 
     def _entity_to_model(self, entity: Ticket) -> TicketModel:
-        """Convert domain entity to SQLAlchemy model"""
-        return TicketModel()
+        model = TicketModel(
+            id=entity.id,
+            showtime_id=entity.showtime_id,
+            price=entity.price_details.price,
+            currency=entity.price_details.currency,
+            ticket_type=entity.ticket_type,
+            status=entity.status,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at
+        )
+        if entity.customer_details:
+            model.customer_email = entity.customer_details.user_email
+            model.user_id = entity.customer_details.id if entity.customer_details.id else None
+            model.customer_ip = entity.customer_details.customer_ip_address
+        
+        return model

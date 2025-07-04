@@ -48,6 +48,10 @@ class TheaterSeat:
         self.__created_at = created_at if created_at is not None else datetime.now()
         self.__updated_at = updated_at
 
+    def get_seat_id(self) -> int:
+        return self.__seat_id
+
+
     def get_theater_id(self) -> int:
         return self.__theater_id
 

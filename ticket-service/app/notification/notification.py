@@ -1,4 +1,10 @@
+from typing import List, Optional
+from pydantic import BaseModel, EmailStr
+from app.ticket.domain.entities.ticket import Ticket
 
-class Notification:
-    def __init__(self) -> None:
-        pass
+
+class Notification(BaseModel):
+    tickets: List[Ticket]
+    customer_email: EmailStr
+    customer_id: int
+    ticket_qr: str

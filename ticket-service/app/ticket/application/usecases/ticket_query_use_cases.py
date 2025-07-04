@@ -1,30 +1,51 @@
-class CreateTicketsForShowtimesUseCase:
-    def __init__(self) -> None:
-        """ 
-        - Init n number of tickets for an incoming showtime.
-        - The number of tickets is based on theater seats. One ticket is created for each seat.
-        - Tickets are mark as not sell it until somebody buys it or after expiration time occurs. 
-        """
-        pass
-    
-    
-class BuyTicketUseCase:
-    def __init__(self) -> None:
-        """
-        - Buys a Ticket. 
-        - Could by a register customer of for anonimus customer.
-        - Customers can buy tickets in 2 ways:
-            -Physical buy: Sell it in ticket office for each cinema
-            -Digital: buy: Sell it on web page an users can buy tickets in any selected cinema 
-        """
-        pass
+from typing import List
+from ..service.ticket_service import TicketService
+from ..dtos import TicketResponse
 
 
-class UseTicketUseCase:
-    def __init__(self) -> None:
-        pass
+class GetTicketByIdUseCase: 
+    def __init__(self, ticket_service: TicketService) -> None:
+        self.ticket_service =  ticket_service
+
+    async def execute(self, ticket_id: int) -> TicketResponse:
+        ticket = await self.ticket_service.get_ticket_by_id(ticket_id)
+        return TicketResponse(**ticket.to_dict())
+
+
+class SearchSearchUseCase:
+    """
+    -Retrieves tickets based on dynamic filters.
+    -Used by admins for manual monitoring  
+    """
+    def __init__(self, ticket_service: TicketService) -> None:
+        self.ticket_service =  ticket_service
+
+    async def execute(self, search_params: dict) -> List[TicketResponse]:
+        tickets = await self.ticket_service.search_tickets(search_params)
+        return [TicketResponse(**ticket.to_dict()) for ticket in tickets]
+                
+                
+class ListTicketsByUserIdUseCase:
+    """
+    -Retrieves tickets based on user id.
+    -Used by admins or registred users that want to see their ticket history  
+    """
+    def __init__(self, ticket_service: TicketService) -> None:
+            self.ticket_service =  ticket_service
     
+    async def execute(self, user_id: int, verbose: bool = False) -> List[TicketResponse]:
+        tickets = await self.ticket_service.get_user_tickets(user_id)
+        return [TicketResponse(**ticket.to_dict()) for ticket in tickets]
+
     
-class CancelTicketCase:
-    def __init__(self) -> None:
-        pass
+class ListTicketsByShowtimeIdUseCase:
+    """
+    -Retrieves tickets based on showtime.
+    -One ticket will be retrived for each seat to show availability 
+    """
+    def __init__(self, ticket_service: TicketService) -> None:
+            self.ticket_service =  ticket_service
+
+    async def execute(self, user_id: int) -> List[TicketResponse]:
+        tickets = await self.ticket_service.get_showtime_tickets(user_id)
+        return [TicketResponse(**ticket.to_dict()) for ticket in tickets]

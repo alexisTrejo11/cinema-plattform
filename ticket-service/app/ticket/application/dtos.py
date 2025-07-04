@@ -1,9 +1,8 @@
 from decimal import Decimal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 from typing import List, Optional
-from app.ticket.domain.valueobjects.enums import TicketStatus
-
+from app.ticket.domain.valueobjects.enums import TicketStatus, TicketType
 
 class CreateTicketData(BaseModel):
     user_id: int = Field(..., gt=0, description="User ID")
@@ -13,12 +12,39 @@ class CreateTicketData(BaseModel):
     seat_type: str = Field(..., description="Seat type")
     price: float = Field(..., gt=0, description="Ticket price")
 
-class UpdateTicketData(BaseModel):
-    seat_number: Optional[str] = Field(None, min_length=1, max_length=10)
-    seat_type: Optional[str] = None
+
+class BuyTicketsRequest(BaseModel):
+    user_email: EmailStr = Field(..., gt=0, description="Customer Email")
+    customer_id: int = Field(..., gt=0, description="Customer ID")
+    showtime_id: int = Field(..., gt=0, description="Showtime ID")
+    seat_list_id: List[int] = Field([])
+    payment_method:  str
+    ticket_type:  TicketType = Field(...)
+    payment_deatils: str
+    customer_ip: str
+    
+    
 
 
 class TicketResponse(BaseModel):
+    id: int
+    user_id: int
+    movie_id: int
+    showtime_id: int
+    seat_number: str
+    seat_type: str
+    price: float
+    status: TicketStatus
+    reservation_time: datetime
+    confirmation_time: Optional[datetime]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+        
+        
+class TicketBuyedResponse(BaseModel):
+    """ DTO retrived to customer after ticket buying"""
     id: int
     user_id: int
     movie_id: int
@@ -57,5 +83,4 @@ class RefundResponse(BaseModel):
     processing_fee: Decimal
     net_refund: Decimal
     status: str
-    
     

@@ -4,16 +4,20 @@ from pymongo.database import Database
 from app.showtime.domain.entities.showtime import Showtime
 from .mongo_mappers import ShowtimeDocMapper
 
-class MongoshowtimeRepository(ShowtimeRepository):
+class MongoShowtimeRepository(ShowtimeRepository):
     def __init__(self, mongo_db) -> None:
         self.collection = mongo_db['showtimes']
     
-    async def get_by_id(self, showtime_id: int) -> Optional[Showtime]:
+    async def get_by_id(self, showtime_id: int,  raise_exception=True) -> Showtime:
         doc = await self.collection.find_one({"showtime_id": showtime_id})
-        if not doc:
+        if doc:
+            return ShowtimeDocMapper.doc_to_domain(doc)
+        
+        if not raise_exception:
             return None
         
-        return ShowtimeDocMapper.doc_to_domain(doc)
+        raise ValueError("Showtime not found")
+       
 
     async def get_all(self) -> List[Showtime]:
         showtimes = []

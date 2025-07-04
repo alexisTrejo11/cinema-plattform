@@ -1,20 +1,37 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Enum as SQLEnum
 from sqlalchemy.sql import func
-from app.ticket.domain.entities.ticket import TicketStatus
-from config.database import Base
+from app.ticket.domain.entities.ticket import TicketStatus, TicketType
+from config.postgres_config import Base
+from sqlalchemy.orm import mapped_column, Mapped, relationship
+from decimal import Decimal
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from app.seats.infra.model import ShowtimeSeatModel
 
 class TicketModel(Base):
     __tablename__ = "tickets"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False, index=True)
-    movie_id = Column(Integer, nullable=False, index=True)
-    showtime_id = Column(Integer, nullable=False, index=True)
-    seat_number = Column(String(10), nullable=False)
-    seat_type = Column(String(30), nullable=False, default='')
-    price = Column(Float, nullable=False)
-    status = Column(SQLEnum(TicketStatus), nullable=False, default=TicketStatus.RESERVED)
-    reservation_time = Column(DateTime(timezone=True), server_default=func.now())
-    confirmation_time = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    movie_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    showtime_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    
+    transaction_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    payment_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    customer_ip: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    customer_email: Mapped[str] = mapped_column(String, nullable=True)
+    
+    price: Mapped[Decimal] = mapped_column(Float, nullable=False)
+    price_currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    
+    status: Mapped[TicketStatus] = mapped_column(String, nullable=False)
+    ticket_type: Mapped[TicketType] = mapped_column(String, nullable=False)
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    deleted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    showtime_seats = relationship("ShowtimeSeatModel", back_populates="ticket", cascade="all, delete-orphan")
