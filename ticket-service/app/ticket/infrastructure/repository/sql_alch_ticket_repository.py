@@ -2,7 +2,7 @@ from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import and_, select, update, delete
 
-from app.ticket.domain.entities.ticket import Ticket, TicketStatus, PriceDetails, CustomerDetails
+from app.ticket.domain.entities.ticket import Ticket, TicketStatus, PriceDetails, CustomerDetails, TicketType
 from app.ticket.application.repository import TicketRepository
 from ..models.ticket_model import TicketModel
 
@@ -28,7 +28,8 @@ class SQLAlchemyTicketRepository(TicketRepository):
             if not model:
                 raise ValueError(f"Ticket with ID {ticket.id} not found")
 
-            model = self._entity_to_model(ticket)
+            # Update the existing model with new values
+            self._update_model_from_entity(model, ticket)
             await self.session.commit()
             await self.session.refresh(model)
             return self._model_to_entity(model)
@@ -67,13 +68,6 @@ class SQLAlchemyTicketRepository(TicketRepository):
         await self.session.commit()
         return True
 
-
-    async def get_by_status(self, status: TicketStatus) -> List[Ticket]:
-        stmt = select(TicketModel).where(TicketModel.status == status)
-        result = await self.session.execute(stmt)
-        models = result.scalars().all()
-        return [self._model_to_entity(model) for model in models]
-    
     
     def _model_to_entity(self, model: TicketModel) -> Ticket:
         price_details = PriceDetails(model.price, model.price_currency)
@@ -81,9 +75,10 @@ class SQLAlchemyTicketRepository(TicketRepository):
         return Ticket(
             id=model.id,
             showtime_id=model.showtime_id,
+            movie_id=model.movie_id,
             price_details=price_details,
-            ticket_type=model.ticket_type,
-            status=model.status,
+            ticket_type=TicketType(model.ticket_type),
+            status=TicketStatus(model.status),
             customer_details=customer_details,
             created_at=model.created_at,
             updated_at=model.updated_at
@@ -94,9 +89,10 @@ class SQLAlchemyTicketRepository(TicketRepository):
             id=entity.id,
             showtime_id=entity.showtime_id,
             price=entity.price_details.price,
-            currency=entity.price_details.currency,
-            ticket_type=entity.ticket_type,
-            status=entity.status,
+            movie_id=entity.movie_id,
+            price_currency=entity.price_details.currency,
+            ticket_type=entity.ticket_type.value,
+            status=entity.status.value,
             created_at=entity.created_at,
             updated_at=entity.updated_at
         )
@@ -106,3 +102,18 @@ class SQLAlchemyTicketRepository(TicketRepository):
             model.customer_ip = entity.customer_details.customer_ip_address
         
         return model
+
+    def _update_model_from_entity(self, model: TicketModel, entity: Ticket) -> None:
+        """Update an existing model instance with values from the entity"""
+        model.showtime_id = entity.showtime_id
+        model.movie_id = entity.movie_id
+        model.price = entity.price_details.price
+        model.price_currency = entity.price_details.currency
+        model.ticket_type = entity.ticket_type.value
+        model.status = entity.status.value
+        model.updated_at = entity.updated_at
+        
+        if entity.customer_details:
+            model.customer_email = entity.customer_details.user_email
+            model.user_id = entity.customer_details.id if entity.customer_details.id else None
+            model.customer_ip = entity.customer_details.customer_ip_address

@@ -12,6 +12,7 @@ class Ticket:
     def __init__(
         self,
         showtime_id : int,
+        movie_id : int,
         price_details: PriceDetails,
         ticket_type: TicketType,
         seats : List[ShowtimeSeat] = [],
@@ -24,6 +25,7 @@ class Ticket:
     ) -> None:
         self.id = id
         self.showtime_id = showtime_id
+        self.movie_id = movie_id
         self.price_details = price_details
         self.seats = seats if seats else []
         self.customer_details = customer_details
@@ -61,7 +63,6 @@ class Ticket:
     @staticmethod
     def max_seats_allowed_per_ticket() -> int:    
         return MAX_LIMIT_OF_SEATS_PER_TICKET
-    
     
     def to_dict(self) -> dict:
         return {

@@ -5,6 +5,7 @@ class ModelMapper:
     @staticmethod
     def to_domain(model : ShowtimeSeatModel) -> ShowtimeSeat:
           return ShowtimeSeat(
+            id=model.id,
             showtime_id=model.showtime_id,
             seat_id=model.seat_id,
             seat_name=model.seat_name,

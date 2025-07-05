@@ -5,7 +5,7 @@ from config.postgres_config import Base
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from decimal import Decimal
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List
 
 if TYPE_CHECKING:
     from app.seats.infra.model import ShowtimeSeatModel
@@ -27,8 +27,8 @@ class TicketModel(Base):
     price: Mapped[Decimal] = mapped_column(Float, nullable=False)
     price_currency: Mapped[str] = mapped_column(String(3), nullable=False)
     
-    status: Mapped[TicketStatus] = mapped_column(String, nullable=False)
-    ticket_type: Mapped[TicketType] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, nullable=False)
+    ticket_type: Mapped[str] = mapped_column(String, nullable=False)
     
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

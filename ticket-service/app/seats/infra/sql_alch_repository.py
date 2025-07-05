@@ -25,14 +25,29 @@ class SqlAlchemySeatRepository(SeatRepository):
         return [ModelMapper.to_domain(model) for model in models]
     
     async def save(self, seat: ShowtimeSeat) -> ShowtimeSeat:
-        seat_model = ModelMapper.from_domain(seat)
-
-        if seat.get_id():
+        if seat.get_id() is None:
+            # New seat - create new model
+            seat_model = ModelMapper.from_domain(seat)
             self.session.add(seat_model)
             await self.session.flush()
             await self.session.refresh(seat_model)
         else:
-            self.session.add(seat_model)
+            # Existing seat - find and update
+            stmt = select(ShowtimeSeatModel).where(ShowtimeSeatModel.id == seat.get_id())
+            result = await self.session.execute(stmt)
+            seat_model = result.scalar_one_or_none()
+            
+            if not seat_model:
+                raise ValueError(f"Seat with ID {seat.get_id()} not found")
+            
+            # Update existing model with new values
+            seat_model.showtime_id = seat.get_showtime_id()
+            seat_model.seat_id = seat.get_seat_id()
+            seat_model.seat_name = seat.get_seat_name()
+            seat_model.is_available = seat.get_is_available()
+            seat_model.taken_at = seat.get_taken_at()
+            seat_model.ticket_id = seat.get_ticket_id()
+            
             await self.session.flush()
             await self.session.refresh(seat_model)
 
@@ -46,16 +61,16 @@ class SqlAlchemySeatRepository(SeatRepository):
     async def bulk_update(self, seats: List[ShowtimeSeat]) -> None:
         updates = []
         for seat in seats:
-            if not seat.get_id():
-                continue 
+            if not seat.get_seat_id():
+                continue
 
             update_data = seat.to_dict()
-            update_data.pop("id", None)
+            update_data.pop("seat_id", None)
             update_data.pop("created_at", None)
             update_data["updated_at"] = datetime.now()
 
             updates.append({
-                "id": seat.get_id(),
+                "seat_id": seat.get_seat_id(),
                 **update_data
             })
         
