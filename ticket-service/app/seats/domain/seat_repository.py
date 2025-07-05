@@ -7,7 +7,6 @@ class SeatRepository:
     async def get_by_id_and_showtime(self, showtime_id: int, id: int) -> Optional[ShowtimeSeat]:
         pass
     
-
     @abstractmethod
     async def list_by_id_in(self, id_list: List[int]) -> List[ShowtimeSeat]:
         pass
