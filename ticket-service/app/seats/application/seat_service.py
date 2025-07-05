@@ -3,6 +3,7 @@ from app.seats.domain.showtime_seat import ShowtimeSeat
 from app.showtime.domain.entities.showtime import Showtime
 from app.showtime.application.repositories.theater_repository import TheaterRepository
 from typing import List
+from .exceptions import TheaterNotFound, SeatInvalidIdListError
 
 class ShowtimeSeatService:
     def __init__(self, repository: SeatRepository, theater_repository: TheaterRepository) -> None:
@@ -12,7 +13,7 @@ class ShowtimeSeatService:
     async def create_seats_from_showtime(self, showtime: Showtime):
         theater = await self.theater_repository.get_by_id(showtime.get_theater_id()) 
         if not theater:
-            raise ValueError("Theater not found")
+            raise TheaterNotFound("Theater", showtime.get_theater_id())
 
         showtime_seats = []
         
@@ -35,7 +36,7 @@ class ShowtimeSeatService:
     async def take_seats(self, seats_id_list: List[int]) -> None:
         seats = await self.repository.list_by_id_in(seats_id_list)
         if len(seats) != len(seats_id_list):
-            raise ValueError("Invalid Seat Id List")
+            raise SeatInvalidIdListError("Seat Ids", "Not all ids are valid")
         
         for seat in seats:
             seat.ocuppy()
@@ -46,7 +47,7 @@ class ShowtimeSeatService:
     async def release_seats(self,  seats_id_list: List[int]):
         seats = await self.repository.list_by_id_in(seats_id_list)
         if len(seats) != len(seats_id_list):
-            raise ValueError("Invalid Seat Id List")
+            raise SeatInvalidIdListError("Invalid Seat", "Not all ids are valid")
         
         for seat in seats:
             seat.release()

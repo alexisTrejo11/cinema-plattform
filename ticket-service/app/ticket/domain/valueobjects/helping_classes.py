@@ -25,6 +25,7 @@ class PriceDetails:
                 "price": str(self.price),
                 "currency": self.currency
             }
+            
 
 class PaymentDetails:
     def __init__(self, id: Optional[int], transaction_id: int, type: str, method: str, currency: str) -> None:

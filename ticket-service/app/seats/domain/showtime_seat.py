@@ -94,9 +94,8 @@ class ShowtimeSeat:
         return (f"ShowtimeSeat(showtime_id={self.__showtime_id}, "
                 f"seat_name='{self.__seat_name}', available={self.__is_available})")
         
-    def ocuppy(self, ticket_id: int):
+    def ocuppy(self):
         self.__taken_at = datetime.now(timezone.utc)
-        self.__ticket_id =ticket_id
         
         if not self.__is_available:
             raise ValueError(f"Seat {self.__id} already taken") 

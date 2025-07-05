@@ -6,6 +6,7 @@ from app.seats.domain.showtime_seat import ShowtimeSeat
 from app.seats.domain.seat_repository import SeatRepository
 from .mapper import ModelMapper
 from .model import ShowtimeSeatModel
+from app.seats.application.exceptions import SeatNotFoundError
 
 class SqlAlchemySeatRepository(SeatRepository):
     def __init__(self, session: AsyncSession) -> None:
@@ -26,27 +27,31 @@ class SqlAlchemySeatRepository(SeatRepository):
     
     async def save(self, seat: ShowtimeSeat) -> ShowtimeSeat:
         if seat.get_id() is None:
-            # New seat - create new model
             seat_model = ModelMapper.from_domain(seat)
             self.session.add(seat_model)
             await self.session.flush()
             await self.session.refresh(seat_model)
         else:
-            # Existing seat - find and update
             stmt = select(ShowtimeSeatModel).where(ShowtimeSeatModel.id == seat.get_id())
             result = await self.session.execute(stmt)
             seat_model = result.scalar_one_or_none()
             
             if not seat_model:
-                raise ValueError(f"Seat with ID {seat.get_id()} not found")
+                raise SeatNotFoundError(f"Seat", seat.get_id())
             
             # Update existing model with new values
             seat_model.showtime_id = seat.get_showtime_id()
             seat_model.seat_id = seat.get_seat_id()
             seat_model.seat_name = seat.get_seat_name()
             seat_model.is_available = seat.get_is_available()
-            seat_model.taken_at = seat.get_taken_at()
-            seat_model.ticket_id = seat.get_ticket_id()
+            taken_at = seat.get_taken_at()
+            
+            if taken_at is not None:
+                seat_model.taken_at = taken_at
+            ticket_id = seat.get_ticket_id()
+            
+            if ticket_id is not None:
+                seat_model.ticket_id = ticket_id
             
             await self.session.flush()
             await self.session.refresh(seat_model)

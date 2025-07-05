@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 from app.ticket.domain.entities.ticket import Ticket, TicketStatus
+from app.ticket.application.dtos import BuyTicketsRequest, SearchTicketParams  
 
 class TicketRepository(ABC):
     @abstractmethod
@@ -16,7 +17,7 @@ class TicketRepository(ABC):
         pass
 
     @abstractmethod
-    async def search(self, **kwargs) -> List[Ticket]:
+    async def search(self, search: SearchTicketParams) -> List[Ticket]:
             pass
 
     @abstractmethod

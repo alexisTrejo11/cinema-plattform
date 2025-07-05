@@ -1,6 +1,6 @@
 from typing import List
 from ..service.ticket_service import TicketService
-from ..dtos import TicketResponse
+from ..dtos import TicketResponse, SearchTicketParams
 
 
 class GetTicketByIdUseCase: 
@@ -20,7 +20,7 @@ class SearchSearchUseCase:
     def __init__(self, ticket_service: TicketService) -> None:
         self.ticket_service =  ticket_service
 
-    async def execute(self, search_params: dict) -> List[TicketResponse]:
+    async def execute(self, search_params: SearchTicketParams) -> List[TicketResponse]:
         tickets = await self.ticket_service.search_tickets(search_params)
         return [TicketResponse(**ticket.to_dict()) for ticket in tickets]
                 
@@ -46,6 +46,6 @@ class ListTicketsByShowtimeIdUseCase:
     def __init__(self, ticket_service: TicketService) -> None:
             self.ticket_service =  ticket_service
 
-    async def execute(self, user_id: int) -> List[TicketResponse]:
+    async def execute(self, user_id: int, include_seats=True) -> List[TicketResponse]:
         tickets = await self.ticket_service.get_showtime_tickets(user_id)
         return [TicketResponse(**ticket.to_dict()) for ticket in tickets]
