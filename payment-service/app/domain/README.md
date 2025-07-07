@@ -2,6 +2,10 @@
 
 This document provides an overview of the domain layer architecture following Domain-Driven Design (DDD) principles and Clean Architecture patterns.
 
+
+
+
+
 ## 🏗️ Domain Architecture Overview
 
 ```
@@ -20,6 +24,10 @@ app/domain/
     ├── payment_service.py    # Payment business logic
     └── wallet_service.py     # Wallet business logic
 ```
+
+
+
+
 
 ## 🎯 Core Domain Concepts
 
@@ -177,6 +185,8 @@ app/domain/
    - Unusual activity detection
    - Transaction pattern analysis
 
+
+
 ## 🎭 Domain Events Flow
 
 ```
@@ -193,6 +203,7 @@ WalletCredited → TransactionRecorded → [Balance Updated]
 Refund Processing:
 PaymentRefunded → WalletCredited → [User Notified]
 ```
+
 
 ## 💡 Design Patterns Used
 
@@ -220,6 +231,12 @@ PaymentRefunded → WalletCredited → [User Notified]
 - Controlled object creation with validation
 - Business rule enforcement at creation time
 - Consistent initialization across aggregates
+
+
+
+
+
+
 
 ## 🧪 Business Logic Examples
 
@@ -301,6 +318,10 @@ health_score = wallet_service.calculate_wallet_health_score(
     transactions=recent_transactions
 )
 ```
+
+
+
+
 
 ## 🔄 Integration Points
 

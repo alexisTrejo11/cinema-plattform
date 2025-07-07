@@ -2,6 +2,8 @@
 
 A FastAPI microservice for managing cinema payments, implementing Clean Architecture with event-driven communication.
 
+
+
 ## 🏗️ Architecture Overview
 
 ### Clean Architecture Layers
@@ -54,10 +56,12 @@ A FastAPI microservice for managing cinema payments, implementing Clean Architec
        │                             │                             │
        ▼                             ▼                             ▼
 ┌─────────────┐               ┌─────────────┐               ┌─────────────┐
-│   Food      │               │  Billing &  │               │   Wallet    │
+│   Food      │               │  Billing &  │               │         Wallet    │
 │   Service   │               │ Transaction │               │   Service   │
 └─────────────┘               └─────────────┘               └─────────────┘
 ```
+
+
 
 ## 🚀 Features
 
@@ -70,6 +74,8 @@ A FastAPI microservice for managing cinema payments, implementing Clean Architec
 - **Real-time Updates**: WebSocket support for payment status
 - **Health Check**: `/health` endpoint for service monitoring
 - **Auto Documentation**: Available at `/docs` (Swagger UI) and `/redoc`
+
+
 
 ## Quick Start
 
@@ -95,6 +101,10 @@ docker-compose up --build
 ```
 
 The service will be available at `http://localhost:8004`
+
+
+
+
 
 ## 📋 API Endpoints
 
@@ -289,6 +299,9 @@ The Payment Service listens to these events from other services:
 }
 ```
 
+
+
+
 ## 🛠️ Development Setup
 
 ### Prerequisites
@@ -363,6 +376,10 @@ pytest --cov=app --cov-report=html
 pytest tests/test_payments.py
 ```
 
+
+
+
+
 ## 📚 Technology Stack
 
 ### Core Technologies
@@ -392,6 +409,10 @@ pytest tests/test_payments.py
 - **Redis** - Caching (optional)
 - **Prometheus** - Metrics collection
 - **Grafana** - Monitoring dashboards
+
+
+
+
 
 ## 🚀 Deployment
 
@@ -510,6 +531,9 @@ jobs:
           docker push ${{ secrets.REGISTRY_URL }}/payment-service:latest
 ```
 
+
+
+
 ## 🛡️ Security
 
 ### Authentication & Authorization
@@ -577,9 +601,14 @@ curl -X POST http://localhost:8000/api/v1/payments/tickets \
   }'
 ```
 
+
+
 ## 📝 License
 
 This project is part of the Cinema API microservices architecture.
+
+
+
 
 ## 🤝 Contributing
 
@@ -597,6 +626,9 @@ This project is part of the Cinema API microservices architecture.
 - Follow PEP 8 style guidelines
 - Document API changes in the README
 - Ensure all tests pass before submitting PR
+
+
+
 
 ## 📞 Support
 
