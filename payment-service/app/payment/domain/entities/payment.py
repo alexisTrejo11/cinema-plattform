@@ -33,36 +33,29 @@ class Payment:
     status management, and refund handling.
     """
     
-    # Identity
     id: PaymentId
     user_id: UserId
     
-    # Payment details
     amount: Money
     payment_method: PaymentMethod
     payment_type: PaymentType
     status: PaymentStatus
     
-    # Timestamps
     created_at: datetime
     updated_at: datetime
     expires_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     
-    # References and metadata
     external_reference: Optional[PaymentReference] = None
     metadata: Optional[PaymentMetadata] = None
     failure_reason: Optional[str] = None
     
-    # Refund information
-    refunded_amount: Money = field(default=None)
+    refunded_amount: Optional[Money] = field(default=None)
     refund_reason: Optional[str] = None
     refunded_at: Optional[datetime] = None
     
-    # Domain events
     _events: List[DomainEvent] = field(default_factory=list, init=False)
     
-    # Business constants
     PAYMENT_EXPIRY_MINUTES = 30
     MIN_REFUND_AMOUNT = 0.01
     MAX_PARTIAL_REFUND_DAYS = 30
@@ -72,7 +65,6 @@ class Payment:
         if self.refunded_amount is None:
             object.__setattr__(self, 'refunded_amount', Money.zero(self.amount.currency))
         
-        # Validate business invariants
         self._validate_payment_invariants()
     
     @classmethod

@@ -10,38 +10,38 @@ A FastAPI microservice for managing cinema payments, implementing Clean Architec
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Presentation Layer                      │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
-│  │   FastAPI REST  │  │   WebSocket     │  │   GraphQL   │ │
-│  │   Endpoints     │  │   Real-time     │  │  (Future)   │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────┘ │
+│                    Presentation Layer                       │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐  │
+│  │   FastAPI REST  │  │   WebSocket     │  │   GraphQL   │  │
+│  │   Endpoints     │  │   Real-time     │  │  (Future)   │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────┐
-│                    Application Layer                       │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
-│  │   Use Cases     │  │   Commands      │  │   Queries   │ │
-│  │   - PayTicket   │  │   - ProcessPay  │  │   - GetHist │ │
-│  │   - BuyFood     │  │   - AddCredit   │  │   - GetWall │ │
-│  │   - AddWallet   │  │   - RefundPay   │  │   - GetTrx  │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────┘ │
+│                    Application Layer                        │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐  │
+│  │   Use Cases     │  │   Commands      │  │   Queries   │  │
+│  │   - PayTicket   │  │   - ProcessPay  │  │   - GetHist │  │
+│  │   - BuyFood     │  │   - AddCredit   │  │   - GetWall │  │
+│  │   - AddWallet   │  │   - RefundPay   │  │   - GetTrx  │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────┐
-│                      Domain Layer                          │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
-│  │    Entities     │  │  Value Objects  │  │  Domain     │ │
-│  │   - Payment     │  │   - Money       │  │  Services   │ │
-│  │   - Wallet      │  │   - PaymentId   │  │   - PayServ │ │
-│  │   - Transaction │  │   - WalletId    │  │   - WalServ │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────┘ │
+│                      Domain Layer                           │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐  │ 
+│  │    Entities     │  │  Value Objects  │  │  Domain     │  │
+│  │   - Payment     │  │   - Money       │  │  Services   │  │
+│  │   - Wallet      │  │   - PaymentId   │  │   - PayServ │  │
+│  │   - Transaction │  │   - WalletId    │  │   - WalServ │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ┌─────────────────────────────────────────────────────────────┐
-│                   Infrastructure Layer                     │
-│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐ │
-│  │   Database      │  │   Message Queue │  │  External   │ │
-│  │   PostgreSQL    │  │   RabbitMQ      │  │  Gateways   │ │
-│  │   - Payments    │  │   - Events      │  │  - Stripe   │ │
-│  │   - Wallets     │  │   - Commands    │  │  - PayPal   │ │
-│  └─────────────────┘  └─────────────────┘  └─────────────┘ │
+│                   Infrastructure Layer                      │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────┐  │
+│  │   Database      │  │   Message Queue │  │  External   │  │
+│  │   PostgreSQL    │  │   RabbitMQ      │  │  Gateways   │  │
+│  │   - Payments    │  │   - Events      │  │  - Stripe   │  │
+│  │   - Wallets     │  │   - Commands    │  │  - PayPal   │  │
+│  └─────────────────┘  └─────────────────┘  └─────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -56,7 +56,7 @@ A FastAPI microservice for managing cinema payments, implementing Clean Architec
        │                             │                             │
        ▼                             ▼                             ▼
 ┌─────────────┐               ┌─────────────┐               ┌─────────────┐
-│   Food      │               │  Billing &  │               │         Wallet    │
+│   Food      │               │  Billing &  │               │   Wallet    │
 │   Service   │               │ Transaction │               │   Service   │
 └─────────────┘               └─────────────┘               └─────────────┘
 ```

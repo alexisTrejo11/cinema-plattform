@@ -3,7 +3,7 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/api/v2/payment-methods")
 
 @router.get("/")
-def lsit(use_case):
+def list(use_case):
     use_case.execute()
     
 
