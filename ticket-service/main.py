@@ -3,7 +3,7 @@ import uvicorn
 from config.app_config import settings
 from config.mongo_config import connect_to_mongo, close_mongo_connection
 from contextlib import asynccontextmanager 
-from app.showtime.infrastructure import test_controller
+from app.billboard_data.infrastructure import test_controller
 
 app = FastAPI(
     debug=settings.app_debug, 

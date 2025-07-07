@@ -1,13 +1,16 @@
 import asyncio
-from app.ticket.application.dtos import BuyTicketsRequest  
-from app.seats.application.seat_service import ShowtimeSeatService
-from app.showtime.application.repositories.showtime_repository import ShowtimeRepository
-from ..service.ticket_service import TicketService
-from ..exceptions import TicketNotFoundError
-from app.showtime.domain.entities.showtime import Showtime
-from app.seats.domain.showtime_seat import ShowtimeSeat
+from datetime import timedelta
 from typing import List, Tuple
 from notification.notification_service import NotificationService
+from app.shared.qr import generate_ticket_qr
+from app.seats.application.seat_service import ShowtimeSeatService
+from app.billboard_data.domain.entities.showtime import Showtime
+from app.billboard_data.application.repositories.showtime_repository import ShowtimeRepository
+from app.seats.domain.showtime_seat import ShowtimeSeat
+from app.ticket.domain.entities.ticket import Ticket
+from ..dtos import BuyTicketsRequest, TicketPurchasedResponse, SeatInfo  
+from ..service.ticket_service import TicketService
+from ..exceptions import TicketNotFoundError
 
 class DigitalBuyTicketsUseCase:
     """
@@ -27,12 +30,12 @@ class DigitalBuyTicketsUseCase:
         self.showtime_repo = showtime_repo
         self.notification_service = notification_service
     
-    async def execute(self, buy_dto: BuyTicketsRequest):
+    async def execute(self, buy_dto: BuyTicketsRequest) -> TicketPurchasedResponse:
         showtime, showtime_seats =  await self._get_showtime_data(buy_dto)
         ticket_created = await self._process_ticket(buy_dto, showtime, showtime_seats)
         
         notification_coroutine = self.notification_service.send_notification_from_ticket(ticket_created, buy_dto.user_email)                 
-        ticket_response_coroutine = self._generate_ticket_response(ticket_created)
+        ticket_response_coroutine = self._generate_ticket_response(ticket_created, showtime)
         tickect_response ,_ = asyncio.gather(ticket_response_coroutine, notification_coroutine)
         
         return tickect_response
@@ -52,8 +55,21 @@ class DigitalBuyTicketsUseCase:
         ticket.seats = seats
         return ticket
     
-    async def _generate_ticket_response(self, ticket):
-        pass
+    async def _generate_ticket_response(self, ticket: Ticket, showtime: Showtime) -> TicketPurchasedResponse:
+        qr = generate_ticket_qr(str(ticket.id), showtime.get_start_time() + timedelta(minutes=30))
+        seat_info = [SeatInfo(**seat.to_dict()) for seat in ticket.seats] 
+        
+        # Add Builder
+        return TicketPurchasedResponse(
+            ticket_id=ticket.id,
+            seats=seat_info,
+            movie_name=showtime.get_movie().get_title(),
+            cinema_name=showtime.get_cinema().name,
+            theather_name=showtime.get_theater().get_name(),
+            showtime_date=showtime.get_start_time(),
+            ticket_qr=qr,
+            transaction_id=str(ticket.payment_details.id),
+        )
     
     
 class UseTicketUseCase:

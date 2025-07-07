@@ -1,17 +1,59 @@
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import and_, select, update, delete
-
-from app.ticket.domain.entities.ticket import Ticket, TicketStatus, PriceDetails, CustomerDetails, TicketType
+from sqlalchemy import and_, select, update
+from sqlalchemy.orm import joinedload
+from app.ticket.domain.entities.ticket import Ticket, TicketStatus, PriceDetails, CustomerDetails, TicketType, PaymentDetails
 from app.ticket.application.repository import TicketRepository
+from app.ticket.application.dtos import SearchTicketParams
 from ..models.ticket_model import TicketModel
+from decimal import Decimal
+
 
 class SQLAlchemyTicketRepository(TicketRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def search(self, **kwargs) -> List[Ticket]:
-            return []
+    async def search(self, search_params: SearchTicketParams) -> List[Ticket]:
+        stmt = select(TicketModel)
+        
+        if search_params.movie_id:
+            stmt = stmt.where(TicketModel.movie_id == search_params.movie_id)
+        if search_params.showtime_id:
+            stmt = stmt.where(TicketModel.showtime_id == search_params.showtime_id)
+        if search_params.user_id:
+            stmt = stmt.where(TicketModel.user_id == search_params.user_id)
+        if search_params.status:
+            stmt = stmt.where(TicketModel.status == search_params.status.value)
+        if search_params.created_before:
+            stmt = stmt.where(TicketModel.created_at <= search_params.created_before)
+        if search_params.created_after:
+            stmt = stmt.where(TicketModel.created_at >= search_params.created_after)
+        if search_params.price_min is not None:
+            stmt = stmt.where(TicketModel.price >= Decimal(str(search_params.price_min)))
+        if search_params.price_max is not None:
+            stmt = stmt.where(TicketModel.price <= Decimal(str(search_params.price_max)))
+           
+        sort_column = {
+            "created_at": TicketModel.created_at,
+            "updated_at": TicketModel.updated_at,
+            "price": TicketModel.price
+        }.get(search_params.sort_by, TicketModel.created_at)
+        
+        if search_params.sort_direction_asc:
+            stmt = stmt.order_by(sort_column.asc())
+        else:
+            stmt = stmt.order_by(sort_column.desc())
+        
+        
+        stmt = stmt.limit(search_params.page_limit).offset(search_params.page_offset)
+        
+        
+        if search_params.include_seats:
+            stmt = stmt.options(joinedload(TicketModel.showtime_seats))
+        
+        result = await self.session.execute(stmt)
+        models = result.unique().scalars().all()
+        return [self._model_to_entity(model) for model in models]
     
     async def save(self, ticket: Ticket) -> Ticket:
         if not ticket.id:
@@ -28,7 +70,6 @@ class SQLAlchemyTicketRepository(TicketRepository):
             if not model:
                 raise ValueError(f"Ticket with ID {ticket.id} not found")
 
-            # Update the existing model with new values
             self._update_model_from_entity(model, ticket)
             await self.session.commit()
             await self.session.refresh(model)
@@ -72,11 +113,13 @@ class SQLAlchemyTicketRepository(TicketRepository):
     def _model_to_entity(self, model: TicketModel) -> Ticket:
         price_details = PriceDetails(model.price, model.price_currency)
         customer_details = CustomerDetails(model.customer_email, model.user_id, model.customer_ip)
+        payment_details = PaymentDetails(model.payment_id, model.transaction_id, "movie-ticket", "digital", model.price_currency)
         return Ticket(
             id=model.id,
             showtime_id=model.showtime_id,
             movie_id=model.movie_id,
             price_details=price_details,
+            payment_details=payment_details,
             ticket_type=TicketType(model.ticket_type),
             status=TicketStatus(model.status),
             customer_details=customer_details,

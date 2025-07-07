@@ -1,7 +1,7 @@
 from app.seats.domain.seat_repository import SeatRepository
 from app.seats.domain.showtime_seat import ShowtimeSeat
-from app.showtime.domain.entities.showtime import Showtime
-from app.showtime.application.repositories.theater_repository import TheaterRepository
+from app.billboard_data.domain.entities.showtime import Showtime
+from app.billboard_data.application.repositories.theater_repository import TheaterRepository
 from typing import List
 from .exceptions import TheaterNotFound, SeatInvalidIdListError
 

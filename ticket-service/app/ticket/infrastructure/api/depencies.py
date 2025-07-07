@@ -7,8 +7,8 @@ from app.ticket.infrastructure.repository.sql_alch_ticket_repository import SQLA
 from app.ticket.application.usecases.ticket_query_use_cases import ListTicketsByUserIdUseCase, ListTicketsByShowtimeIdUseCase, SearchSearchUseCase, GetTicketByIdUseCase
 from app.ticket.application.usecases.ticket_command_use_cases import UseTicketUseCase, CancelTicketCase, DigitalBuyTicketsUseCase
 
-from app.showtime.infrastructure.repository.mongo_theater_repo import MongoTheaterRepository
-from app.showtime.infrastructure.repository.mongo_showtime import MongoShowtimeRepository
+from app.billboard_data.infrastructure.repository.mongo_theater_repo import MongoTheaterRepository
+from app.billboard_data.infrastructure.repository.mongo_showtime import MongoShowtimeRepository
 from app.seats.application.seat_service import ShowtimeSeatService
 from app.seats.infra.sql_alch_repository import SqlAlchemySeatRepository
 from app.notification.notification_service import NotificationService

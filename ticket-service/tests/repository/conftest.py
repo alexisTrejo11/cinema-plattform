@@ -86,11 +86,13 @@ async def sample_ticket_model(async_session):
 def sample_ticket_entity():
     price_details = PriceDetails(Decimal("10.50"), "USD")
     customer_details = CustomerDetails("modelcustomer_email@mail.com", 1, "0.0.0.0")
+    payment_details = PaymentDetails(id=1, transaction_id=123, type="digital", method="card", currency="USD")
     return Ticket(
         id=None,
         movie_id=2,
         showtime_id=2,
         price_details=price_details,
+        payment_details= payment_details,
         customer_details=customer_details,
         status=TicketStatus.RESERVED,
         ticket_type=TicketType.DIGITAL,

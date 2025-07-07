@@ -1,8 +1,8 @@
 from typing import List, Optional
 from app.ticket.domain.entities.ticket import Ticket, PriceDetails, CustomerDetails
 from app.ticket.application.repository import TicketRepository
-from app.showtime.domain.entities.showtime import Showtime
-from app.showtime.application.repositories.theater_repository import TheaterRepository
+from app.billboard_data.domain.entities.showtime import Showtime
+from app.billboard_data.application.repositories.theater_repository import TheaterRepository
 from app.ticket.application.dtos import BuyTicketsRequest, SearchTicketParams  
 from ..exceptions import TicketNotFoundError, TicketInvalidOperationError
 

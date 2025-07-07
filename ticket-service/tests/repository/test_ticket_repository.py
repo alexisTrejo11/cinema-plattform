@@ -29,11 +29,14 @@ class TestSQLAlchemyTicketRepository:
         # Create an entity from the existing model
         price_details = PriceDetails(Decimal("10.50"), "USD")
         customer_details = CustomerDetails("updated@example.com", 1, "0.0.0.0")
+        payment_details = PaymentDetails(id=1, transaction_id=123, type="digital", method="card", currency="USD")
+        
         existing_ticket = Ticket(
             id=sample_ticket_model.id,
             movie_id=sample_ticket_model.movie_id,
             showtime_id=sample_ticket_model.showtime_id,
             customer_details=customer_details,
+            payment_details=payment_details,
             price_details=price_details,
             status=TicketStatus(sample_ticket_model.status),
             ticket_type=TicketType(sample_ticket_model.ticket_type),
@@ -54,11 +57,14 @@ class TestSQLAlchemyTicketRepository:
     async def test_save_non_existing_ticket(self, ticket_repository):
         price_details = PriceDetails(Decimal("10.50"), "USD")
         customer_details = CustomerDetails("modelcustomer_email@mail.com", 1, "0.0.0.0")
+        payment_details = PaymentDetails(id=1, transaction_id=123, type="digital", method="card", currency="USD")
+
         non_existing_ticket = Ticket(
             id=9999,  # Non-existing ID
             movie_id=1,
             showtime_id=1,
             customer_details=customer_details,
+            payment_details=payment_details,
             price_details=price_details,
             status=TicketStatus.RESERVED,
             ticket_type=TicketType.DIGITAL,

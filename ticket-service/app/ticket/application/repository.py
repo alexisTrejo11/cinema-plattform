@@ -59,7 +59,7 @@ class TicketRepository(ABC):
         pass
 
     @abstractmethod
-    async def search(self, search: SearchTicketParams) -> List[Ticket]:
+    async def search(self, search_params: SearchTicketParams) -> List[Ticket]:
         """Search tickets based on various filtering criteria.
         
         Args:

@@ -28,8 +28,8 @@ class PriceDetails:
             
 
 class PaymentDetails:
-    def __init__(self, id: Optional[int], transaction_id: int, type: str, method: str, currency: str) -> None:
-        self.id: Optional[int] = id
+    def __init__(self, id: int, transaction_id: int, type: str, method: str, currency: str) -> None:
+        self.id: int = id
         self.type: str = type
         self.transaction_id: int = transaction_id
         self.method : str = method

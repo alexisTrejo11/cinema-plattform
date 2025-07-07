@@ -296,6 +296,11 @@ class TicketPurchasedResponse(BaseModel):
         description="Name of the cinema venue",
         json_schema_extra={"example": "Cineplex Downtown"}
     )
+    theather_name: str = Field(
+        ...,
+        description="Name of the movie booked",
+        json_schema_extra={"example": "The Matrix Resurrections"}
+    )
     showtime_date: datetime = Field(
         ...,
         description="Date and time of the showtime",
