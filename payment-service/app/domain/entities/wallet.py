@@ -1,4 +1,6 @@
 """
+MOVE TO WALLET SERVICE
+
 Wallet Domain Entity
 
 Represents a user's wallet for storing and managing credit balances.
@@ -10,14 +12,14 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Optional
 
-from ..value_objects import (
+from ...domain.value_objects import (
     WalletId, UserId, Money, Currency, WalletStatus, TransactionId, TransactionType
 )
-from ..events import (
+from ...domain.events import (
     DomainEvent, WalletCredited, WalletDebited, InsufficientFundsDetected,
     TransactionRecorded
 )
-from ..exceptions import (
+from ...domain.excpetions import (
     InsufficientFundsException, WalletNotActiveException,
     InvalidWalletOperationException
 )
@@ -32,32 +34,26 @@ class Wallet:
     business rule enforcement and event generation.
     """
     
-    # Identity
     id: WalletId
     user_id: UserId
     
-    # Balance and currency
     balance: Money
     currency: Currency
     
-    # Status and metadata
     status: WalletStatus
     created_at: datetime
     updated_at: datetime
     last_transaction_at: Optional[datetime] = None
     
-    # Limits and constraints
     daily_limit: Optional[Money] = None
     monthly_limit: Optional[Money] = None
     minimum_balance: Money = field(default=None)
     
-    # Domain events
     _events: List[DomainEvent] = field(default_factory=list, init=False)
     
-    # Business constants
     MIN_CREDIT_AMOUNT = 0.01
     MIN_DEBIT_AMOUNT = 0.01
-    MAX_BALANCE_LIMIT = 10000.00  # Default maximum balance
+    MAX_BALANCE_LIMIT = 10000.00
     
     def __post_init__(self):
         """Initialize derived fields and validate business rules."""

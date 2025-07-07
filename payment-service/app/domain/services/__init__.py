@@ -6,6 +6,6 @@ that doesn't naturally fit within a single entity or aggregate.
 """
 
 from .payment_service import PaymentDomainService
-from .wallet_service import WalletDomainService
+from ....walllet.application.wallet_service import WalletDomainService
 
 __all__ = ["PaymentDomainService", "WalletDomainService"]

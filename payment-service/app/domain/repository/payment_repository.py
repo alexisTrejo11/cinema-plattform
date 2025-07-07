@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from app.payment.domain.entities.payment import Payment, PaymentId
+from app.domain.entities.payment import Payment, PaymentId
 
 class PaymentRepository(ABC):
     @abstractmethod

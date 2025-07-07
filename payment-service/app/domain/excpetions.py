@@ -1,21 +1,4 @@
-"""
-Domain Exceptions
-
-Defines custom exceptions for business rule violations and domain-specific errors.
-These exceptions represent violations of business invariants and rules.
-"""
-
-from typing import Optional
-
-
-class DomainException(Exception):
-    """Base exception for all domain-related errors."""
-    
-    def __init__(self, message: str, error_code: Optional[str] = None):
-        super().__init__(message)
-        self.message = message
-        self.error_code = error_code
-
+from app.shared.base_exceptions import DomainException
 
 class PaymentException(DomainException):
     """Base exception for payment-related domain errors."""
@@ -62,6 +45,22 @@ class InsufficientFundsException(PaymentException):
         )
 
 
+class TransactionException(DomainException):
+    """Base exception for transaction-related domain errors."""
+    pass
+
+
+class InvalidTransactionStateException(TransactionException):
+    """Raised when transaction state transition is invalid."""
+    
+    def __init__(self, from_state: str, to_state: str):
+        super().__init__(
+            f"Invalid state transition from {from_state} to {to_state}",
+            "INVALID_TRANSACTION_STATE"
+        )
+
+
+
 class WalletException(DomainException):
     """Base exception for wallet-related domain errors."""
     pass
@@ -87,16 +86,3 @@ class WalletNotActiveException(WalletException):
         )
 
 
-class TransactionException(DomainException):
-    """Base exception for transaction-related domain errors."""
-    pass
-
-
-class InvalidTransactionStateException(TransactionException):
-    """Raised when transaction state transition is invalid."""
-    
-    def __init__(self, from_state: str, to_state: str):
-        super().__init__(
-            f"Invalid state transition from {from_state} to {to_state}",
-            "INVALID_TRANSACTION_STATE"
-        )

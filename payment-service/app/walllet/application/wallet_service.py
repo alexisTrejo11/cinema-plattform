@@ -9,11 +9,11 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
-from ..entities import Wallet, Transaction
-from ..value_objects import (
+from ...payment.domain.entities import Wallet, Transaction
+from ...payment.domain.value_objects import (
     Money, Currency, TransactionType, WalletId, UserId, TransactionId
 )
-from ..exceptions import (
+from ...payment.domain.excpetions import (
     InsufficientFundsException, InvalidWalletOperationException,
     WalletNotActiveException
 )

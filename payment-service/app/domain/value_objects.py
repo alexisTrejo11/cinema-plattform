@@ -12,7 +12,7 @@ from enum import Enum
 from typing import Optional
 from uuid import UUID, uuid4
 
-from .exceptions import InvalidPaymentAmountException
+from .excpetions import InvalidPaymentAmountException
 
 
 class Currency(str, Enum):

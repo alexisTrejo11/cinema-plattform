@@ -1,10 +1,3 @@
-"""
-Payment Domain Service
-
-Implements complex payment business logic that spans multiple aggregates
-or requires coordination between different domain concepts.
-"""
-
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List, Optional
@@ -13,7 +6,7 @@ from ..entities import Payment, Wallet
 from ..value_objects import (
     Money, PaymentType, PaymentMethod, PaymentStatus, UserId, Currency
 )
-from ..exceptions import (
+from ..excpetions import (
     PaymentNotRefundableException, InsufficientFundsException,
     InvalidPaymentAmountException
 )
@@ -27,7 +20,6 @@ class PaymentDomainService:
     Payment and Wallet aggregates or external considerations.
     """
     
-    # Business rules constants
     MAX_REFUND_PERCENTAGE = Decimal('1.0')  # 100%
     PARTIAL_REFUND_FEE_PERCENTAGE = Decimal('0.03')  # 3%
     BULK_PAYMENT_DISCOUNT_THRESHOLD = 5  # Number of tickets

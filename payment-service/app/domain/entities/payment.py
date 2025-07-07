@@ -18,7 +18,7 @@ from ..events import (
     DomainEvent, PaymentCreated, PaymentProcessingStarted, 
     PaymentCompleted, PaymentFailed, PaymentRefunded
 )
-from ..exceptions import (
+from ..excpetions import (
     PaymentAlreadyProcessedException, PaymentNotRefundableException,
     InvalidPaymentAmountException
 )
