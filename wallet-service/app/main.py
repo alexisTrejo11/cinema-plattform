@@ -1,12 +1,16 @@
+
 from fastapi import FastAPI
+from app.interfaces.api.routers import wallets, users
+from app.database import Base, engine
 
-app = FastAPI()
+Base.metadata.create_all(bind=engine)
 
-@app.get("/ping")
-def ping():
-    return {"ping": "pong"}
+app = FastAPI(
+    title="Wallet Service API",
+    description="API for managing wallets and users.",
+    version="1.0.0",
+)
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+app.include_router(wallets.router, prefix="/wallets", tags=["wallets"])
+app.include_router(users.router, prefix="/users", tags=["users"])
 
