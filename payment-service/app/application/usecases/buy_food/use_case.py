@@ -1,4 +1,4 @@
-from ...commands.procces_pay import ProcessPayCommand
+from ...commands.procces_pay.procces_pay import ProcessPayCommand
 from datetime import datetime
 
 class BuyProductUseCase:

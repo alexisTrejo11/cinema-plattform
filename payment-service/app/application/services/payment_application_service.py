@@ -8,13 +8,13 @@ This service acts as the application facade and coordinates business workflows.
 from typing import Union, Dict, Any
 from uuid import UUID
 
-from app.application.commands.procces_pay import (
+from app.application.commands.procces_pay.procces_pay import (
     ProcessPayCommand, ProcessPaymentCommandHandler, ProcessPaymentResult
 )
-from app.application.commands.refund_pay import (
+from app.application.commands.refund_pay.refund_pay import (
     RefundPaymentCommand, RefundPaymentCommandHandler, RefundPaymentResult
 )
-from app.application.commands.add_credit import (
+from app.application.commands.credit.add_credit import (
     AddCreditCommand, AddCreditCommandHandler, AddCreditResult
 )
 from app.application.queries.get_history import (

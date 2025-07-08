@@ -1,97 +1,11 @@
-from pydantic import BaseModel, Field, UUID4
-from typing import Optional, List, Dict, Any
-from datetime import datetime
-from uuid import UUID
-from enum import Enum
-
-from app.domain.value_objects import (
-    PaymentId, TransactionId, WalletId, UserId
-)
+from app.domain.value_objects import PaymentId, TransactionId, WalletId, UserId
 from app.domain.repository.payment_repository import PaymentRepository
 from app.application.interfaces import TransactionRepository, WalletRepository
-
-
-class GetTransactionQuery(BaseModel):
-    """Query to get a specific transaction or payment details."""
-    transaction_id: Optional[UUID4] = Field(None, description="Transaction ID to lookup.")
-    payment_id: Optional[UUID4] = Field(None, description="Payment ID to lookup.")
-    wallet_id: Optional[UUID4] = Field(None, description="Wallet ID to get transactions for.")
-    user_id: Optional[UUID4] = Field(None, description="User ID to get transactions for.")
-    include_payment_details: bool = Field(False, description="Include related payment details.")
-    include_wallet_details: bool = Field(False, description="Include wallet information.")
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "transaction_id": "123e4567-e89b-12d3-a456-426614174000",
-                "payment_id": "987fcdeb-51a2-43d1-9876-543210fedcba",
-                "include_payment_details": True,
-                "include_wallet_details": True
-            }
-        }
-
-
-class TransactionDetail(BaseModel):
-    """Detailed transaction information."""
-    transaction_id: UUID
-    wallet_id: UUID
-    user_id: UUID
-    amount: float
-    currency: str
-    transaction_type: str
-    description: str
-    created_at: datetime
-    processed_at: Optional[datetime] = None
-    reference_id: Optional[str] = None
-    related_transaction_id: Optional[UUID] = None
-    balance_before: Optional[float] = None
-    balance_after: Optional[float] = None
-    is_reversed: bool = False
-    reversal_reason: Optional[str] = None
-    reversed_at: Optional[datetime] = None
-
-
-class PaymentDetail(BaseModel):
-    """Payment details for transaction context."""
-    payment_id: UUID
-    user_id: UUID
-    amount: float
-    currency: str
-    payment_method: str
-    payment_type: str
-    status: str
-    created_at: datetime
-    updated_at: datetime
-    completed_at: Optional[datetime] = None
-    failure_reason: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-
-
-class WalletDetail(BaseModel):
-    """Wallet details for transaction context."""
-    wallet_id: UUID
-    user_id: UUID
-    current_balance: float
-    currency: str
-    status: str
-    created_at: datetime
-    updated_at: datetime
-    last_transaction_at: Optional[datetime] = None
-
-
-class GetTransactionResult(BaseModel):
-    """Result of transaction query."""
-    transaction: Optional[TransactionDetail] = None
-    payment: Optional[PaymentDetail] = None
-    wallet: Optional[WalletDetail] = None
-    related_transactions: List[TransactionDetail] = []
-    found: bool = False
-    message: str = ""
-
+from .query import GetTransactionQuery
+from .result import GetTransactionResult, WalletDetail, PaymentDetail, TransactionDetail
 
 class GetTransactionQueryHandler:
     """Handler for getting transaction details."""
-    
     def __init__(
         self,
         payment_repository: PaymentRepository,
