@@ -16,3 +16,5 @@ payment-service/env/
 notification-service/.env
 notification-service/env/
 
+wallet-service/.env
+wallet-service/env/
