@@ -17,5 +17,7 @@ class CreateNotificationUseCase:
         send_couroutine = self._send(new_notification)
         _, _ = gather(save_coroutine, send_couroutine)
 
+        print("Success")
+
     async def _send(self, notification: Notification):
         pass

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from uuid import UUID
 
 
-class NotificationRepository:
+class NotificationRepository(ABC):
     """
     Abstract Base Class for notification repository operations.
     Defines the contract for data access specific to notifications.
