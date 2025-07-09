@@ -23,3 +23,14 @@ class Recipient:
             raise ValueError(
                 "Recipient must have at least one contact method (email, phone_number, or device_token)."
             )
+
+    def to_dict(self) -> dict:
+        """
+        Converts the Recipient value object to a dictionary.
+        """
+        return {
+            "user_id": self.user_id,
+            "email": self.email,
+            "phone_number": self.phone_number,
+            "device_token": self.device_token,
+        }

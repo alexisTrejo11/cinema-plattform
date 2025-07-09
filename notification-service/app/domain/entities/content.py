@@ -20,3 +20,14 @@ class NotificationContent:
         """
         if not self.subject or not self.body:
             raise ValueError("Notification content must have a subject and a body.")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Converts the NotificationContent value object to a dictionary.
+        """
+        return {
+            "subject": self.subject,
+            "body": self.body,
+            "template_name": self.template_name,
+            "data": self.data,
+        }

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 from ..enums import *
 from .content import NotificationContent
 from .recipient import Recipient
@@ -236,3 +236,48 @@ class Notification:
         Hash based on notification_id for set/dict usage.
         """
         return hash(self.notification_id)
+
+    def to_dict(self) -> dict:
+        """
+        Converts the Notification object to a dictionary representation.
+        """
+        return {
+            "_id": self.notification_id,
+            "notification_type": self.notification_type.value,
+            "recipient": self.recipient.to_dict(),
+            "content": self.content.to_dict(),
+            "channel": self.channel.value,
+            "created_at": self.created_at.isoformat(),
+            "event_id": self.event_id,
+            "status": self.status.value,
+            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+            "failed_at": self.failed_at.isoformat() if self.failed_at else None,
+            "error_details": self.error_details,
+            "provider_response": self.provider_response,
+        }
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> Notification:
+        """
+        Creates a Notification object from a dictionary representation.
+        """
+        return Notification(
+            notification_id=data["_id"],
+            notification_type=NotificationType(data["notification_type"]),
+            recipient=Recipient(**data["recipient"]),
+            content=NotificationContent(**data["content"]),
+            channel=NotificationChannel(data["channel"]),
+            created_at=datetime.fromisoformat(data["created_at"]),
+            event_id=data.get("event_id"),
+            status=NotificationStatus(data["status"]),
+            sent_at=(
+                datetime.fromisoformat(data["sent_at"]) if data.get("sent_at") else None
+            ),
+            failed_at=(
+                datetime.fromisoformat(data["failed_at"])
+                if data.get("failed_at")
+                else None
+            ),
+            error_details=data.get("error_details"),
+            provider_response=data.get("provider_response"),
+        )
