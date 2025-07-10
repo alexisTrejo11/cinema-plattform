@@ -1,8 +1,8 @@
 from ..commands.notification_command import (
     CreateNotificationCommand as NotificationCommand,
 )
-from app.domain.entities.models import Notification
-from app.domain.repository import NotificationRepository
+from app.notification.domain.entities.models import Notification
+from app.notification.domain.repository import NotificationRepository
 from asyncio import gather
 
 

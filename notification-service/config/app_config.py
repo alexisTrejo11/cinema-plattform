@@ -24,15 +24,15 @@ class Settings(BaseSettings):
     JWT_EXPIRATION_TIME: int = 3600
 
     smtp_server: str = "smtp.gmail.com"
-    smtp_port = 587
+    smtp_port: int = 587
     smtp_username: str
     smtp_password: str
     from_email: str
     from_name: str = "Cinema App"
 
-    account_sid: str
-    auth_token: str
-    twilio_number: str
+    twilio_account_sid: str
+    twilio_auth_token: str
+    twilio_phone_number: str
 
 
 settings = Settings()  # type: ignore
@@ -47,4 +47,4 @@ class EmailConfig:
     from_name: str = settings.from_name
 
 
-twilio_client = TwilioClient(settings.account_sid, settings.auth_token)
+twilio_client = TwilioClient(settings.twilio_auth_token, settings.twilio_auth_token)

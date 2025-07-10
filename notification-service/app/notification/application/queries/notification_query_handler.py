@@ -7,8 +7,11 @@ from .notification_queries import (
     ListNotificationsByUserIdQuery,
     ListNotificationsByStatusQuery,
 )
-from app.application.dtos import NotificationResponse, NotificationListResponse
-from app.domain.repository import NotificationRepository
+from app.notification.application.dtos import (
+    NotificationResponse,
+    NotificationListResponse,
+)
+from app.notification.domain.repository import NotificationRepository
 
 
 class GetNotificationByIdQueryHandler:

@@ -2,9 +2,9 @@ from pydantic import BaseModel, Field, EmailStr, UUID4
 from typing import Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
-from app.domain.enums import NotificationChannel, NotificationType
-from app.domain.entities.content import NotificationContent
-from app.domain.entities.recipient import Recipient
+from app.notification.domain.enums import NotificationChannel, NotificationType
+from app.notification.domain.entities.content import NotificationContent
+from app.notification.domain.entities.recipient import Recipient
 
 
 class CreateNotificationCommand(BaseModel):
