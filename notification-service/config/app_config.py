@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+from twilio.rest import Client as TwilioClient
 
 
 class Settings(BaseSettings):
@@ -22,5 +23,28 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_TIME: int = 3600
 
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port = 587
+    smtp_username: str
+    smtp_password: str
+    from_email: str
+    from_name: str = "Cinema App"
+
+    account_sid: str
+    auth_token: str
+    twilio_number: str
+
 
 settings = Settings()  # type: ignore
+
+
+class EmailConfig:
+    smtp_server: str = settings.smtp_server
+    smtp_port: int = settings.smtp_port
+    smtp_username: str = settings.smtp_username
+    smtp_password: str = settings.smtp_password
+    from_email: str = settings.from_email
+    from_name: str = settings.from_name
+
+
+twilio_client = TwilioClient(settings.account_sid, settings.auth_token)
