@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any, List
-from app.domain.entities.models import Notification
+from app.notification.domain.entities.models import Notification
 from abc import ABC, abstractmethod
 from uuid import UUID
 

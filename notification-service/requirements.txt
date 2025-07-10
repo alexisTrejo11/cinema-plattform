@@ -12,5 +12,6 @@ email-validator==2.1.0
 httpx==0.25.2
 twilio==9.6.4
 
+aio_pika==9.5.5
 colorlog
 slowapi

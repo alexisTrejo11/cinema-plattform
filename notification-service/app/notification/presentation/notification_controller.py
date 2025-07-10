@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends, Query, status
 from uuid import UUID
-from app.application.dtos import NotificationListResponse, NotificationResponse
-from app.application.queries.notification_queries import (
+from app.notification.application.dtos import (
+    NotificationListResponse,
+    NotificationResponse,
+)
+from app.notification.application.queries.notification_queries import (
     GetNotificationByIdQuery,
     ListNotificationsByChannelQuery,
     ListNotificationsByStatusQuery,
@@ -9,7 +12,7 @@ from app.application.queries.notification_queries import (
     ListNotificationsByUserIdQuery,
 )
 
-from app.application.queries.notification_query_handler import (
+from app.notification.application.queries.notification_query_handler import (
     GetNotificationByIdQueryHandler,
     ListNotificationsByChannelQueryHandler,
     ListNotificationsByStatusQueryHandler,

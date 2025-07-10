@@ -4,8 +4,10 @@ import smtplib
 from typing import Dict, Any, Optional
 from jinja2 import Template
 import logging
-from config.app_config import EmailConfig
+from config.app_config import EmailConfig, settings
 from .html_teamplates import *
+from app.notification.domain.entities.models import Notification, NotificationType
+
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +15,22 @@ logger = logging.getLogger(__name__)
 class EmailService:
     def __init__(self, config: EmailConfig) -> None:
         self.config = config
+
+    async def send(self, notification: Notification):
+        template_content = self.assing_template(notification.notification_type)
+        if not notification.content.data:
+            raise ValueError("Template Data Required")
+        if not notification.recipient.email:
+            raise ValueError("Email Required")
+
+        self.send_template_email(
+            to_email=notification.recipient.email,
+            template_content=template_content,
+            subject=notification.notification_type.value,
+            from_email=settings.from_email,
+            from_name=settings.from_name,
+            template_data=notification.content.data,
+        )
 
     def send_email(
         self,
@@ -64,7 +82,7 @@ class EmailService:
     def send_template_email(
         self,
         to_email: str,
-        template_name: str,
+        template_content: str,
         subject: str,
         template_data: Dict[str, Any],
         from_email: Optional[str] = None,
@@ -85,11 +103,6 @@ class EmailService:
             bool: True if email was sent successfully, False otherwise
         """
         try:
-            # Get template
-            template_content = self.get_template(template_name)
-            if not template_content:
-                logger.error(f"Template {template_name} not found")
-                return False
 
             # Render template
             template = Template(template_content)
@@ -108,16 +121,19 @@ class EmailService:
             logger.error(f"Failed to send template email to {to_email}: {str(e)}")
             return False
 
-    def get_template(self, template_name: str) -> Optional[str]:
-        """
-        Get email template content.
-        """
-
+    def assing_template(self, notification_type: NotificationType) -> str:
         templates = {
-            "ticket_purchase": TICKET_PURCHASE_TEMPLATE,
-            "account_created": ACCOUNT_CREATED_TEMPLATE,
-            "auth_code": AUTH_CODE_TEMPLATE,
-            "announcement": ANNOUNCEMENT_TEMPLATE,
-            "payment_failed": PAYMENT_FAILED_TEMPLATE,
+            NotificationType.TICKET_BUY: TICKET_PURCHASE_TEMPLATE,
+            NotificationType.ACCOUNT_CREATED: ACCOUNT_CREATED_TEMPLATE,
+            NotificationType.ACCOUNT_AUTH: AUTH_CODE_TEMPLATE,
+            NotificationType.PAYMENT_FAILED: PAYMENT_FAILED_TEMPLATE,
+            NotificationType.PRODUCT_BUY: ANNOUNCEMENT_TEMPLATE,
+            NotificationType.ACCOUNT_DELETED: ANNOUNCEMENT_TEMPLATE,
+            NotificationType.ANNOUNCEMENT: ANNOUNCEMENT_TEMPLATE,
+            NotificationType.CUSTOM_MESSAGE: ANNOUNCEMENT_TEMPLATE,
         }
-        return templates.get(template_name)
+        template_assigned = templates.get(notification_type)
+        if not template_assigned:
+            raise ValueError("Notification Type Not Supported")
+
+        return template_assigned
