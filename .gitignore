@@ -16,3 +16,10 @@ payment-service/env/
 notification-service/.env
 notification-service/env/
 
+admin-service/.env
+admin-service/env/
+
+wallet-service/.env
+wallet-service/env/
+
+.env 
