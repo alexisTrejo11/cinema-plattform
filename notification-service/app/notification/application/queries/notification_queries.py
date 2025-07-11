@@ -39,7 +39,7 @@ class ListNotificationsByChannelQuery(BaseModel):
 class ListNotificationsByUserIdQuery(BaseModel):
     """Query to list notifications for a specific user ID."""
 
-    user_id: UUID = Field(
+    user_id: str = Field(
         ..., description="ID of the user whose notifications to retrieve."
     )
     limit: int = Field(

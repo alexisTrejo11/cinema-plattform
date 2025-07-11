@@ -2,7 +2,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Optional, Dict, List
 from pydantic import BaseModel, ConfigDict, Field
-from app.domain.enums import NotificationChannel, NotificationStatus, NotificationType
+from app.notification.domain.enums import (
+    NotificationChannel,
+    NotificationStatus,
+    NotificationType,
+)
 
 
 class RecipientResponse(BaseModel):

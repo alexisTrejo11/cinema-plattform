@@ -5,6 +5,7 @@ from config.log_config import setup_logging
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
+from app.notification.presentation import notification_controller
 
 
 app = FastAPI(
@@ -39,3 +40,6 @@ def health_check():
     logger.info("Health check passed.")
     audit_logger.info("Audit: Health check event.")
     return {"status": "ok"}
+
+
+app.include_router(notification_controller.router)

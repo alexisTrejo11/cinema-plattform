@@ -1,10 +1,10 @@
 from fastapi import Depends
-from app.domain.repository import NotificationRepository
+from app.notification.domain.repository import NotificationRepository
 from config.mongo_config import get_mongo_database
-from app.infrastructure.persistence.mongo_notification_repository import (
+from app.notification.infrastructure.repository.mongo_notification_repository import (
     MongoNotificationRepository,
 )
-from app.application.queries.notification_query_handler import (
+from app.notification.application.queries.notification_query_handler import (
     GetNotificationByIdQueryHandler,
     ListNotificationsByStatusQueryHandler,
     ListNotificationsByUserIdQueryHandler,

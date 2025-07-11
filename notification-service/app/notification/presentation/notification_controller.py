@@ -87,7 +87,7 @@ async def list_notifications_by_channel(
 
 @router.get("/by-user/{user_id}", response_model=NotificationListResponse)
 async def list_notifications_by_user_id(
-    user_id: UUID,
+    user_id: str,
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
     handler: ListNotificationsByUserIdQueryHandler = Depends(

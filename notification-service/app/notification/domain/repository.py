@@ -64,5 +64,5 @@ class NotificationRepository(ABC):
         pass
 
     @abstractmethod
-    async def save(self, notification: Notification) -> None:
+    async def save(self, notification: Notification) -> Notification:
         pass

@@ -66,6 +66,12 @@ class Notification:
         """
         return self._notification_id
 
+    def set_notification_id(self, id: str) -> None:
+        """
+        Returns the unique identifier of the notification.
+        """
+        self._notification_id = id
+
     @property
     def notification_type(self) -> NotificationType:
         """
@@ -242,7 +248,7 @@ class Notification:
         Converts the Notification object to a dictionary representation.
         """
         return {
-            "_id": self.notification_id,
+            "notification_id": self.notification_id,
             "notification_type": self.notification_type.value,
             "recipient": self.recipient.to_dict(),
             "content": self.content.to_dict(),
