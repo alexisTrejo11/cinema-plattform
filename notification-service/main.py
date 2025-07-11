@@ -2,6 +2,10 @@ from fastapi import FastAPI
 from config.app_config import settings
 import logging
 from config.log_config import setup_logging
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+
 
 app = FastAPI(
     title=settings.app_name,
@@ -10,10 +14,15 @@ app = FastAPI(
     debug=settings.app_debug,
 )
 
+# Logger
 setup_logging()
-
 logger = logging.getLogger("app")
 audit_logger = logging.getLogger("audit")
+
+# Rate Limiter
+limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 
 
 @app.get("/ping")
