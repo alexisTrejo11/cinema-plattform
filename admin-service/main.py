@@ -1,10 +1,14 @@
 # admin-service/main.py
 from fastapi import FastAPI, HTTPException, status
 import uvicorn
-import datetime
+from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 from contextlib import asynccontextmanager
 import aiohttp
+from admin.admin import registered_services
+from admin import admin_controller
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 
 
 # Admin config
@@ -27,13 +31,26 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+origins = ["http://localhost:3000", "http://127.0.0.1", "http://127.0.0.1:8000"]
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 async def perform_health_check(service_data: dict, instance_id: str):
     """Realiza una llamada de salud a un servicio."""
     url = f"http://{service_data['host']}:{service_data['port']}{service_data['health_check_endpoint']}"
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=5) as response:
+            async with session.get(
+                url, timeout=aiohttp.ClientTimeout(total=5)
+            ) as response:
                 if response.status == 200:
                     registered_services[service_data["service_name"]][instance_id][
                         "status"
@@ -62,6 +79,18 @@ async def health_check_monitor():
                 await perform_health_check(data, instance_id)
         await asyncio.sleep(10)
 
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def get_dashboard():
+    with open("static/dashboard.html", "r") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
+
+
+app.include_router(admin_controller.app)
 
 if __name__ == "__main__":
 
