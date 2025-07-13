@@ -1,19 +1,20 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
-from app.application.use_cases.wallet_use_cases import WalletUseCases
-from app.application.dtos.wallet_dtos import (
-    CreateWalletResponse,
+from app.wallet.application.use_cases.wallet_use_cases import WalletUseCases
+from app.wallet.application.dtos.wallet_dtos import (
+    CreateWalletCommand,
     AddCreditResponse,
     PayResponse,
+    PydanticUserId,
     WalletResponse,
 )
-from config.dependency_injection import get_wallet_uc
+from ..dependencies import get_wallet_uc
 
-router = APIRouter()
+router = APIRouter(prefix="/v2/api/wallets")
 
 
 @router.post(
-    "/",
+    "/{user_id}",
     response_model=WalletResponse,
     status_code=201,
     summary="Create a new wallet",
@@ -23,18 +24,16 @@ router = APIRouter()
         400: {"description": "Invalid input"},
     },
 )
-def create_wallet(
-    create_wallet_dto: CreateWalletResponse,
+async def create_wallet(
+    user_id: PydanticUserId,
     wallet_use_cases: WalletUseCases = Depends(get_wallet_uc),
 ):
     """
     Creates a new wallet for a user.
     - **user_id**: The ID of the user to create the wallet for.
     """
-    try:
-        return wallet_use_cases.create_wallet(create_wallet_dto)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    command = CreateWalletCommand(user_id=user_id)
+    return await wallet_use_cases.create_wallet(command)
 
 
 @router.get(

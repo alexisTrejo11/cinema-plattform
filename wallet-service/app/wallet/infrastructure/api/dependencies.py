@@ -1,10 +1,14 @@
 from config.postgres_config import get_db
 from fastapi import Depends
-from app.infrastructure.persistence.wallet_repository import SQLAlchemyWalletRepository
-from app.infrastructure.persistence.user_repository import SQLAlchemyUserRepository
+from app.wallet.infrastructure.persistence.wallet_repository import (
+    SQLAlchemyWalletRepository,
+)
+from app.wallet.infrastructure.persistence.user_repository import (
+    SQLAlchemyUserRepository,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.application.use_cases.wallet_use_cases import WalletUseCases
-from app.application.service.user_service import UserService
+from app.wallet.application.use_cases.wallet_use_cases import WalletUseCases
+from app.wallet.application.service.user_service import UserService
 
 
 def get_wallet_repository(

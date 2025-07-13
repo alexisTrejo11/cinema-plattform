@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 from uuid import UUID
-from app.domain.models import Wallet
+from app.wallet.domain.models import Wallet
 
 
 class WalletRepository(ABC):

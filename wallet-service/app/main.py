@@ -54,5 +54,5 @@ async def read_root():
     return {"message": "Wallet Service is running and listening for user events!"}
 
 
-app.include_router(wallet_controller.router, prefix="/wallets", tags=["wallets"])
-app.include_router(user_admin_controller.router, prefix="/users", tags=["users"])
+app.include_router(wallet_controller.router, tags=["wallets"])
+app.include_router(user_admin_controller.router, tags=["users"])
