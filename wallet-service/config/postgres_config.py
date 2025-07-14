@@ -7,7 +7,7 @@ class Base(DeclarativeBase):
     pass
 
 
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@db:5432/cinema_wallet"
+DATABASE_URL = "postgresql+asyncpg://postgres:root@localhost:5432/cinema-wallet"
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 

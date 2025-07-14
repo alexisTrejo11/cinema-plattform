@@ -2,11 +2,11 @@ from uuid import UUID
 from enum import Enum
 
 
-class UserRole(Enum):
-    ADMIN = "admin"
-    MANAGER = "manager"
-    EMPLOYEE = "employee"
-    CUSTOMER = "customer"
+class UserRole(str, Enum):
+    ADMIN = "ADMIN"
+    MANAGER = "MANAGER"
+    EMPLOYEE = "EMPLOYEE"
+    CUSTOMER = "CUSTOMER"
 
 
 class UserId:

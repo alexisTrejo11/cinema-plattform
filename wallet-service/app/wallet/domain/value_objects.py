@@ -104,3 +104,14 @@ class Money:
 
     def __repr__(self) -> str:
         return f"Money({self.amount} {self.currency.value})"
+
+
+class PaymentDetails:
+    def __init__(self, payment_method: str, payment_id: uuid.UUID):
+        self.payment_method = payment_method
+        self.payment_id = payment_id
+
+    def __repr__(self):
+        return (
+            f"PaymentDeal(payment_id={self.payment_id}, method={self.payment_method})"
+        )

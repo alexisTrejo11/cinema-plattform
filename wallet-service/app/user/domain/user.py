@@ -45,7 +45,7 @@ class User:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "id": str(self.__id),
+            "id": str(self.__id.value),
             "email": self.__email,
             "roles": [role.value for role in self.__roles],
             "is_active": self.__is_active,

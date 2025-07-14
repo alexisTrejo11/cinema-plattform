@@ -1,14 +1,16 @@
 from abc import ABC, abstractmethod
 from typing import List
 from uuid import UUID
-from app.wallet.domain.models import Wallet
+from app.wallet.domain.entities.wallet import Wallet
 
 
 class WalletRepository(ABC):
     """Abstract repository for wallet data access."""
 
     @abstractmethod
-    async def get_by_id(self, wallet_id: UUID) -> Wallet | None:
+    async def get_by_id(
+        self, wallet_id: UUID, include_transactions=True
+    ) -> Wallet | None:
         """Get all wallets for a specific user asynchronously.
 
         Args:
@@ -20,7 +22,9 @@ class WalletRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_user_id(self, user_id: UUID) -> List[Wallet]:
+    async def get_by_user_id(
+        self, user_id: UUID, include_transactions=True
+    ) -> List[Wallet]:
         """Retrieves all wallets for a given user."""
         raise NotImplementedError
 

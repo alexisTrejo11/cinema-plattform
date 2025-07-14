@@ -38,10 +38,10 @@ class Wallet:
 
     def add_credit(
         self,
-        payment_details: PaymentDetails,
         amount: Money,
-        transaction_type: TransactionType,  # Use TransactionType enum
-    ):
+        transaction_type: TransactionType,
+        payment_details: PaymentDetails,
+    ) -> WalletTransaction:
         if not isinstance(amount, Money):
             raise TypeError("Amount must be a Money object.")
         if not isinstance(transaction_type, TransactionType):
@@ -58,7 +58,7 @@ class Wallet:
         payment_details: PaymentDetails,
         amount: Money,
         transaction_type: TransactionType = TransactionType.BUY_PRODUCT,  # Default for payments
-    ):
+    ) -> WalletTransaction:
         if not isinstance(amount, Money):
             raise TypeError("Amount must be a Money object.")
         if not isinstance(transaction_type, TransactionType):
