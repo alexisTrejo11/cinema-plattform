@@ -1,3 +1,4 @@
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import delete
 from uuid import UUID
@@ -8,7 +9,7 @@ from app.wallet.domain.repositories.transaction_repository import (
 from app.wallet.domain.entities.wallet_transaction import (
     WalletTransaction as DomainWalletTransaction,
 )
-from app.wallet.infrastructure.persistence.sqlalchemy_models import (
+from .sqlalchemy_models import (
     WalletTransactionSQLModel,
 )
 
@@ -18,6 +19,9 @@ class SqlAlchemyWalletTransactionRepository(WalletTransactionRepository):
 
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def search(self, **kwargs) -> List[DomainWalletTransaction]:
+        return []
 
     async def create(
         self, transaction: DomainWalletTransaction

@@ -1,4 +1,7 @@
-class WalletError(Exception):
+from app.shared.base_exceptions import DomainException
+
+
+class WalletError(DomainException):
     """Base exception for wallet-related errors."""
 
     pass

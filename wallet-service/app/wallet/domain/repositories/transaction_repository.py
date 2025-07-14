@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from uuid import UUID  # Use UUID directly for transaction_id
+from uuid import UUID
 from app.wallet.domain.entities.wallet_transaction import (
     WalletTransaction,
 )

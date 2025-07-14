@@ -9,8 +9,8 @@ class WalletRepository(ABC):
 
     @abstractmethod
     async def get_by_id(
-        self, wallet_id: UUID, include_transactions=True
-    ) -> Wallet | None:
+        self, wallet_id: UUID, include_transactions=False, raise_exception=False
+    ) -> Wallet:
         """Get all wallets for a specific user asynchronously.
 
         Args:
@@ -23,8 +23,8 @@ class WalletRepository(ABC):
 
     @abstractmethod
     async def get_by_user_id(
-        self, user_id: UUID, include_transactions=True
-    ) -> List[Wallet]:
+        self, user_id: UUID, include_transactions=False, raise_exception=False
+    ) -> Wallet:
         """Retrieves all wallets for a given user."""
         raise NotImplementedError
 

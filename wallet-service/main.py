@@ -1,5 +1,6 @@
 from fastapi import FastAPI, status
 from app.user.presentation import user_admin_controller
+from app.wallet.presentation.controllers import wallet_controller
 
 app = FastAPI()
 
@@ -15,3 +16,4 @@ async def health():
 
 
 app.include_router(user_admin_controller.router)
+app.include_router(wallet_controller.router)

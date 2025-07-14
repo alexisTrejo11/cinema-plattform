@@ -1,11 +1,11 @@
 from typing import List, Optional
-from .wallet_query_usecases import (
+from .wallet.wallet_query_usecases import (
     WalletRepository,
     GetWalletByIdUseCase,
     GetWalletsByUserIdUseCase,
     WalletResponse,
 )
-from .wallet_command_use_cases import (
+from .wallet.wallet_command_use_cases import (
     InitWalletForUserUseCase,
     PayWithWalletUseCase,
     AddCreditUseCase,
@@ -18,6 +18,7 @@ from .wallet_command_use_cases import (
 from app.wallet.domain.repositories.transaction_repository import (
     WalletTransactionRepository,
 )
+from app.user.domain.repository import UserRepository
 from uuid import UUID
 
 
@@ -28,21 +29,26 @@ class WalletUseCases:
         self,
         wallet_repo: WalletRepository,
         transaction_repository: WalletTransactionRepository,
+        user_repository: UserRepository,
     ):
         self._add_credit = AddCreditUseCase(wallet_repo, transaction_repository)
         self._pay = PayWithWalletUseCase(wallet_repo, transaction_repository)
-        self._create_wallet = InitWalletForUserUseCase(wallet_repo)
+        self._create_wallet = InitWalletForUserUseCase(wallet_repo, user_repository)
         self._get_wallet_by_id = GetWalletByIdUseCase(wallet_repo)
         self._get_wallets_by_user_id = GetWalletsByUserIdUseCase(wallet_repo)
 
-    async def create_wallet(self, command: CreateWalletCommand) -> BuyCreditResponse:
+    async def create_wallet(self, command: CreateWalletCommand) -> WalletResponse:
         return await self._create_wallet.execute(command)
 
-    async def get_wallet_by_id(self, wallet_id: UUID) -> Optional[WalletResponse]:
-        return await self._get_wallet_by_id.execute(wallet_id)
+    async def get_wallet_by_id(
+        self, wallet_id: UUID, include_transactions: bool
+    ) -> Optional[WalletResponse]:
+        return await self._get_wallet_by_id.execute(wallet_id, include_transactions)
 
-    async def get_wallets_by_user_id(self, user_id: UUID) -> List[WalletResponse]:
-        return await self._get_wallets_by_user_id.execute(user_id)
+    async def get_wallets_by_user_id(
+        self, user_id: UUID, include_transactions: bool
+    ) -> Optional[WalletResponse]:
+        return await self._get_wallets_by_user_id.execute(user_id, include_transactions)
 
     async def add_credit(self, command: AddCreditCommand) -> BuyCreditResponse:
         return await self._add_credit.execute(command)

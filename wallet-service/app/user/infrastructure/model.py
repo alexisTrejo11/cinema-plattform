@@ -1,13 +1,16 @@
+import uuid
+from typing import List, Optional, TYPE_CHECKING
+from datetime import datetime
 from sqlalchemy import String, Boolean, DateTime, Enum, ARRAY
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import declarative_base, Mapped, mapped_column
-from datetime import datetime
-import uuid
-from typing import List, Optional
-
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.user.domain.user import UserRole
+from config.postgres_config import Base
 
-Base = declarative_base()
+if TYPE_CHECKING:
+    from app.wallet.infrastructure.persistence.sql.sqlalchemy_models import (
+        WalletSQLModel,
+    )
 
 
 class UserSQLModel(Base):
@@ -28,6 +31,9 @@ class UserSQLModel(Base):
         DateTime, nullable=True, onupdate=datetime.utcnow
     )
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    wallet: Mapped["WalletSQLModel"] = relationship(
+        "WalletSQLModel", back_populates="user"
+    )
 
     def __repr__(self):
         return f"<UserSQLModel(id={self.id}, email='{self.email}')>"

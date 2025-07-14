@@ -1,36 +1,41 @@
-from typing import Optional, List
 import asyncio
-from uuid import UUID
 from app.user.domain.value_objects import UserId
-from app.wallet.domain.entities.wallet import Wallet
-from app.wallet.domain.repositories.wallet_repository import WalletRepository
-from app.wallet.domain.repositories.transaction_repository import (
-    WalletTransactionRepository,
-    WalletTransaction,
-)
+from app.user.domain.repository import UserRepository
 
-from app.wallet.domain.enums import TransactionType
-from ..dtos.wallet_dtos import (
-    AddCreditCommand,
-    PayResponse,
-    CreateWalletCommand,
-    WalletBuyResponse,
-    BuyCreditResponse,
-    PayWithWalletCommand,
-)
+from app.wallet.domain.entities.wallet import Wallet
+from app.wallet.domain.entities.wallet_transaction import WalletTransaction
+from app.wallet.domain.repositories.wallet_repository import WalletRepository
+from app.wallet.domain.repositories.transaction_repository import WalletTransactionRepository
+
+from ..exceptions import UserNotFoundError, UserWalletConflict
+from ...dtos.wallet_dtos import AddCreditCommand, CreateWalletCommand, WalletBuyResponse, BuyCreditResponse, PayWithWalletCommand, WalletResponse
 
 
 class InitWalletForUserUseCase:
-    def __init__(self, wallet_repo: WalletRepository):
+    def __init__(self, wallet_repo: WalletRepository, user_repo: UserRepository):
         self.wallet_repo = wallet_repo
+        self.user_repo = user_repo
 
-    async def execute(self, command: CreateWalletCommand) -> BuyCreditResponse:
+    async def execute(self, command: CreateWalletCommand) -> WalletResponse:
         """Creates a new wallet for a user."""
-        user_id = UserId(command.user_id.value)
-        new_wallet = Wallet.create(user_id)
+        await self._validate_user(command.user_id)
+        return await self._proces_creation(command)
 
+    async def _validate_user(self, user_id: UserId) -> None:
+        user_couroutine = self.user_repo.get_by_id(user_id.to_string())
+        user_wallet_coroutine = self.wallet_repo.get_by_user_id(user_id.value)
+        
+        user, user_wallet = asyncio.gather(user_couroutine, user_wallet_coroutine)
+        if not user:
+            raise UserNotFoundError(user_id)
+
+        if user_wallet:
+            raise UserWalletConflict("User Already Has a Wallet")
+
+    async def _proces_creation(self, command: CreateWalletCommand) -> WalletResponse:
+        new_wallet = Wallet.create(command.user_id)
         created_wallet = await self.wallet_repo.create(new_wallet)
-        return BuyCreditResponse.model_validate(created_wallet)
+        return WalletResponse.from_domain(created_wallet)
 
 
 class AddCreditUseCase:
@@ -44,21 +49,15 @@ class AddCreditUseCase:
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo
 
+
     async def execute(self, command: AddCreditCommand) -> BuyCreditResponse:
         """Adds credit to a wallet."""
-        wallet = await self.wallet_repo.get_by_id(command.wallet_id)
-        if not wallet:
-            raise ValueError("Wallet not found")
-
-        transaction = wallet.add_credit(
-            command.amount, TransactionType.BUY_PRODUCT, command.payment_details
-        )
-
+        wallet = await self.wallet_repo.get_by_id(command.wallet_id, raise_exception=True)
+        transaction = wallet.buy_credit(command.payment_details, command.amount)
         return await self._proccess_buy(wallet, transaction)
 
-    async def _proccess_buy(
-        self, wallet: Wallet, transaction: WalletTransaction
-    ) -> BuyCreditResponse:
+
+    async def _proccess_buy(self, wallet: Wallet, transaction: WalletTransaction) -> BuyCreditResponse:
         event_couroutine = self._publish_event(wallet, transaction)
         wallet_couroutine = self.wallet_repo.update(wallet)
         transaction_couroutine = self.transaction_repo.create(transaction)
@@ -67,12 +66,8 @@ class AddCreditUseCase:
             event_couroutine, wallet_couroutine, transaction_couroutine
         )
 
-        return BuyCreditResponse(
-            id=wallet_updated.id.value,
-            user_id=wallet.user_id.value,
-            balance=wallet.balance.amount,
-            transaction=transaction_created.__dict__,
-        )
+        return BuyCreditResponse.from_domain(wallet_updated, transaction_created)
+
 
     async def _publish_event(self, wallet: Wallet, transaction: WalletTransaction):
         # Produce RabbitMQ message to notification service
@@ -92,19 +87,13 @@ class PayWithWalletUseCase:
 
     async def execute(self, command: PayWithWalletCommand) -> WalletBuyResponse:
         """Makes a payment from a wallet."""
-        wallet = await self.wallet_repo.get_by_id(command.wallet_id)
-        if not wallet:
-            raise ValueError("Wallet not found")
+        wallet = await self.wallet_repo.get_by_id(command.wallet_id, raise_exception=True)
 
-        transaction = wallet.remove_credit(
-            command.payment_details, command.amount, TransactionType.BUY_PRODUCT
-        )
+        transaction = wallet.buy_product(command.payment_details, command.amount)
 
         return await self._proccess_buy(wallet, transaction)
 
-    async def _proccess_buy(
-        self, wallet: Wallet, transaction: WalletTransaction
-    ) -> WalletBuyResponse:
+    async def _proccess_buy(self, wallet: Wallet, transaction: WalletTransaction) -> WalletBuyResponse:
         event_couroutine = self._publish_event(wallet, transaction)
         wallet_couroutine = self.wallet_repo.update(wallet)
         transaction_couroutine = self.transaction_repo.create(transaction)
@@ -113,12 +102,7 @@ class PayWithWalletUseCase:
             event_couroutine, wallet_couroutine, transaction_couroutine
         )
 
-        return WalletBuyResponse(
-            id=wallet_updated.id.value,
-            user_id=wallet.user_id.value,
-            balance=wallet.balance.amount,
-            transaction=transaction_created.__dict__,
-        )
+        return WalletBuyResponse.from_domain(wallet_updated, transaction_created)
 
     async def _publish_event(self, wallet: Wallet, transaction: WalletTransaction):
         # Produce RabbitMQ message to notification service

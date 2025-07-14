@@ -48,7 +48,7 @@ class Money:
         else:
             self.amount = amount
 
-        if self.amount <= Decimal("0"):
+        if self.amount < Decimal("0"):
             raise InvalidTransactionAmountError("Amount must be positive.")
 
         if not isinstance(currency, Currency):

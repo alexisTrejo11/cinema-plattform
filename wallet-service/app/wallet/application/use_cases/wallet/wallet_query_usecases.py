@@ -1,7 +1,8 @@
 from typing import Optional, List
 from uuid import UUID
 from app.wallet.domain.repositories.wallet_repository import WalletRepository
-from ..dtos.wallet_dtos import WalletResponse
+from ...dtos.wallet_dtos import WalletResponse
+from ..exceptions import WalletNotFoundError, UserNotFoundError
 
 
 class GetWalletByIdUseCase:
@@ -12,10 +13,13 @@ class GetWalletByIdUseCase:
 
     async def execute(
         self, wallet_id: UUID, include_transactions: bool = True
-    ) -> Optional[WalletResponse]:
+    ) -> WalletResponse:
         """Retrieves a wallet by its ID."""
         wallet = await self.wallet_repo.get_by_id(wallet_id, include_transactions)
-        return WalletResponse.model_validate(wallet) if wallet else None
+        if not wallet:
+            raise WalletNotFoundError(str(wallet_id))
+
+        return WalletResponse.from_domain(wallet)
 
 
 class GetWalletsByUserIdUseCase:
@@ -26,7 +30,10 @@ class GetWalletsByUserIdUseCase:
 
     async def execute(
         self, user_id: UUID, include_transactions: bool = True
-    ) -> List[WalletResponse]:
+    ) -> WalletResponse:
         """Retrieves all wallets for a given user."""
-        wallets = await self.wallet_repo.get_by_user_id(user_id, include_transactions)
-        return [WalletResponse.model_validate(wallet) for wallet in wallets]
+        wallet = await self.wallet_repo.get_by_user_id(user_id, include_transactions)
+        if not wallet:
+            raise UserNotFoundError(str(user_id))
+
+        return WalletResponse.from_domain(wallet)

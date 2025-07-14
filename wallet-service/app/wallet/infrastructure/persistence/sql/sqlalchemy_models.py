@@ -1,16 +1,15 @@
-from sqlalchemy import ForeignKey, String, Boolean, DateTime, Enum, DECIMAL
+import uuid
+from datetime import datetime
+from decimal import Decimal
+from typing import List, Optional, TYPE_CHECKING
+from sqlalchemy import ForeignKey, String, DateTime, Enum, DECIMAL
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import List, Optional
-from datetime import datetime
-import uuid
-from decimal import Decimal
 
 from config.postgres_config import Base
-from app.user.infrastructure.model import UserSQLModel
+from app.user.domain.value_objects import UserId
 from app.wallet.domain.enums import Currency, TransactionType
 from app.wallet.domain.value_objects import WalletId, Money
-from app.user.domain.value_objects import UserId
 from app.wallet.domain.entities.wallet_transaction import (
     PaymentDetails,
     WalletTransaction as DomainWalletTransaction,
@@ -18,6 +17,9 @@ from app.wallet.domain.entities.wallet_transaction import (
 from app.wallet.domain.entities.wallet import (
     Wallet as DomainWallet,
 )
+
+if TYPE_CHECKING:
+    from app.user.infrastructure.model import UserSQLModel
 
 
 class WalletTransactionSQLModel(Base):
@@ -28,7 +30,7 @@ class WalletTransactionSQLModel(Base):
     )
     wallet_id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True),
-        ForeignKey("cinem_wallets.id"),
+        ForeignKey("cinema_wallets.id"),
         nullable=False,
         index=True,
     )
@@ -99,7 +101,7 @@ class WalletTransactionSQLModel(Base):
 class WalletSQLModel(Base):
     """SQLAlchemy model for the wallets table using modern annotations."""
 
-    __tablename__ = "cinem_wallets"
+    __tablename__ = "cinema_wallets"
 
     id: Mapped[uuid.UUID] = mapped_column(
         PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
@@ -115,14 +117,11 @@ class WalletSQLModel(Base):
         Enum(Currency, name="currency_enum"), nullable=False, default=Currency.USD
     )
 
-    user: Mapped["UserSQLModel"] = relationship(
-        "UserSQLModel", back_populates="wallets", lazy="selectin"
-    )
+    user: Mapped["UserSQLModel"] = relationship("UserSQLModel", back_populates="wallet")
     transactions: Mapped[List["WalletTransactionSQLModel"]] = relationship(
         "WalletTransactionSQLModel",
         back_populates="wallet",
         cascade="all, delete-orphan",
-        lazy="selectin",
     )
 
     def __repr__(self):
@@ -142,7 +141,7 @@ class WalletSQLModel(Base):
             balance=domain_balance,
         )
 
-        if self.transactions:
+        if "transactions" in self.__dict__:
             domain_wallet.transactions = [
                 tx.to_domain_transaction() for tx in self.transactions
             ]
