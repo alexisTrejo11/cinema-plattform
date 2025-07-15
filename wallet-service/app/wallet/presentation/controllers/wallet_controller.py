@@ -7,6 +7,7 @@ from ..dependencies import get_wallet_uc, WalletUseCases
 from app.wallet.domain.value_objects import PaymentDetails, Money
 from app.user.domain.value_objects import UserId
 from app.shared.response import ApiResponse
+
 router = APIRouter(prefix="/api/v2/wallets")
 
 @router.get(
@@ -56,7 +57,7 @@ async def get_user_wallet(
 
 
 @router.post(
-    "/{id}",
+    "/user/{id}",
     response_model=ApiResponse[WalletResponse],
     status_code=201,
     summary="Create a new wallet",
@@ -122,11 +123,6 @@ async def pay(
     request_dto: WalletOperationRequest,
     wallet_use_cases: WalletUseCases = Depends(get_wallet_uc),
 ):
-    """
-    Makes a payment from a wallet.
-    - **wallet_id**: The ID of the wallet to pay from.
-    - **amount**: The amount to pay.
-    """
     command = PayWithWalletCommand(
         wallet_id=request_dto.wallet_id,
         payment_details=PaymentDetails(request_dto.payment_method, request_dto.payment_id),

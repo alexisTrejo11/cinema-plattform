@@ -24,7 +24,7 @@ class SqlAlchemyWalletRepository(WalletRepository):
 
 
         result = await self.session.execute(query)
-        wallet_model = result.scalars().one_or_none()
+        wallet_model = result.unique().scalars().one_or_none()
 
         if not wallet_model and raise_exception:
             raise WalletNotFoundError(str(wallet_id))
@@ -37,11 +37,10 @@ class SqlAlchemyWalletRepository(WalletRepository):
         query = select(WalletSQLModel).where(WalletSQLModel.user_id == user_id)
 
         if include_transactions:
-            # Usamos joinedload para realizar un LEFT JOIN explícito
             query = query.options(joinedload(WalletSQLModel.transactions))
 
         result = await self.session.execute(query)
-        wallet_model = result.scalars().one_or_none()
+        wallet_model = result.unique().scalars().one_or_none()
 
         if not wallet_model and raise_exception:
             raise WalletNotFoundError(str(user_id))
@@ -57,17 +56,16 @@ class SqlAlchemyWalletRepository(WalletRepository):
 
         return WalletSQLModel.to_domain_wallet(wallet_model)
 
-    # FIX
     async def update(self, wallet: Wallet) -> Wallet:
         result = await self.session.execute(
-            select(WalletSQLModel).where(WalletSQLModel.id == wallet.id)
+            select(WalletSQLModel).where(WalletSQLModel.id == wallet.id.value)
         )
         wallet_model = result.scalars().first()
-
         if not wallet_model:
-            raise ValueError("not found")
-        for field, value in wallet.__dict__.items():
-            setattr(wallet_model, field, value)
+            raise ValueError("Wallet not found for update")
+        
+        wallet_model.balance_amount = wallet.balance.amount
+        wallet_model.balance_currency = wallet.balance.currency
 
         await self.session.commit()
         await self.session.refresh(wallet_model)

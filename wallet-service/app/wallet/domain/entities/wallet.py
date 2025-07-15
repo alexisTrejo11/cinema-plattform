@@ -23,19 +23,23 @@ class Wallet:
     def buy_product(self, payment_details: PaymentDetails, amount: Money):
         self.validator.validate_credit_decrease(amount)
         self.remove_credit(amount)
-        return self.create_transaction(amount, TransactionType.ADD_CREDIT, payment_details)
+        
+        # TODO: HANDLE NEGATIVE MONEY FOR BUY
+        amount.amount = -amount.amount 
+        return self.create_transaction(amount, TransactionType.BUY_PRODUCT, payment_details)
 
     def buy_credit(self, payment_details: PaymentDetails, amount: Money):
         self.add_credit(amount)
-        return self.create_transaction(amount, TransactionType.BUY_PRODUCT, payment_details)
+        return self.create_transaction(amount, TransactionType.ADD_CREDIT, payment_details)
 
     def add_credit(self, amount: Money) -> None:
         self.validator.validate_credit_increase(amount)
-        self.balance = self.balance + amount
+        self.balance += amount
 
+        
     def remove_credit(self, amount: Money) -> None:
         self.validator.validate_credit_decrease(amount)
-        self.balance = self.balance - amount
+        self.balance -= amount
 
     def add_transaction(self, transaction: WalletTransaction) -> WalletTransaction:
         self.transactions.append(transaction)

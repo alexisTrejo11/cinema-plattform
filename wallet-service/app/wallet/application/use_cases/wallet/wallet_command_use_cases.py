@@ -28,13 +28,11 @@ class InitWalletForUserUseCase:
         return WalletResponse.from_domain(created_wallet)
 
     async def _validate_user(self, user_id: UserId) -> None:
-        user_couroutine = self.user_repo.get_by_id(user_id.to_string())
-        user_wallet_coroutine = self.wallet_repo.get_by_user_id(user_id.value)
-        
-        user, user_wallet = asyncio.gather(user_couroutine, user_wallet_coroutine)
+        user = await self.user_repo.get_by_id(user_id.to_string())
         if not user:
             raise UserNotFoundError(user_id)
-
+        
+        user_wallet = await self.wallet_repo.get_by_user_id(user_id.value)
         if user_wallet:
             raise UserWalletConflict("User Already Has a Wallet")
 
@@ -59,13 +57,9 @@ class AddCreditUseCase:
 
 
     async def _proccess_buy(self, wallet: Wallet, transaction: WalletTransaction) -> WalletBuyResponse:
-        event_couroutine = self._publish_event(wallet, transaction)
-        wallet_couroutine = self.wallet_repo.update(wallet)
-        transaction_couroutine = self.transaction_repo.create(transaction)
-
-        _, wallet_updated, transaction_created = await asyncio.gather(
-            event_couroutine, wallet_couroutine, transaction_couroutine
-        )
+        await self._publish_event(wallet, transaction)
+        wallet_updated = await self.wallet_repo.update(wallet)
+        transaction_created = await self.transaction_repo.create(transaction)
 
         return WalletBuyResponse.from_domain(wallet_updated, transaction_created)
 
@@ -95,13 +89,9 @@ class PayWithWalletUseCase:
         return await self._proccess_buy(wallet, transaction)
 
     async def _proccess_buy(self, wallet: Wallet, transaction: WalletTransaction) -> WalletBuyResponse:
-        event_couroutine = self._publish_event(wallet, transaction)
-        wallet_couroutine = self.wallet_repo.update(wallet)
-        transaction_couroutine = self.transaction_repo.create(transaction)
-
-        _, wallet_updated, transaction_created = await asyncio.gather(
-            event_couroutine, wallet_couroutine, transaction_couroutine
-        )
+        await self._publish_event(wallet, transaction)
+        wallet_updated = await self.wallet_repo.update(wallet)
+        transaction_created = await self.transaction_repo.create(transaction)
 
         return WalletBuyResponse.from_domain(wallet_updated, transaction_created)
 

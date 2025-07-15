@@ -48,8 +48,8 @@ class Money:
         else:
             self.amount = amount
 
-        if self.amount < Decimal("0"):
-            raise InvalidTransactionAmountError("Amount must be positive.")
+        #if self.amount < Decimal("0"):
+        #    raise InvalidTransactionAmountError("Amount must be positive.")
 
         if not isinstance(currency, Currency):
             raise TypeError("Currency must be an instance of Currency Enum.")

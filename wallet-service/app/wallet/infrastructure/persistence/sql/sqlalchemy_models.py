@@ -48,7 +48,7 @@ class WalletTransactionSQLModel(Base):
     payment_reference: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.utcnow
+        DateTime, nullable=False, default=datetime.now()
     )
 
     wallet: Mapped["WalletSQLModel"] = relationship(
@@ -90,7 +90,7 @@ class WalletTransactionSQLModel(Base):
                 else None
             ),
             payment_reference=(
-                domain_transaction.payment_details.payment_id
+                str(domain_transaction.payment_details.payment_id)
                 if domain_transaction.payment_details
                 else None
             ),

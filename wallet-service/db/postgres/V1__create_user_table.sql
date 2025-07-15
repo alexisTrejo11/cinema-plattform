@@ -14,7 +14,7 @@ END $$;
 -- Create transaction_type_enum type
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'transaction_type_enum') THEN
-        CREATE TYPE transaction_type_enum AS ENUM ('add_credit', 'buy_product', 'refund', 'transfer_in', 'transfer_out');
+        CREATE TYPE transaction_type_enum AS ENUM ('ADD_CREDIT', 'BUY_PRODUCT', 'REFUND', 'TRANSFER_IN', 'TRANSFER_OUT');
     END IF;
 END $$;
 

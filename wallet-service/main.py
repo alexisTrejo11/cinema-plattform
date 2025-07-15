@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.wallet.presentation.controllers import wallet_controller
 from app.user.presentation import user_admin_controller
-from app.user.infrastructure.queue.event_consumer import RabbitMQConsumer
 from config.app_config import settings
 import asyncio
 from config.global_exception_handler import GLOBAL_EXCEPTION_HANDLERS
