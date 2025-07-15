@@ -2,35 +2,14 @@ from typing import Any, Optional, TypeVar, Generic
 from pydantic import BaseModel, Field
 
 T = TypeVar('T')
-
     
-class ErrorResponse(BaseModel): 
-    """
-    Represents a structured error response, typically used within an API response.
-
-    This Pydantic model provides clear fields for common error attributes,
-    making error handling consistent across an application.
-    """
-    code: Optional[str] = Field(
-        None,
-        description="An optional, machine-readable error code (e.g., 'AUTH_FAILED', 'INVALID_INPUT', 'USER_NOT_FOUND').",
-        examples=["INVALID_INPUT", "USER_ALREADY_EXISTS"]
-    )
-    type: Optional[str] = Field(
-        None,
-        description="An optional, human-readable type or category of the error (e.g., 'AuthenticationError', 'ValidationError', 'NotFoundError').",
-        examples=["ValidationError", "AuthenticationError"]
-    )
-    message: Optional[str] = Field(
-        None,
-        description="A human-readable message describing the error. This message is usually displayed to the end-user.",
-        examples=["Invalid email format.", "User with this email already exists.", "Invalid credentials."]
-    )
-
+class ErrorResponse(BaseModel):
+    code: Optional[str] = Field(None, description="An optional, machine-readable error code")
+    type: Optional[str] = Field(None, description="An optional, human-readable type or category of the error")
+    message: Optional[str] = Field(None, description="A human-readable message describing the error")
+    details: Optional[Any] = Field(None, description="Additional details about the error, e.g., validation errors") # Agregamos 'details' para ser consistente
+    
     class Config:
-        """
-        Pydantic configuration for the ErrorResponse model.
-        """
         json_schema_extra = {
             "example": {
                 "code": "VALIDATION_ERROR",
