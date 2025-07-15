@@ -5,6 +5,9 @@ SQLAlchemy
 asyncpg
 greenlet
 
+colorlog
+slowapi
+
 aiosqlite
 pydantic-settings
 pydantic[email]
