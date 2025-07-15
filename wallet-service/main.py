@@ -1,19 +1,61 @@
-from fastapi import FastAPI, status
-from app.user.presentation import user_admin_controller
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
 from app.wallet.presentation.controllers import wallet_controller
-
-app = FastAPI()
-
-
-@app.get("/ping", status_code=status.HTTP_200_OK)
-async def ping():
-    return {"message": "pong"}
+from app.user.presentation import user_admin_controller
+from app.user.infrastructure.queue.event_consumer import RabbitMQConsumer
+from config.app_config import settings
+import asyncio
+from config.global_exception_handler import GLOBAL_EXCEPTION_HANDLERS
 
 
-@app.get("/health", status_code=status.HTTP_200_OK)
-async def health():
-    return {"status": "ok"}
+"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(
+        "Application startup: Initializing database and starting RabbitMQ consumer..."
+    )
+    
+    app.state.rabbitmq_consumer = RabbitMQConsumer(
+        settings.RABBITMQ_URL,
+        settings.USER_EVENTS_EXCHANGE,
+        settings.CONSUMER_QUEUE_NAME,
+    )
+    app.state.consumer_task = asyncio.create_task(
+        app.state.rabbitmq_consumer.start_consuming()
+    )
+
+    yield
+
+    print("Application shutdown: Closing RabbitMQ consumer and database connections...")
+
+    if app.state.consumer_task:
+        app.state.consumer_task.cancel()
+        try:
+            await app.state.consumer_task
+        except asyncio.CancelledError:
+            print("RabbitMQ consumer task cancelled successfully.")
+        except Exception as e:
+            print(f"Error during consumer task cancellation: {e}")
+
+    if app.state.rabbitmq_consumer:
+        await app.state.rabbitmq_consumer.close()
+        print("RabbitMQ connection closed.")
+    """
 
 
-app.include_router(user_admin_controller.router)
+app = FastAPI(
+    title="Wallet Service API",
+    description="API for managing wallets and users.",
+    version="1.0.0",
+    exception_handlers=GLOBAL_EXCEPTION_HANDLERS,
+    #lifespan=lifespan,
+)
+
+
+@app.get("/")
+async def read_root():
+    return {"message": "Wallet Service is running and listening for user events!"}
+
+
 app.include_router(wallet_controller.router)
+app.include_router(user_admin_controller.router)

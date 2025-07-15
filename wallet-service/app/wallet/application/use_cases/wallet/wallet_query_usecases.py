@@ -1,8 +1,8 @@
 from typing import Optional, List
 from uuid import UUID
 from app.wallet.domain.repositories.wallet_repository import WalletRepository
-from ...dtos.wallet_dtos import WalletResponse
-from ..exceptions import WalletNotFoundError, UserNotFoundError
+from app.wallet.presentation.dtos.response import WalletResponse
+from ...exceptions import WalletNotFoundError, UserNotFoundError
 
 
 class GetWalletByIdUseCase:

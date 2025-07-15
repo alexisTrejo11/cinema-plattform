@@ -21,7 +21,8 @@ class GetUserByIdUseCase:
         """
         user = await self.user_repository.get_by_id(user_id.to_string())
         if not user:
-            raise UserNotFoundException(f"User with ID {user_id} not found.")
+
+            raise UserNotFoundException(str(user_id.value))
 
         return UserResponse(**user.to_dict())
 
@@ -39,7 +40,7 @@ class GetUserByEmailUseCase:
         """
         user = await self.user_repository.get_by_email(email)
         if not user:
-            raise UserNotFoundException(f"User with email {email} not found.")
+            raise UserNotFoundException(email)
 
         return UserResponse(**user.to_dict())
 
@@ -89,7 +90,7 @@ class UpdateUserUseCase:
         """
         user = await self.user_repository.get_by_id(user_id.to_string())
         if not user:
-            raise UserNotFoundException(f"User with ID {user_id} not found.")
+            raise UserNotFoundException(str(user_id.value))
 
         user_created = await self.user_repository.save(
             **command.model_dump(exclude_unset=True)
@@ -111,6 +112,6 @@ class SoftDeleteUserUseCase:
         """
         user = await self.user_repository.get_by_id(user_id.to_string())
         if not user:
-            raise UserNotFoundException(f"User with ID {user_id} not found.")
+            raise UserNotFoundException(str(user_id.value))
 
         await self.user_repository.delete(user_id.to_string())

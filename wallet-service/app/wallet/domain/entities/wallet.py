@@ -15,6 +15,11 @@ class Wallet:
         self.transactions: List[WalletTransaction] = []
         self.validator = WalletValidator(self)
 
+    @staticmethod
+    def create(user_id: UserId, initial_currency: Currency = Currency.USD) -> "Wallet":
+        initial_balance = Money(Decimal("0.00"), initial_currency)
+        return Wallet(WalletId(uuid.uuid4()), user_id, initial_balance)
+
     def buy_product(self, payment_details: PaymentDetails, amount: Money):
         self.validator.validate_credit_decrease(amount)
         self.remove_credit(amount)
@@ -31,11 +36,6 @@ class Wallet:
     def remove_credit(self, amount: Money) -> None:
         self.validator.validate_credit_decrease(amount)
         self.balance = self.balance - amount
-
-    @staticmethod
-    def create(user_id: UserId, initial_currency: Currency = Currency.USD) -> "Wallet":
-        initial_balance = Money(Decimal("0.00"), initial_currency)
-        return Wallet(WalletId(uuid.uuid4()), user_id, initial_balance)
 
     def add_transaction(self, transaction: WalletTransaction) -> WalletTransaction:
         self.transactions.append(transaction)

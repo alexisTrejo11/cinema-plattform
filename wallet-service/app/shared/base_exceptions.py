@@ -22,7 +22,7 @@ class DomainException(Exception):
 class ApplicationException(Exception):
     """Base class for all application-specific exceptions."""
 
-    status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+    status_code = HTTPStatus.CONFLICT
 
     def __init__(
         self,

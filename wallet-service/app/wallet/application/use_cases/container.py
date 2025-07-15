@@ -1,26 +1,11 @@
 from typing import List, Optional
-from .wallet.wallet_query_usecases import (
-    WalletRepository,
-    GetWalletByIdUseCase,
-    GetWalletsByUserIdUseCase,
-    WalletResponse,
-)
-from .wallet.wallet_command_use_cases import (
-    InitWalletForUserUseCase,
-    PayWithWalletUseCase,
-    AddCreditUseCase,
-    CreateWalletCommand,
-    BuyCreditResponse,
-    PayWithWalletCommand,
-    WalletBuyResponse,
-    AddCreditCommand,
-)
-from app.wallet.domain.repositories.transaction_repository import (
-    WalletTransactionRepository,
-)
-from app.user.domain.repository import UserRepository
 from uuid import UUID
-
+from .wallet.wallet_query_usecases import WalletRepository, GetWalletByIdUseCase, GetWalletsByUserIdUseCase
+from .wallet.wallet_command_use_cases import InitWalletForUserUseCase, PayWithWalletUseCase, AddCreditUseCase
+from app.wallet.domain.repositories.transaction_repository import WalletTransactionRepository
+from app.user.domain.repository import UserRepository
+from app.wallet.application.command.commands import PayWithWalletCommand, CreateWalletCommand, AddCreditCommand
+from app.wallet.presentation.dtos.response import WalletResponse, WalletBuyResponse
 
 class WalletUseCases:
     """Container for all wallet use cases - useful for dependency injection."""
@@ -50,7 +35,7 @@ class WalletUseCases:
     ) -> Optional[WalletResponse]:
         return await self._get_wallets_by_user_id.execute(user_id, include_transactions)
 
-    async def add_credit(self, command: AddCreditCommand) -> BuyCreditResponse:
+    async def add_credit(self, command: AddCreditCommand) -> WalletBuyResponse:
         return await self._add_credit.execute(command)
 
     async def pay(self, command: PayWithWalletCommand) -> WalletBuyResponse:

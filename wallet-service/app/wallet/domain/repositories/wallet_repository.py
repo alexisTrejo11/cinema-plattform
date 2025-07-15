@@ -9,7 +9,7 @@ class WalletRepository(ABC):
 
     @abstractmethod
     async def get_by_id(
-        self, wallet_id: UUID, include_transactions=False, raise_exception=False
+        self, wallet_id: UUID, include_transactions: bool = False, raise_exception: bool = False
     ) -> Wallet:
         """Get all wallets for a specific user asynchronously.
 

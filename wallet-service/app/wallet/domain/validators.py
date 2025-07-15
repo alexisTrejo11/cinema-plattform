@@ -1,6 +1,5 @@
 from .exceptions import *
 from .value_objects import Money, Decimal, Currency, WalletId
-from ..domain.entities.wallet import Wallet
 from app.user.domain.value_objects import UserId
 
 MIN_CREDIT_ALLOWED_MXN = Money(Decimal("5.00"), Currency.MXN)
@@ -8,8 +7,14 @@ MAX_CREDIT_ALLOWED_MXN = Money(Decimal("2000.00"), Currency.MXN)
 MIN_CREDIT_ALLOWED_USD = Money(Decimal("0.25"), Currency.USD)
 MAX_CREDIT_ALLOWED_USD = Money(Decimal("200.00"), Currency.USD)
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..domain.entities.wallet import Wallet
+
+
 class WalletDomainValidator:
-    def __init__(self, wallet: Wallet) -> None:
+    def __init__(self, wallet: 'Wallet') -> None:
         self.wallet = wallet
         self.validate_data_types()
         
