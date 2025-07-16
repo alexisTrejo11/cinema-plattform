@@ -14,17 +14,16 @@ from config.logging import setup_logging
 from middleware.logging_middleware import LoggingMiddleware 
 from config.register_server import RegistryMicroservice
 
-
 logger = logging.getLogger("app")
-
-
-setup_logging()
 limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
 registry_client: Optional[RegistryMicroservice] = None
+
+setup_logging()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up Wallet Service...")
+    
     registry_client  = RegistryMicroservice()
     registered, instance_id = await registry_client.perfom_registry()
 
@@ -41,8 +40,6 @@ async def lifespan(app: FastAPI):
         registry_client.stop_heartbeat_loop()
         logger.info("Heartbeat loop stopped.")
 """
-
-
     app.state.rabbitmq_consumer = RabbitMQConsumer(
         settings.RABBITMQ_URL,
         settings.USER_EVENTS_EXCHANGE,
@@ -87,8 +84,7 @@ async def read_root():
 
 @app.get("/health")
 async def read_health():
-    return {"message": "Wallet Service is running and listening for user events!"}
-
+    return {"status": "healthy", "service": "wallet-service"}
 
 
 app.include_router(wallet_controller.router)

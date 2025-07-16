@@ -25,7 +25,7 @@ class RabbitMQClient:
             self.channel = await self.connection.channel()
             self.exchange = await self.channel.declare_exchange(
                 self.exchange_name,
-                ExchangeType.FANOUT,
+                ExchangeType.TOPIC,
                 durable=True,
             )
             logger.info(f"Connected to RabbitMQ at {self.rabbitmq_url}, exchange '{self.exchange_name}'.")

@@ -31,6 +31,17 @@ class WalletTransaction:
             f"timestamp={self.timestamp})"
         )
 
+    def to_dict(self):
+        return {
+            "transaction_id": str(self.transaction_id),
+            "wallet_id": str(self.wallet_id.value),
+            "amount": str(self.amount.amount),
+            "currency": self.amount.currency,
+            "transaction_type": self.transaction_type.value,
+            "payment_details": self.payment_details.to_dict(),
+            "timestamp": self.timestamp.isoformat(),
+        }
+
     @classmethod
     def create(cls, wallet_id, amount, transaction_type, payment_details):
         return cls(

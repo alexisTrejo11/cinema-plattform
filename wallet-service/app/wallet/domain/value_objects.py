@@ -48,9 +48,6 @@ class Money:
         else:
             self.amount = amount
 
-        #if self.amount < Decimal("0"):
-        #    raise InvalidTransactionAmountError("Amount must be positive.")
-
         if not isinstance(currency, Currency):
             raise TypeError("Currency must be an instance of Currency Enum.")
         self.currency = currency
@@ -115,3 +112,12 @@ class PaymentDetails:
         return (
             f"PaymentDeal(payment_id={self.payment_id}, method={self.payment_method})"
         )
+
+    def to_dict(self):
+        return {
+            "payment_method": self.payment_method,
+            "payment_id": str(self.payment_id),
+        }
+
+class Charge(Money):
+    pass

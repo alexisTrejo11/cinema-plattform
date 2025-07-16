@@ -1,6 +1,6 @@
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict # Import ConfigDict here!
-from app.wallet.domain.value_objects import Money, PaymentDetails
+from pydantic import BaseModel, ConfigDict
+from app.wallet.domain.value_objects import Money, PaymentDetails, Charge
 from app.user.domain.value_objects import UserId
 
 class PayWithWalletCommand(BaseModel):
@@ -9,7 +9,7 @@ class PayWithWalletCommand(BaseModel):
 
     wallet_id: UUID
     payment_details: PaymentDetails
-    amount: Money
+    charge: Charge
 
 
 class AddCreditCommand(BaseModel):

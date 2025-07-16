@@ -6,10 +6,11 @@ from app.wallet.domain.entities.wallet import Wallet
 from app.wallet.domain.entities.wallet_transaction import WalletTransaction
 from app.wallet.domain.repositories.wallet_repository import WalletRepository
 from app.wallet.domain.repositories.transaction_repository import WalletTransactionRepository
+from app.wallet.presentation.dtos.response import WalletBuyResponse, WalletResponse
 
+from ...event_publisher import WalletEventPublisher, TransactionEvents
 from ...exceptions import UserNotFoundError, UserWalletConflict
 from ...command.commands import AddCreditCommand, CreateWalletCommand, PayWithWalletCommand
-from app.wallet.presentation.dtos.response import WalletBuyResponse, WalletResponse
 
 
 class InitWalletForUserUseCase:
@@ -44,29 +45,28 @@ class AddCreditUseCase:
         self,
         wallet_repo: WalletRepository,
         transaction_repo: WalletTransactionRepository,
+        event_publisher: WalletEventPublisher
     ):
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo
-
+        self.event_publisher = event_publisher
 
     async def execute(self, command: AddCreditCommand) -> WalletBuyResponse:
         """Adds credit to a wallet."""
         wallet = await self.wallet_repo.get_by_id(command.wallet_id, raise_exception=True)
         transaction = wallet.buy_credit(command.payment_details, command.amount)
-        return await self._proccess_buy(wallet, transaction)
-
-
+        
+        buy_coroutine = self._proccess_buy(wallet, transaction)
+        event_couroutine = self.event_publisher.publish_event(wallet, transaction, TransactionEvents.CHARGE_CREDIT)
+        
+        response, _ = asyncio.gather(buy_coroutine, event_couroutine)
+        return response
+    
     async def _proccess_buy(self, wallet: Wallet, transaction: WalletTransaction) -> WalletBuyResponse:
-        await self._publish_event(wallet, transaction)
         wallet_updated = await self.wallet_repo.update(wallet)
         transaction_created = await self.transaction_repo.create(transaction)
 
         return WalletBuyResponse.from_domain(wallet_updated, transaction_created)
-
-
-    async def _publish_event(self, wallet: Wallet, transaction: WalletTransaction):
-        # Produce RabbitMQ message to notification service
-        pass
 
 
 class PayWithWalletUseCase:
@@ -76,25 +76,27 @@ class PayWithWalletUseCase:
         self,
         wallet_repo: WalletRepository,
         transaction_repo: WalletTransactionRepository,
+        event_publisher: WalletEventPublisher
     ):
         self.wallet_repo = wallet_repo
         self.transaction_repo = transaction_repo
+        self.event_publisher = event_publisher
 
     async def execute(self, command: PayWithWalletCommand) -> WalletBuyResponse:
         """Makes a payment from a wallet."""
         wallet = await self.wallet_repo.get_by_id(command.wallet_id, raise_exception=True)
 
-        transaction = wallet.buy_product(command.payment_details, command.amount)
+        transaction = wallet.buy_product(command.payment_details, command.charge)
 
-        return await self._proccess_buy(wallet, transaction)
-
+        buy_coroutine = self._proccess_buy(wallet, transaction)
+        event_couroutine = self.event_publisher.publish_event(wallet, transaction, TransactionEvents.CHARGE_CREDIT)
+        
+        response, _ = asyncio.gather(buy_coroutine, event_couroutine)
+        return response
+    
     async def _proccess_buy(self, wallet: Wallet, transaction: WalletTransaction) -> WalletBuyResponse:
-        await self._publish_event(wallet, transaction)
         wallet_updated = await self.wallet_repo.update(wallet)
         transaction_created = await self.transaction_repo.create(transaction)
 
         return WalletBuyResponse.from_domain(wallet_updated, transaction_created)
 
-    async def _publish_event(self, wallet: Wallet, transaction: WalletTransaction):
-        # Produce RabbitMQ message to notification service
-        pass

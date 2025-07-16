@@ -5,7 +5,7 @@ from functools import lru_cache
 class Settings(BaseSettings):
     API_VERSION: str = "1.0"
     DEBUG_MODE: bool = False
-    JWT_SECRETKEY: str
+    JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
 
     DATABASE_URL: str
@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     RABBITMQ_URL: str
     USER_EVENTS_EXCHANGE: str
     CONSUMER_QUEUE_NAME: str
+    WALLET_EXCHANGE: str
 
     model_config = SettingsConfigDict(
         env_file="./.env", env_file_encoding="utf-8", extra="ignore"

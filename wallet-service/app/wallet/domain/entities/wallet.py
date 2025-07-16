@@ -2,7 +2,7 @@ import uuid
 from decimal import Decimal
 from typing import List, Optional
 from app.user.domain.value_objects import UserId
-from app.wallet.domain.value_objects import Money, WalletId
+from app.wallet.domain.value_objects import Money, WalletId, Charge
 from app.wallet.domain.enums import Currency, TransactionType
 from .wallet_transaction import PaymentDetails, WalletTransaction
 from ..validators import WalletDomainValidator as WalletValidator
@@ -20,11 +20,10 @@ class Wallet:
         initial_balance = Money(Decimal("0.00"), initial_currency)
         return Wallet(WalletId(uuid.uuid4()), user_id, initial_balance)
 
-    def buy_product(self, payment_details: PaymentDetails, amount: Money):
+    def buy_product(self, payment_details: PaymentDetails, amount: Charge):
         self.validator.validate_credit_decrease(amount)
         self.remove_credit(amount)
         
-        # TODO: HANDLE NEGATIVE MONEY FOR BUY
         amount.amount = -amount.amount 
         return self.create_transaction(amount, TransactionType.BUY_PRODUCT, payment_details)
 
@@ -37,9 +36,9 @@ class Wallet:
         self.balance += amount
 
         
-    def remove_credit(self, amount: Money) -> None:
+    def remove_credit(self, amount: Charge) -> None:
         self.validator.validate_credit_decrease(amount)
-        self.balance -= amount
+        self.balance += amount
 
     def add_transaction(self, transaction: WalletTransaction) -> WalletTransaction:
         self.transactions.append(transaction)
@@ -56,3 +55,11 @@ class Wallet:
         return new_transaction
 
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id.to_string(),
+            "user_id": self.user_id.to_string(),
+            "balance": str(self.balance.amount),
+            "currency": self.balance.currency.value,
+            "transactions": [transaction.to_dict() for transaction in self.transactions]
+        }

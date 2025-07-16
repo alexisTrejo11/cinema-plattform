@@ -2,6 +2,7 @@ import json
 from typing import Dict, Any
 from rabbitmq_client import RabbitMQClient
 import logging
+from aio_pika import Message
 
 logger = logging.getLogger("app")
 
@@ -17,7 +18,7 @@ class RabbitMQProducer(RabbitMQClient):
         try:
             body = json.dumps(message).encode('utf-8')
             await self.exchange.publish(
-                message=message.to_publish(body),
+                message=Message(body, delivery_mode=2),
                 routing_key=routing_key,
             )
             logger.info(f"Published message to exchange '{self.exchange_name}' with routing key '{routing_key}': {message}")

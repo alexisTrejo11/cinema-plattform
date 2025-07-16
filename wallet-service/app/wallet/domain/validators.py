@@ -1,5 +1,5 @@
 from .exceptions import *
-from .value_objects import Money, Decimal, Currency, WalletId
+from .value_objects import Money, Decimal, Currency, WalletId, Charge
 from app.user.domain.value_objects import UserId
 
 MIN_CREDIT_ALLOWED_MXN = Money(Decimal("5.00"), Currency.MXN)
@@ -48,14 +48,14 @@ class WalletDomainValidator:
                 f"Credit limit validation not defined for currency: {amount.currency.value}"
             )
 
-    def validate_credit_decrease(self, amount: Money):
+    def validate_credit_decrease(self, amount: Charge):
         if self.wallet.balance.currency != amount.currency:
             raise UnsupportedCurrencyError(
                 "Cannot remove credit with a different currency than wallet balance."
             )
 
-        if amount.amount <= Decimal("0"):
-            raise InvalidTransactionAmountError("Debit amount must be positive.")
+        if amount.amount > Decimal("0"):
+            raise InvalidTransactionAmountError("Charge amount must be negative or zero.")
 
         if self.wallet.balance < amount:
             raise InsufficientFundsError(
