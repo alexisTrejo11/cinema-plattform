@@ -1,8 +1,6 @@
-from typing import Optional, List
-from uuid import UUID
 from app.wallet.domain.repositories.wallet_repository import WalletRepository
 from app.wallet.presentation.dtos.response import WalletResponse
-from ...exceptions import WalletNotFoundError, UserNotFoundError
+from ...query.queries import GetWalletByIdQuery, GetWalletByUserIdQuery
 
 
 class GetWalletByIdUseCase:
@@ -11,13 +9,13 @@ class GetWalletByIdUseCase:
     def __init__(self, wallet_repo: WalletRepository):
         self.wallet_repo = wallet_repo
 
-    async def execute(
-        self, wallet_id: UUID, include_transactions: bool = True
-    ) -> WalletResponse:
+    async def execute(self, query: GetWalletByIdQuery) -> WalletResponse:
         """Retrieves a wallet by its ID."""
-        wallet = await self.wallet_repo.get_by_id(wallet_id, include_transactions)
-        if not wallet:
-            raise WalletNotFoundError(str(wallet_id))
+        wallet = await self.wallet_repo.get_by_id(
+            wallet_id=query.walletId,
+            raise_exception=True,
+            transaction_query=(query.model_dump()),
+        )
 
         return WalletResponse.from_domain(wallet)
 
@@ -28,12 +26,12 @@ class GetWalletsByUserIdUseCase:
     def __init__(self, wallet_repo: WalletRepository):
         self.wallet_repo = wallet_repo
 
-    async def execute(
-        self, user_id: UUID, include_transactions: bool = True
-    ) -> WalletResponse:
+    async def execute(self, query: GetWalletByUserIdQuery) -> WalletResponse:
         """Retrieves all wallets for a given user."""
-        wallet = await self.wallet_repo.get_by_user_id(user_id, include_transactions)
-        if not wallet:
-            raise UserNotFoundError(str(user_id))
+        wallet = await self.wallet_repo.get_by_user_id(
+            user_id=query.userId,
+            transaction_query=query.model_dump(),
+            raise_exception=True,
+        )
 
         return WalletResponse.from_domain(wallet)

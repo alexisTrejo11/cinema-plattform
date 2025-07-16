@@ -48,3 +48,5 @@ class WalletOperationRequest(BaseModel):
             "payment_method": "card"
         }
     }
+    
+    

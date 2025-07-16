@@ -6,7 +6,7 @@ from .value_objects import UserRole, UserId
 class User:
     def __init__(
         self,
-        id: "UserId",
+        id: UserId,
         email: str,
         roles: List[UserRole],
         is_active: bool,

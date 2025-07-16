@@ -1,12 +1,16 @@
 from uuid import UUID
 from typing import List
+from pydantic import EmailStr
+
 from fastapi import APIRouter, Depends, status
+
 from app.user.domain.value_objects import UserId
 from app.auth.auth_dependencies import get_logged_admin_user, User
 from app.user.application.dtos import UserResponse
-from pydantic import EmailStr
+
 from .dependencies import get_user_by_id_uc, list_users_uc, get_user_by_email_uc
 from .dependencies import GetUserByIdUseCase, ListUsersUseCase, GetUserByEmailUseCase
+
 from app.shared.response import ApiResponse
 from app.shared.documentation import common_error_responses
 
@@ -34,16 +38,16 @@ router = APIRouter(prefix="/api/v2/admin/users", tags=["admin"])
                                     "email": "testuser@example.com",
                                     "roles": ["user", "admin"],
                                     "is_active": True,
-                                    "created_at": "2024-07-15T10:30:00.123456Z"
+                                    "created_at": "2024-07-15T10:30:00.123456Z",
                                 },
-                                "error": None
-                            }
+                                "error": None,
+                            },
                         }
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def get_user_by_id(
     user_id: UUID,
@@ -84,16 +88,16 @@ async def get_user_by_id(
                                     "email": "anotheruser@example.com",
                                     "roles": ["user", "guest"],
                                     "is_active": False,
-                                    "created_at": "2024-07-10T09:15:00.000000Z"
+                                    "created_at": "2024-07-10T09:15:00.000000Z",
                                 },
-                                "error": None
-                            }
+                                "error": None,
+                            },
                         }
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def get_user_by_email(
     email: EmailStr,

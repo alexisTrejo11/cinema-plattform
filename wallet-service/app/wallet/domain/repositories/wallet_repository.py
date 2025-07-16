@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any, Dict, List, Optional
 from uuid import UUID
-from app.wallet.domain.entities.wallet import Wallet
+from app.wallet.domain.entities.wallet import Wallet, WalletId
+from app.user.domain.value_objects import UserId
 
 
 class WalletRepository(ABC):
@@ -9,7 +10,10 @@ class WalletRepository(ABC):
 
     @abstractmethod
     async def get_by_id(
-        self, wallet_id: UUID, include_transactions: bool = False, raise_exception: bool = False
+        self,
+        wallet_id: WalletId,
+        transaction_query: Dict[str, Any],
+        raise_exception: bool = False,
     ) -> Wallet:
         """Get all wallets for a specific user asynchronously.
 
@@ -23,7 +27,10 @@ class WalletRepository(ABC):
 
     @abstractmethod
     async def get_by_user_id(
-        self, user_id: UUID, include_transactions=False, raise_exception=False
+        self,
+        user_id: UserId,
+        transaction_query: Dict[str, Any],
+        raise_exception: bool = False,
     ) -> Wallet:
         """Retrieves all wallets for a given user."""
         raise NotImplementedError

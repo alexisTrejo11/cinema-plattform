@@ -1,19 +1,34 @@
 from typing import Optional
+import logging
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 
+
 from app.shared.response import ApiResponse
 from app.user.domain.value_objects import UserId
-from app.auth.auth_dependencies import get_employee_user, User
+from app.auth.auth_dependencies import get_staff_user, User
 
-from app.wallet.application.command.commands import PayWithWalletCommand, AddCreditCommand, CreateWalletCommand
-from app.wallet.domain.value_objects import PaymentDetails, Money, Charge
-from ..dtos.response import WalletResponse, WalletBuyResponse, PayResponse
+from app.wallet.application.command.commands import (
+    PayWithWalletCommand,
+    AddCreditCommand,
+    CreateWalletCommand,
+)
+from app.wallet.application.query.queries import (
+    GetWalletByIdQuery,
+    GetWalletByUserIdQuery,
+)
+
+from ..dtos.response import WalletResponse, WalletBuyResponse
 from ..dtos.request import WalletOperationRequest
 from ..dependencies import get_wallet_uc, WalletUseCases
-from app.shared.documentation import common_wallet_error_responses as common_error_responses
+from app.shared.documentation import (
+    common_wallet_error_responses as common_error_responses,
+)
 
 router = APIRouter(prefix="/api/v2/wallets", tags=["Wallets"])
+
+logger = logging.getLogger("app")
+
 
 @router.get(
     "/{wallet_id}",
@@ -45,51 +60,68 @@ router = APIRouter(prefix="/api/v2/wallets", tags=["Wallets"])
                                         {
                                             "transaction_id": "a0b1c2d3-e4f5-6789-0123-456789abcdef",
                                             "wallet_id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
-                                            "amount": {"amount": 50.00, "currency": "USD"},
+                                            "amount": {
+                                                "amount": 50.00,
+                                                "currency": "USD",
+                                            },
                                             "transaction_type": "CREDIT",
                                             "payment_details": {
                                                 "payment_method": "card",
-                                                "payment_id": "d1e2f3a4-b5c6-7890-1234-567890abcdef"
+                                                "payment_id": "d1e2f3a4-b5c6-7890-1234-567890abcdef",
                                             },
-                                            "timestamp": "2024-07-15T19:00:00.123456Z"
+                                            "timestamp": "2024-07-15T19:00:00.123456Z",
                                         }
-                                    ]
+                                    ],
                                 },
-                                "error": None
-                            }
+                                "error": None,
+                            },
                         }
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def get_wallet(
     wallet_id: UUID,
     include_transactions: bool = Query(
         default=False,
-        description="If true, includes the latest transactions for the wallet. Default is false."
+        description="If true, includes the latest transactions for the wallet. Default is false.",
     ),
     offset: Optional[int] = Query(
         default=0,
         ge=0,
-        description="Offset for paginating transactions, used with `include_transactions=true`."
+        description="Offset for paginating transactions, used with `include_transactions=true`.",
     ),
     limit: Optional[int] = Query(
         default=10,
         gt=0,
         le=100,
-        description="Limit for the number of transactions to return, used with `include_transactions=true`."
+        description="Limit for the number of transactions to return, used with `include_transactions=true`.",
     ),
-    employee: User = Depends(get_employee_user), # Dependency for Bearer Token and employee role check
+    user: User = Depends(get_staff_user),
     wallet_use_cases: WalletUseCases = Depends(get_wallet_uc),
 ):
     """
     Retrieves a wallet by its ID.
     """
-    transaction_page = {"offset": offset, "limit": limit}
-    wallet_response = await wallet_use_cases.get_wallet_by_id(wallet_id, include_transactions, transaction_page)
-    return ApiResponse.success(wallet_response, "Wallet Successfully Retrieved")
+    try:
+        logger.info(
+            f"GET get wallet request | Wallet ID:{wallet_id} | Client:{user.get_id().value if user else None}"
+        )
+        query = GetWalletByIdQuery.from_request(
+            wallet_id, include_transactions, limit, offset
+        )
+
+        wallet_response = await wallet_use_cases.get_wallet_by_id(query)
+        logger.info(
+            f"GET get wallet success | Wallet ID:{wallet_id} | User ID:{user.get_id().value}"
+        )
+
+        return ApiResponse.success(wallet_response, "Wallet Successfully Retrieved")
+    except Exception as e:
+        logger.error(f"GET get wallet failed | Wallet ID:{wallet_id} | Error: {str(e)}")
+        raise
 
 
 @router.get(
@@ -118,43 +150,59 @@ async def get_wallet(
                                     "id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
                                     "user_id": "1a2b3c4d-5e6f-7890-1234-567890abcdef",
                                     "balance": {"amount": 1250.75, "currency": "USD"},
-                                    "transactions": [] # Example with no transactions
+                                    "transactions": [],  # Example with no transactions
                                 },
-                                "error": None
-                            }
+                                "error": None,
+                            },
                         }
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def get_user_wallet(
     user_id: UUID,
     include_transactions: bool = Query(
         default=False,
-        description="If true, includes the latest transactions for the wallet. Default is false."
+        description="If true, includes the latest transactions for the wallet. Default is false.",
     ),
     offset: Optional[int] = Query(
         default=0,
         ge=0,
-        description="Offset for paginating transactions, used with `include_transactions=true`."
+        description="Offset for paginating transactions, used with `include_transactions=true`.",
     ),
     limit: Optional[int] = Query(
         default=10,
         gt=0,
         le=100,
-        description="Limit for the number of transactions to return, used with `include_transactions=true`."
+        description="Limit for the number of transactions to return, used with `include_transactions=true`.",
     ),
-    employee: User = Depends(get_employee_user),
+    user: User = Depends(get_staff_user),
     wallet_use_cases: WalletUseCases = Depends(get_wallet_uc),
 ):
     """
     Retrieves a wallet by its associated user ID.
     """
-    transaction_page = {"offset": offset, "limit": limit}
-    wallet_response = await wallet_use_cases.get_wallets_by_user_id(user_id, include_transactions, transaction_page)
-    return ApiResponse.success(wallet_response, "Wallet Successfully Retrieved")
+    try:
+        logger.info(
+            f"GET get user wallet request | User ID:{user_id} | Client:{user.get_id().value if user else None}"
+        )
+
+        query = GetWalletByUserIdQuery.from_request(
+            user_id, include_transactions, limit, offset
+        )
+        wallet_response = await wallet_use_cases.get_wallets_by_user_id(query)
+
+        logger.info(
+            f"GET get user wallet success | User ID:{user_id} | Wallet ID:{str(wallet_response.id)}"
+        )
+        return ApiResponse.success(wallet_response, "Wallet Successfully Retrieved")
+    except Exception as e:
+        logger.error(
+            f"GET get user wallet failed | User ID:{user_id} | Error: {str(e)}"
+        )
+        raise
 
 
 @router.post(
@@ -183,28 +231,32 @@ async def get_user_wallet(
                                 "data": {
                                     "id": "c1d2e3f4-a5b6-7890-1234-567890abcdef",
                                     "user_id": "2a3b4c5d-6e7f-8901-2345-67890abcdef1",
-                                    "balance": {"amount": 0.00, "currency": "USD"}, # Assuming initial balance is 0
-                                    "transactions": []
+                                    "balance": {
+                                        "amount": 0.00,
+                                        "currency": "USD",
+                                    },  # Assuming initial balance is 0
+                                    "transactions": [],
                                 },
-                                "error": None
-                            }
+                                "error": None,
+                            },
                         }
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def create_wallet(
     user_id: UUID,
     wallet_use_cases: WalletUseCases = Depends(get_wallet_uc),
-    employee: User = Depends(get_employee_user)
+    user: User = Depends(get_staff_user),
 ):
     """
     Creates a new wallet for a user.
     """
-    command = CreateWalletCommand(user_id=UserId(user_id))
+    command = CreateWalletCommand.from_uuid(user_id)
     wallet_response = await wallet_use_cases.create_wallet(command)
+
     return ApiResponse.success(wallet_response, "Wallet Successfully Inited")
 
 
@@ -235,7 +287,7 @@ async def create_wallet(
                                 "data": {
                                     "id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
                                     "user_id": "1a2b3c4d-5e6f-7890-1234-567890abcdef",
-                                    "balance": 1300.75, # Example new balance
+                                    "balance": 1300.75,  # Example new balance
                                     "transaction": {
                                         "transaction_id": "g1h2i3j4-k5l6-7890-1234-567890abcdef",
                                         "wallet_id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
@@ -243,39 +295,55 @@ async def create_wallet(
                                         "transaction_type": "CREDIT",
                                         "payment_details": {
                                             "payment_method": "card",
-                                            "payment_id": "x1y2z3a4-b5c6-7890-1234-567890abcdef"
+                                            "payment_id": "x1y2z3a4-b5c6-7890-1234-567890abcdef",
                                         },
-                                        "timestamp": "2024-07-15T19:30:00.123456Z"
-                                    }
+                                        "timestamp": "2024-07-15T19:30:00.123456Z",
+                                    },
                                 },
-                                "error": None
-                            }
+                                "error": None,
+                            },
                         }
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def recharge_credit(
     request_dto: WalletOperationRequest,
     wallet_use_cases: WalletUseCases = Depends(get_wallet_uc),
-    employee: User = Depends(get_employee_user), # Dependency for Bearer Token and employee role check
+    user: User = Depends(get_staff_user),
 ):
     """
     Adds credit to a wallet based on the provided operation details.
     """
-    command = AddCreditCommand(
-        wallet_id=request_dto.wallet_id,
-        payment_details=PaymentDetails(request_dto.payment_method, request_dto.payment_id),
-        amount=Money(request_dto.amount, request_dto.currency)
-    )
-    operation_response = await wallet_use_cases.add_credit(command)
-    return ApiResponse.success(operation_response, "Credit Recharge Successfully processed in wallet")
+    try:
+        logger.info(
+            f"POST add credit to wallet request | Wallet ID:{request_dto.wallet_id} |Client:{user.get_id().value if user else None}"
+        )
+        command = AddCreditCommand.from_request(request_dto)
+
+        operation_response = await wallet_use_cases.add_credit(command)
+
+        logger.info(
+            f"POST add credit to wallet success | Wallet ID:{request_dto.wallet_id} | New Balance: {operation_response.balance} | Transaction ID: {operation_response.transaction.transaction_id}"
+        )
+
+        return ApiResponse.success(
+            operation_response, "Credit Recharge Successfully processed in wallet"
+        )
+    except Exception as e:
+        logger.error(
+            f"POST add credit to wallet failed | Wallet ID:{request_dto.wallet_id} | Error: {str(e)}"
+        )
+        raise
+
 
 @router.post(
     "/pay",
-    response_model=ApiResponse[WalletBuyResponse], # Assuming WalletBuyResponse is suitable for payment output
+    response_model=ApiResponse[
+        WalletBuyResponse
+    ],  # Assuming WalletBuyResponse is suitable for payment output
     summary="Make a Payment from a Wallet",
     description="""
     Initiates a payment from a specified wallet, debiting the given amount.
@@ -299,7 +367,7 @@ async def recharge_credit(
                                 "data": {
                                     "id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
                                     "user_id": "1a2b3c4d-5e6f-7890-1234-567890abcdef",
-                                    "balance": 1200.00, # Example new balance after payment
+                                    "balance": 1200.00,  # Example new balance after payment
                                     "transaction": {
                                         "transaction_id": "h1i2j3k4-l5m6-7890-0123-456789abcdef",
                                         "wallet_id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
@@ -307,32 +375,42 @@ async def recharge_credit(
                                         "transaction_type": "DEBIT",
                                         "payment_details": {
                                             "payment_method": "merchant_purchase",
-                                            "payment_id": "y1z2a3b4-c5d6-7890-1234-567890abcdef"
+                                            "payment_id": "y1z2a3b4-c5d6-7890-1234-567890abcdef",
                                         },
-                                        "timestamp": "2024-07-15T19:45:00.123456Z"
-                                    }
+                                        "timestamp": "2024-07-15T19:45:00.123456Z",
+                                    },
                                 },
-                                "error": None
-                            }
+                                "error": None,
+                            },
                         }
                     }
                 }
-            }
-        }
-    }
+            },
+        },
+    },
 )
 async def pay(
     request_dto: WalletOperationRequest,
     wallet_use_cases: WalletUseCases = Depends(get_wallet_uc),
-    employee: User = Depends(get_employee_user),
+    user: User = Depends(get_staff_user),
 ):
     """
     Makes a payment from a wallet.
     """
-    command = PayWithWalletCommand(
-        wallet_id=request_dto.wallet_id,
-        payment_details=PaymentDetails(request_dto.payment_method, request_dto.payment_id),
-        charge=Charge(request_dto.amount, request_dto.currency)
-    )
-    pay_response = await wallet_use_cases.pay(command)
-    return ApiResponse.success(data=pay_response, message="Pay Successfully processed in wallet")
+    try:
+        logger.info(
+            f"POST pay from wallet request | Wallet ID:{request_dto.wallet_id} | Client:{user.get_id().value if user else None}"
+        )
+        command = PayWithWalletCommand.from_request(request_dto)
+
+        pay_response = await wallet_use_cases.pay(command)
+
+        logger.info(
+            f"POST pay from wallet success | Wallet ID:{request_dto.wallet_id} | New Balance: {pay_response.balance} | Transaction ID: {pay_response.transaction.transaction_id}"
+        )
+        return ApiResponse.success(pay_response, "Pay Successfully processed in wallet")
+    except Exception as e:
+        logger.error(
+            f"POST pay from wallet failed | Wallet ID:{request_dto.wallet_id} | Error: {str(e)}"
+        )
+        raise
