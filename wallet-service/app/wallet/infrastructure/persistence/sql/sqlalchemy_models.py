@@ -117,7 +117,7 @@ class WalletSQLModel(Base):
         Enum(Currency, name="currency_enum"), nullable=False, default=Currency.USD
     )
 
-    user: Mapped["UserSQLModel"] = relationship("UserSQLModel", back_populates="wallet")
+    user: Mapped["UserSQLModel"] = relationship("UserSQLModel", back_populates="wallet", lazy="select")
     transactions: Mapped[List["WalletTransactionSQLModel"]] = relationship(
         "WalletTransactionSQLModel",
         back_populates="wallet",

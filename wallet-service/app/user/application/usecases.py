@@ -1,11 +1,10 @@
-from app.user.domain.user import User, UserId
-from typing import Any, Dict, List, Optional
+from app.user.domain.user import UserId
+from typing import Any, Dict, List
 from app.user.domain.exceptions import UserNotFoundException
 from app.user.domain.repository import UserRepository
 from app.user.application.dtos import UserCreateCommand, UserResponse
-from datetime import datetime
-from typing import List, Optional
-from app.user.domain.user import User, UserId
+from typing import List
+from app.user.domain.user import UserId
 
 
 class GetUserByIdUseCase:

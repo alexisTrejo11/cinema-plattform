@@ -1,21 +1,28 @@
+# Core FastAPI and Uvicorn for the web application
 fastapi
 uvicorn
 
+# Database ORM and async drivers
 SQLAlchemy
 asyncpg
 greenlet
 
-colorlog
-slowapi
+# Logging and API rate limiting
+colorlog  # Enhanced colored logging
+slowapi   # API rate limiting
 
-aiosqlite
+# Pydantic
+pydantic==2.11.7
 pydantic-settings
-pydantic[email]
+pydantic[email] 
 
-SQLAlchemy
-asyncpg
+# Asynchronous messaging/task queue (RabbitMQ)
 aio_pika
 
+# Authentication and HTTP client
+aiohttp                # Asynchronous HTTP client
+python-jose[cryptography] # JOSE (JSON Object Signing and Encryption) 
 
-aiohttp
-python-jose[cryptography]
+# Testing framework
+pytest
+pytest-asyncio

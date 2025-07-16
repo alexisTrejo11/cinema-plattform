@@ -1,8 +1,8 @@
 import uuid
 from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, Enum, ARRAY
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy import String, Boolean, DateTime, Enum
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.user.domain.user import UserRole
 from config.postgres_config import Base
@@ -32,7 +32,7 @@ class UserSQLModel(Base):
     )
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     wallet: Mapped["WalletSQLModel"] = relationship(
-        "WalletSQLModel", back_populates="user"
+        "WalletSQLModel", back_populates="user", lazy="select"
     )
 
     def __repr__(self):

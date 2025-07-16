@@ -1,6 +1,7 @@
 from app.user.domain.repository import UserRepository
 from typing import List, Optional, Dict, Any
 from sqlalchemy import select, insert, update, delete, asc, desc
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from .model import UserSQLModel
@@ -39,7 +40,8 @@ class SqlAlchemyUserRepository(UserRepository):
                 role_enum = UserRole(params["role"])
             else:
                 role_enum = params["role"]
-            stmt = stmt.where(UserSQLModel.roles.contains([role_enum]))
+            # Use PostgreSQL array overlap operator
+            stmt = stmt.where(UserSQLModel.roles.op("&&")([role_enum]))
 
         if "sort_by" in params:
             sort_column_name = params["sort_by"]
@@ -64,19 +66,34 @@ class SqlAlchemyUserRepository(UserRepository):
         return [sql_user.to_domain_user() for sql_user in sql_users]
 
     async def save(self, user_data: Dict[str, Any]) -> User:
-        if "roles" in user_data:
-            user_data["roles"] = [UserRole(role) for role in user_data["roles"]]
+        # Convert domain objects to database-compatible values
+        data_copy = user_data.copy()
 
-        if "id" in user_data and user_data["id"]:
-            existing_user = await self.session.get(UserSQLModel, UUID(user_data["id"]))
+        if "roles" in data_copy:
+            data_copy["roles"] = [UserRole(role) for role in data_copy["roles"]]
+
+        if "id" in data_copy and data_copy["id"]:
+            user_id = (
+                data_copy["id"].value
+                if hasattr(data_copy["id"], "value")
+                else data_copy["id"]
+            )
+            existing_user = await self.session.get(UserSQLModel, user_id)
             if existing_user:
-                for key, value in user_data.items():
+                for key, value in data_copy.items():
                     if hasattr(existing_user, key):
-                        setattr(existing_user, key, value)
+                        # Convert value objects to their underlying values
+                        if key == "id" and hasattr(value, "value"):
+                            setattr(existing_user, key, value.value)
+                        else:
+                            setattr(existing_user, key, value)
                 await self.session.flush()
                 return existing_user.to_domain_user()
 
-        new_sql_user = UserSQLModel(**user_data)
+            # Convert the id to UUID for new user creation
+            data_copy["id"] = user_id
+
+        new_sql_user = UserSQLModel(**data_copy)
         self.session.add(new_sql_user)
         await self.session.flush()
         await self.session.refresh(new_sql_user)

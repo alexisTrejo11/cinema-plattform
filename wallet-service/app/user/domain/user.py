@@ -45,11 +45,11 @@ class User:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            "id": str(self.__id.value),
+            "id": self.__id.value,  # Return UUID directly, not string
             "email": self.__email,
             "roles": [role.value for role in self.__roles],
             "is_active": self.__is_active,
-            "created_at": self.__created_at.isoformat() if self.__created_at else None,
-            "updated_at": self.__updated_at.isoformat() if self.__updated_at else None,
-            "deleted_at": self.__deleted_at.isoformat() if self.__deleted_at else None,
+            "created_at": self.__created_at,  # Return datetime directly
+            "updated_at": self.__updated_at,  # Return datetime directly
+            "deleted_at": self.__deleted_at,  # Return datetime directly
         }
