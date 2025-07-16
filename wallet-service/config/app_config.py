@@ -3,11 +3,20 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
+    # Application Configuration
+    API_NAME: str = "Wallet Service"
+    API_HOST: str
+    API_PORT: int
     API_VERSION: str = "1.0"
     DEBUG_MODE: bool = False
+
+    REGISTRY_ADMIN_URL: str
+
+    # JWT Configuration
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
 
+    # Database Configuration
     DATABASE_URL: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
@@ -15,6 +24,7 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_DB: str
 
+    # RabbitMQ Configuration
     RABBITMQ_URL: str
     USER_EVENTS_EXCHANGE: str
     CONSUMER_QUEUE_NAME: str
