@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, TYPE_CHECKING
-from sqlalchemy import ForeignKey, String, DateTime, Enum, DECIMAL
+from sqlalchemy import ForeignKey, String, DateTime, Enum, DECIMAL, DATETIME
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -117,7 +117,9 @@ class WalletSQLModel(Base):
         Enum(Currency, name="currency_enum"), nullable=False, default=Currency.USD
     )
 
-    user: Mapped["UserSQLModel"] = relationship("UserSQLModel", back_populates="wallet", lazy="select")
+    user: Mapped["UserSQLModel"] = relationship(
+        "UserSQLModel", back_populates="wallet", lazy="select"
+    )
     transactions: Mapped[List["WalletTransactionSQLModel"]] = relationship(
         "WalletTransactionSQLModel",
         back_populates="wallet",

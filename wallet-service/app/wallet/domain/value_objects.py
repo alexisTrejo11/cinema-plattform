@@ -14,6 +14,8 @@ class WalletId:
             raise ValueError("WalletId must be a valid UUID.")
         self.value = value
 
+    arbitrary_types_allowed = True
+
     @classmethod
     def from_string(cls, value: str) -> "WalletId":
         try:
@@ -47,6 +49,9 @@ class Money:
                 ) from e
         else:
             self.amount = amount
+
+        if self.amount < 0:
+            raise InvalidTransactionAmountError("Amount cannot be negative.")
 
         if not isinstance(currency, Currency):
             raise TypeError("Currency must be an instance of Currency Enum.")
@@ -119,5 +124,20 @@ class PaymentDetails:
             "payment_id": str(self.payment_id),
         }
 
+
 class Charge(Money):
-    pass
+    def __init__(self, amount: Union[Decimal, str, float], currency: Currency):
+        if not isinstance(amount, Decimal):
+            try:
+                self.amount = Decimal(str(amount))
+            except Exception as e:
+                raise InvalidTransactionAmountError(
+                    "Amount must be a valid number."
+                ) from e
+        else:
+            self.amount = amount
+
+        # Unlike Money, Charge can have negative amounts for debits
+        if not isinstance(currency, Currency):
+            raise TypeError("Currency must be an instance of Currency Enum.")
+        self.currency = currency

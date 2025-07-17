@@ -12,7 +12,6 @@ class WalletRepository(ABC):
     async def get_by_id(
         self,
         wallet_id: WalletId,
-        transaction_query: Dict[str, Any],
         raise_exception: bool = False,
     ) -> Wallet:
         """Get all wallets for a specific user asynchronously.
@@ -29,7 +28,6 @@ class WalletRepository(ABC):
     async def get_by_user_id(
         self,
         user_id: UserId,
-        transaction_query: Dict[str, Any],
         raise_exception: bool = False,
     ) -> Wallet:
         """Retrieves all wallets for a given user."""
@@ -61,7 +59,7 @@ class WalletRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def delete(self, wallet_id: UUID) -> bool:
+    async def delete(self, wallet_id: WalletId) -> bool:
         """Delete a wallet asynchronously.
 
         Args:

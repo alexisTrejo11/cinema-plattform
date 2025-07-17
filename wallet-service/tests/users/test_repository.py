@@ -1,22 +1,16 @@
-# Import necessary modules for testing
 import pytest
 import pytest_asyncio
 from typing import Dict, Any, List
 from datetime import datetime, timezone
 import uuid
 
-# Import domain models and repository
 from app.user.domain.user import User, UserRole, UserId
 from app.user.infrastructure.sql_user_respository import SqlAlchemyUserRepository
 from app.user.infrastructure.model import (
     UserSQLModel,
-)  # Needed for direct DB checks in some tests
+)
 
-# Import fixtures from conftest.py (assuming conftest.py is in tests/ directory)
-# This line assumes the conftest.py is correctly set up as discussed previously.
-from tests.conftest import session  # We only need the session fixture directly here
-
-# --- Fixtures for Test Data (Corrected to provided fields only) ---
+from tests.conftest import session
 
 
 @pytest.fixture
@@ -87,8 +81,6 @@ async def user_repo(session) -> SqlAlchemyUserRepository:
 
 
 # --- Test Cases ---
-
-
 @pytest.mark.asyncio
 async def test_create_user_successfully(
     user_repo: SqlAlchemyUserRepository, sample_user_data: Dict[str, Any]
