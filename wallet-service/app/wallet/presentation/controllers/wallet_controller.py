@@ -3,10 +3,8 @@ import logging
 from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 
-
 from app.shared.response import ApiResponse
-from app.user.domain.value_objects import UserId
-from app.auth.auth_dependencies import get_staff_user, User
+from app.user.auth.auth_dependencies import get_staff_user, User
 
 from app.wallet.application.command.commands import (
     PayWithWalletCommand,
@@ -25,9 +23,8 @@ from app.shared.documentation import (
     common_wallet_error_responses as common_error_responses,
 )
 
-router = APIRouter(prefix="/api/v2/wallets", tags=["Wallets"])
-
 logger = logging.getLogger("app")
+router = APIRouter(prefix="/api/v2/wallets", tags=["Wallets"])
 
 
 @router.get(

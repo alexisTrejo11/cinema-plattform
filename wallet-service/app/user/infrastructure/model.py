@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID, ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.user.domain.user import UserRole
 from config.postgres_config import Base
+from app.user.domain.user import User, UserId
 
 if TYPE_CHECKING:
     from app.wallet.infrastructure.persistence.sql.sqlalchemy_models import (
@@ -39,7 +40,6 @@ class UserSQLModel(Base):
         return f"<UserSQLModel(id={self.id}, email='{self.email}')>"
 
     def to_domain_user(self):
-        from app.user.domain.user import User, UserId
 
         return User(
             id=UserId(self.id),
@@ -50,3 +50,23 @@ class UserSQLModel(Base):
             updated_at=self.updated_at,
             deleted_at=self.deleted_at,
         )
+
+    @staticmethod
+    def from_domain(user: User) -> "UserSQLModel":
+        return UserSQLModel(
+            id=user.get_id().value,
+            email=user.get_email(),
+            roles=[role.value for role in user.get_roles()],
+            is_active=user.is_active(),
+            created_at=user.get_created_at(),
+            updated_at=user.get_updated_at(),
+            deleted_at=user.get_deleted_at(),
+        )
+
+    def update_from_domain(self, user: User) -> None:
+        self.id = user.get_id().value
+        self.email = user.get_email()
+        self.roles = [role for role in user.get_roles()]
+        self.is_active = user.is_active()
+        self.updated_at = user.get_updated_at()
+        self.deleted_at = user.get_deleted_at()

@@ -10,9 +10,9 @@ class User:
         email: str,
         roles: List[UserRole],
         is_active: bool,
-        created_at: Optional[datetime],
-        updated_at: Optional[datetime],
-        deleted_at: Optional[datetime],
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
+        deleted_at: Optional[datetime] = None,
     ) -> None:
         self.__id = id
         self.__email = email

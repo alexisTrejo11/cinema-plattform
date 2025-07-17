@@ -2,9 +2,10 @@ from app.user.domain.user import UserId
 from typing import Any, Dict, List
 from app.user.domain.exceptions import UserNotFoundException
 from app.user.domain.repository import UserRepository
-from app.user.application.dtos import UserCreateCommand, UserResponse
-from typing import List
+from app.user.application.commands import UserCreateCommand, UserUpdateCommand
+from app.user.application.dtos import UserResponse
 from app.user.domain.user import UserId
+from .mapper import UserMapper
 
 
 class GetUserByIdUseCase:
@@ -12,16 +13,9 @@ class GetUserByIdUseCase:
         self.user_repository = user_repository
 
     async def execute(self, user_id: UserId) -> UserResponse:
-        """
-        Retrieves a user by their Email.
-
-        :param email: The email of the user to retrieve.
-        :return: The User object if found, otherwise None.
-        """
-        user = await self.user_repository.get_by_id(user_id.to_string())
+        user = await self.user_repository.get_by_id(user_id)
         if not user:
-
-            raise UserNotFoundException(str(user_id.value))
+            raise UserNotFoundException(user_id.to_string())
 
         return UserResponse(**user.to_dict())
 
@@ -31,12 +25,6 @@ class GetUserByEmailUseCase:
         self.user_repository = user_repository
 
     async def execute(self, email: str) -> UserResponse:
-        """
-        Retrieves a user by their ID.
-
-        :param user_id: The ID of the user to retrieve.
-        :return: The User object if found, otherwise None.
-        """
         user = await self.user_repository.get_by_email(email)
         if not user:
             raise UserNotFoundException(email)
@@ -49,12 +37,7 @@ class ListUsersUseCase:
         self.user_repository = user_repository
 
     async def execute(self, params: Dict[str, Any]) -> List[UserResponse]:
-        """
-        Lists all users.
-
-        :return: A list of User objects.
-        """
-        users = await self.user_repository.list(params)
+        users = await self.user_repository.search(params)
         return [UserResponse(**user.to_dict()) for user in users]
 
 
@@ -63,13 +46,9 @@ class CreateUserUseCase:
         self.user_repository = user_repository
 
     async def execute(self, command: UserCreateCommand) -> UserResponse:
-        """
-        Creates a new user.
+        new_user = UserMapper.from_create_command(command)
 
-        :param user: The User object to create.
-        :return: The created User object.
-        """
-        user_created = await self.user_repository.save(**command.model_dump())
+        user_created = await self.user_repository.create(new_user)
 
         return UserResponse(**user_created.to_dict())
 
@@ -79,21 +58,14 @@ class UpdateUserUseCase:
         self.user_repository = user_repository
 
     async def execute(
-        self, user_id: UserId, command: UserCreateCommand
+        self, user_id: UserId, command: UserUpdateCommand
     ) -> UserResponse:
-        """
-        Creates a new user.
-
-        :param user: The User object to create.
-        :return: The created User object.
-        """
-        user = await self.user_repository.get_by_id(user_id.to_string())
-        if not user:
-            raise UserNotFoundException(str(user_id.value))
-
-        user_created = await self.user_repository.save(
-            **command.model_dump(exclude_unset=True)
+        existing_user = await self.user_repository.get_by_id(
+            user_id, raise_exception=True
         )
+
+        update_user = UserMapper.from_update_command(command, existing_user)
+        user_created = await self.user_repository.update(update_user)
 
         return UserResponse(**user_created.to_dict())
 
@@ -103,14 +75,5 @@ class SoftDeleteUserUseCase:
         self.user_repository = user_repository
 
     async def execute(self, user_id: UserId) -> None:
-        """
-        Soft Delete a new user.
-
-        :param user: The User object to create.
-        :return: The created User object.
-        """
-        user = await self.user_repository.get_by_id(user_id.to_string())
-        if not user:
-            raise UserNotFoundException(str(user_id.value))
-
-        await self.user_repository.delete(user_id.to_string())
+        await self.user_repository.get_by_id(user_id, raise_exception=True)
+        await self.user_repository.delete(user_id, soft_delete=True)

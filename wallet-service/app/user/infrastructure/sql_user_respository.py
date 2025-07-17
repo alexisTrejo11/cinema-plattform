@@ -3,32 +3,39 @@ from typing import List, Optional, Dict, Any
 from sqlalchemy import select, insert, update, delete, asc, desc
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.asyncio import AsyncSession
-from uuid import UUID
 from .model import UserSQLModel
-from app.user.domain.user import User, UserRole
+from app.user.domain.user import User, UserRole, UserId
+from app.user.domain.exceptions import UserNotFoundException
 
 
 class SqlAlchemyUserRepository(UserRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get_by_id(self, user_id: str) -> Optional[User]:
-        stmt = select(UserSQLModel).where(UserSQLModel.id == UUID(user_id))
+    async def get_by_id(self, user_id: UserId, raise_exception=True) -> User:
+        stmt = select(UserSQLModel).where(UserSQLModel.id == user_id.value)
         result = await self.session.execute(stmt)
         sql_user = result.scalar_one_or_none()
+
         if sql_user:
             return sql_user.to_domain_user()
-        return None
+
+        if not raise_exception:
+            return None
+
+        raise UserNotFoundException(user_id.to_string())
 
     async def get_by_email(self, email: str) -> Optional[User]:
         stmt = select(UserSQLModel).where(UserSQLModel.email == email)
         result = await self.session.execute(stmt)
         sql_user = result.scalar_one_or_none()
+
         if sql_user:
             return sql_user.to_domain_user()
+
         return None
 
-    async def list(self, params: Dict[str, Any]) -> List[User]:
+    async def search(self, params: Dict[str, Any]) -> List[User]:
         stmt = select(UserSQLModel)
 
         if "is_active" in params:
@@ -40,7 +47,7 @@ class SqlAlchemyUserRepository(UserRepository):
                 role_enum = UserRole(params["role"])
             else:
                 role_enum = params["role"]
-            # Use PostgreSQL array overlap operator
+            # array overlap operator
             stmt = stmt.where(UserSQLModel.roles.op("&&")([role_enum]))
 
         if "sort_by" in params:
@@ -65,41 +72,24 @@ class SqlAlchemyUserRepository(UserRepository):
         sql_users = result.scalars().all()
         return [sql_user.to_domain_user() for sql_user in sql_users]
 
-    async def save(self, user_data: Dict[str, Any]) -> User:
-        # Convert domain objects to database-compatible values
-        data_copy = user_data.copy()
+    async def create(self, user: User) -> None:
+        new_sql_user = UserSQLModel.from_domain(user)
 
-        if "roles" in data_copy:
-            data_copy["roles"] = [UserRole(role) for role in data_copy["roles"]]
-
-        if "id" in data_copy and data_copy["id"]:
-            user_id = (
-                data_copy["id"].value
-                if hasattr(data_copy["id"], "value")
-                else data_copy["id"]
-            )
-            existing_user = await self.session.get(UserSQLModel, user_id)
-            if existing_user:
-                for key, value in data_copy.items():
-                    if hasattr(existing_user, key):
-                        # Convert value objects to their underlying values
-                        if key == "id" and hasattr(value, "value"):
-                            setattr(existing_user, key, value.value)
-                        else:
-                            setattr(existing_user, key, value)
-                await self.session.flush()
-                return existing_user.to_domain_user()
-
-            # Convert the id to UUID for new user creation
-            data_copy["id"] = user_id
-
-        new_sql_user = UserSQLModel(**data_copy)
         self.session.add(new_sql_user)
         await self.session.flush()
-        await self.session.refresh(new_sql_user)
-        return new_sql_user.to_domain_user()
 
-    async def delete(self, user_id: str) -> bool:
-        stmt = delete(UserSQLModel).where(UserSQLModel.id == UUID(user_id))
+    async def update(self, user: User) -> None:
+        existing_user = await self.session.get(UserSQLModel, user.get_id().value)
+
+        if not existing_user:
+            raise UserNotFoundException(user.get_id().to_string())
+
+        existing_user.update_from_domain(user)
+
+        self.session.add(existing_user)
+        await self.session.commit()
+
+    async def delete(self, user_id: UserId) -> bool:
+        stmt = delete(UserSQLModel).where(UserSQLModel.id == user_id.value)
         result = await self.session.execute(stmt)
         return result.rowcount > 0
