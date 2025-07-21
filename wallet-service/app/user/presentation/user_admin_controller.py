@@ -5,7 +5,7 @@ from pydantic import EmailStr
 from fastapi import APIRouter, Depends, status
 
 from app.user.domain.value_objects import UserId
-from app.auth.auth_dependencies import get_logged_admin_user, User
+from app.user.auth.auth_dependencies import get_logged_admin_user, User
 from app.user.application.dtos import UserResponse
 
 from .dependencies import get_user_by_id_uc, list_users_uc, get_user_by_email_uc

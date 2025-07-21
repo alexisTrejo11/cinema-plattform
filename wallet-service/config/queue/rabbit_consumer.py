@@ -1,7 +1,7 @@
 import json
 from aio_pika.abc import AbstractQueue, AbstractIncomingMessage
 from typing import Optional, Dict, Any
-from rabbitmq_client import RabbitMQClient
+from .rabbitmq_client import RabbitMQClient
 from app.user.infrastructure.queue.user_event_processor import UserEventProcessor
 import logging
 
@@ -20,7 +20,9 @@ class RabbitMQConsumer(RabbitMQClient):
         if self.channel:
             self.queue = await self.channel.declare_queue(self.queue_name, durable=True)
             await self.queue.bind(self.exchange)
-            logger.info(f"Connected to RabbitMQ. Listening on queue '{self.queue_name}'...")
+            logger.info(
+                f"Connected to RabbitMQ. Listening on queue '{self.queue_name}'..."
+            )
 
     async def start_consuming(self):
         await self.connect()
@@ -39,4 +41,3 @@ class RabbitMQConsumer(RabbitMQClient):
             except Exception as e:
                 logger.error(f"Error in on_message (dispatching to processor): {e}")
                 await message.reject(requeue=False)
-

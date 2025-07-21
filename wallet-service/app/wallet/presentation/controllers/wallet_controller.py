@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 
 from app.shared.response import ApiResponse
 from app.user.auth.auth_dependencies import get_staff_user, User
-
+from ..docs.walley_docs import *
 from app.wallet.application.command.commands import (
     PayWithWalletCommand,
     AddCreditCommand,
@@ -30,54 +30,10 @@ router = APIRouter(prefix="/api/v2/wallets", tags=["Wallets"])
 @router.get(
     "/{wallet_id}",
     response_model=ApiResponse[WalletResponse],
-    summary="Retrieve Wallet by ID",
-    description="""
-    Retrieves detailed information for a specific wallet using its unique identifier.
-
-    This endpoint requires authentication as an employee.
-    It can optionally include a list of recent transactions associated with the wallet.
-    """,
+    summary=walleyByIdDoc["summary"],
+    description=walleyByIdDoc["description"],
     status_code=status.HTTP_200_OK,
-    responses={
-        **common_error_responses,
-        status.HTTP_200_OK: {
-            "description": "Wallet successfully retrieved.",
-            "content": {
-                "application/json": {
-                    "examples": {
-                        "success": {
-                            "summary": "Successful Wallet Retrieval",
-                            "value": {
-                                "message": "Wallet Successfully Retrieved",
-                                "data": {
-                                    "id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
-                                    "user_id": "1a2b3c4d-5e6f-7890-1234-567890abcdef",
-                                    "balance": {"amount": 1250.75, "currency": "USD"},
-                                    "transactions": [
-                                        {
-                                            "transaction_id": "a0b1c2d3-e4f5-6789-0123-456789abcdef",
-                                            "wallet_id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
-                                            "amount": {
-                                                "amount": 50.00,
-                                                "currency": "USD",
-                                            },
-                                            "transaction_type": "CREDIT",
-                                            "payment_details": {
-                                                "payment_method": "card",
-                                                "payment_id": "d1e2f3a4-b5c6-7890-1234-567890abcdef",
-                                            },
-                                            "timestamp": "2024-07-15T19:00:00.123456Z",
-                                        }
-                                    ],
-                                },
-                                "error": None,
-                            },
-                        }
-                    }
-                }
-            },
-        },
-    },
+    responses=walleyByIdDoc["responses"],
 )
 async def get_wallet(
     wallet_id: UUID,
@@ -124,39 +80,10 @@ async def get_wallet(
 @router.get(
     "/user/{user_id}",
     response_model=ApiResponse[WalletResponse],
-    summary="Retrieve Wallet by User ID",
-    description="""
-    Retrieves detailed information for a specific wallet associated with a user ID.
-
-    This endpoint requires authentication as an employee.
-    It can optionally include a list of recent transactions for the wallet.
-    """,
+    summary=walleyByUserIdDoc["summary"],
+    description=walleyByUserIdDoc["description"],
     status_code=status.HTTP_200_OK,
-    responses={
-        **common_error_responses,
-        status.HTTP_200_OK: {
-            "description": "Wallet successfully retrieved.",
-            "content": {
-                "application/json": {
-                    "examples": {
-                        "success": {
-                            "summary": "Successful Wallet Retrieval by User ID",
-                            "value": {
-                                "message": "Wallet Successfully Retrieved",
-                                "data": {
-                                    "id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
-                                    "user_id": "1a2b3c4d-5e6f-7890-1234-567890abcdef",
-                                    "balance": {"amount": 1250.75, "currency": "USD"},
-                                    "transactions": [],  # Example with no transactions
-                                },
-                                "error": None,
-                            },
-                        }
-                    }
-                }
-            },
-        },
-    },
+    responses=walleyByUserIdDoc["responses"],
 )
 async def get_user_wallet(
     user_id: UUID,
@@ -260,51 +187,10 @@ async def create_wallet(
 @router.post(
     "/add-credit",
     response_model=ApiResponse[WalletBuyResponse],
-    summary="Add Credit to a Wallet",
-    description="""
-    Adds a specified amount of credit to a wallet. This operation typically represents
-    a top-up or a deposit into the user's wallet.
-
-    This endpoint requires authentication as an employee.
-    The `WalletOperationRequest` includes the target wallet ID, amount, currency,
-    and details of the payment used for the credit addition.
-    """,
     status_code=status.HTTP_200_OK,
-    responses={
-        **common_error_responses,
-        status.HTTP_200_OK: {
-            "description": "Credit successfully added to the wallet.",
-            "content": {
-                "application/json": {
-                    "examples": {
-                        "success": {
-                            "summary": "Successful Credit Addition",
-                            "value": {
-                                "message": "Credit Recharge Successfully processed in wallet",
-                                "data": {
-                                    "id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
-                                    "user_id": "1a2b3c4d-5e6f-7890-1234-567890abcdef",
-                                    "balance": 1300.75,  # Example new balance
-                                    "transaction": {
-                                        "transaction_id": "g1h2i3j4-k5l6-7890-1234-567890abcdef",
-                                        "wallet_id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
-                                        "amount": {"amount": 50.00, "currency": "USD"},
-                                        "transaction_type": "CREDIT",
-                                        "payment_details": {
-                                            "payment_method": "card",
-                                            "payment_id": "x1y2z3a4-b5c6-7890-1234-567890abcdef",
-                                        },
-                                        "timestamp": "2024-07-15T19:30:00.123456Z",
-                                    },
-                                },
-                                "error": None,
-                            },
-                        }
-                    }
-                }
-            },
-        },
-    },
+    summary=addCreditDoc["summary"],
+    description=addCreditDoc["description"],
+    responses=addCreditDoc["responses"],
 )
 async def recharge_credit(
     request_dto: WalletOperationRequest,
@@ -338,53 +224,11 @@ async def recharge_credit(
 
 @router.post(
     "/pay",
-    response_model=ApiResponse[
-        WalletBuyResponse
-    ],  # Assuming WalletBuyResponse is suitable for payment output
-    summary="Make a Payment from a Wallet",
-    description="""
-    Initiates a payment from a specified wallet, debiting the given amount.
-
-    This endpoint requires authentication as an employee.
-    The `WalletOperationRequest` includes the wallet ID, amount, currency,
-    and details of the payment being made.
-    """,
     status_code=status.HTTP_200_OK,
-    responses={
-        **common_error_responses,
-        status.HTTP_200_OK: {
-            "description": "Payment successfully processed from the wallet.",
-            "content": {
-                "application/json": {
-                    "examples": {
-                        "success": {
-                            "summary": "Successful Payment",
-                            "value": {
-                                "message": "Pay Successfully processed in wallet",
-                                "data": {
-                                    "id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
-                                    "user_id": "1a2b3c4d-5e6f-7890-1234-567890abcdef",
-                                    "balance": 1200.00,  # Example new balance after payment
-                                    "transaction": {
-                                        "transaction_id": "h1i2j3k4-l5m6-7890-0123-456789abcdef",
-                                        "wallet_id": "b1c2d3e4-f5a6-7890-1234-567890abcdef",
-                                        "amount": {"amount": 100.75, "currency": "USD"},
-                                        "transaction_type": "DEBIT",
-                                        "payment_details": {
-                                            "payment_method": "merchant_purchase",
-                                            "payment_id": "y1z2a3b4-c5d6-7890-1234-567890abcdef",
-                                        },
-                                        "timestamp": "2024-07-15T19:45:00.123456Z",
-                                    },
-                                },
-                                "error": None,
-                            },
-                        }
-                    }
-                }
-            },
-        },
-    },
+    response_model=ApiResponse[WalletBuyResponse],
+    summary=payCartDoc["summary"],
+    description=payCartDoc["description"],
+    responses=payCartDoc["responses"],
 )
 async def pay(
     request_dto: WalletOperationRequest,
