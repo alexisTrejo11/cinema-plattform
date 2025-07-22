@@ -8,12 +8,12 @@ from app.products.domain.entities.value_objects import ProductId
 class SearchProductsQuery(BaseModel):
     """Parameters for searching food products"""
 
-    offset: int = Field(
-        ..., ge=0, description="Pagination offset", json_schema_extra={"example": 0}
+    offset: Optional[int] = Field(
+        None, ge=0, description="Pagination offset", json_schema_extra={"example": 0}
     )
 
-    limit: int = Field(
-        ...,
+    limit: Optional[int] = Field(
+        None,
         ge=1,
         le=100,
         description="Maximum number of results to return (1-100)",
@@ -38,7 +38,7 @@ class SearchProductsQuery(BaseModel):
         None, description="Category ID filter", json_schema_extra={"example": 1}
     )
 
-    active_only: bool = Field(
+    active_only: Optional[bool] = Field(
         True,
         description="Whether to include only active products",
         json_schema_extra={"example": True},

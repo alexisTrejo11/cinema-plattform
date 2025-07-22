@@ -21,8 +21,9 @@ class ComboItem:
         Raises:
             TypeError: If product is not a Product or quantity is not an integer
         """
-        if not isinstance(id, ComboItemId):
-            raise TypeError("id must be an ComboItemId instance")
+        if id:
+            if not isinstance(id, ComboItemId):
+                raise TypeError("id must be an ComboItemId instance")
         if not isinstance(product, Product):
             raise TypeError("product must be an instance of Product")
         if not isinstance(quantity, int):

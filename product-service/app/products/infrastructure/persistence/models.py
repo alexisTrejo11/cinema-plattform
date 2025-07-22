@@ -2,8 +2,18 @@ import __future__
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
-from sqlalchemy import Integer, String, Float, Boolean, DateTime, Text, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import (
+    DECIMAL,
+    Integer,
+    String,
+    Float,
+    Boolean,
+    DateTime,
+    Text,
+    ForeignKey,
+)
+from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
+from config.postgres_config import Base
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from app.products.domain.entities.product import Product, ProductId
 from app.products.domain.entities.product_category import ProductCategory
@@ -11,8 +21,6 @@ from uuid import UUID
 
 if TYPE_CHECKING:
     from app.combos.infrastructure.persistence.models import ComboItemModel
-
-Base = declarative_base()
 
 
 class ProductCategoryModel(Base):
@@ -22,7 +30,7 @@ class ProductCategoryModel(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     description: Mapped[str] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
 
     products = relationship("ProductModel", back_populates="category")
 
@@ -38,10 +46,12 @@ class ProductCategoryModel(Base):
 class ProductModel(Base):
     __tablename__ = "products"
 
-    id: Mapped[UUID] = mapped_column(String, primary_key=True, index=True)
+    id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), primary_key=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text)
-    price: Mapped[Decimal] = mapped_column(Float, nullable=False)
+    price: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
     image_url: Mapped[str] = mapped_column(String(500))
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
     preparation_time_mins: Mapped[int] = mapped_column(Integer)

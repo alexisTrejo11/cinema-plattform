@@ -8,21 +8,23 @@ from app.combos.domain.entities.value_objects import ComboId
 
 class ComboRepository(ABC):
     @abstractmethod
-    def get_by_id(self, search_query: GetComboByIdQuery) -> Optional[Combo]:
+    async def get_by_id(self, search_query: GetComboByIdQuery) -> Optional[Combo]:
         pass
 
     @abstractmethod
-    def list_by_product(self, search_query: GetCombosByProductIdQuery) -> List[Combo]:
+    async def list_by_product(
+        self, search_query: GetCombosByProductIdQuery
+    ) -> List[Combo]:
         pass
 
     @abstractmethod
-    def list_all(self, pagination: PaginationQuery) -> List[Combo]:
+    async def list(self, pagination: PaginationQuery) -> List[Combo]:
         pass
 
     @abstractmethod
-    def save(self, combo: Combo) -> Combo:
+    async def save(self, combo: Combo) -> Combo:
         pass
 
     @abstractmethod
-    def soft_delete(self, combo_id: ComboId) -> None:
+    async def soft_delete(self, combo_id: ComboId) -> None:
         pass

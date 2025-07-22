@@ -7,8 +7,14 @@ from app.shared.schema import AbstractId
 
 
 class ComboId(AbstractId):
-    pass
+    @staticmethod
+    def generate() -> "ComboId":
+        """Generate a new UUID."""
+        return ComboId(uuid.uuid4())
 
 
 class ComboItemId(AbstractId):
-    pass
+    @staticmethod
+    def generate() -> "ComboItemId":
+        """Generate a new UUID."""
+        return ComboItemId(uuid.uuid4())

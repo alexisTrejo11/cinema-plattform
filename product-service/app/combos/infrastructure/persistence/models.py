@@ -5,7 +5,9 @@ from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import ForeignKey, Numeric, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import ARRAY
-from app.products.infrastructure.persistence.models import Base
+from config.postgres_config import Base
+from uuid import UUID
+from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 
 if TYPE_CHECKING:
     from app.products.infrastructure.persistence.models import ProductModel
@@ -14,7 +16,9 @@ if TYPE_CHECKING:
 class ComboModel(Base):
     __tablename__ = "combos"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), primary_key=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
@@ -37,7 +41,9 @@ class ComboModel(Base):
 class ComboItemModel(Base):
     __tablename__ = "combo_items"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), primary_key=True, index=True
+    )
     combo_id: Mapped[int] = mapped_column(ForeignKey("combos.id", ondelete="CASCADE"))
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
     quantity: Mapped[int] = mapped_column(default=1)

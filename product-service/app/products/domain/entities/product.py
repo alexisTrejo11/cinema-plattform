@@ -96,7 +96,7 @@ class Product:
     def to_dict(self) -> Dict[str, Any]:
         """Converts the FoodProduct instance to a dictionary."""
         return {
-            "id": self.id,
+            "id": self.id.value,  # Extract UUID value from ProductId
             "name": self.name,
             "description": self.description,
             "price": str(self.price),

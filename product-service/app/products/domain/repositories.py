@@ -102,7 +102,7 @@ class ProductRepository(ABC):
     """
 
     @abstractmethod
-    def get_by_id(self, product_id: ProductId) -> Optional[Product]:
+    async def get_by_id(self, product_id: ProductId) -> Optional[Product]:
         """
         Retrieves a single food product by its ID.
 
@@ -115,7 +115,7 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    def get_by_id_in(
+    async def get_by_id_in(
         self, product_id_list: List[ProductId]
     ) -> Dict[ProductId, Product]:
         """
@@ -132,7 +132,7 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    def search(self, food_params: SearchProductsQuery) -> List[Product]:
+    async def search(self, food_params: SearchProductsQuery) -> List[Product]:
         """
         Searches for food products based on various criteria provided in SearchFoodParams.
 
@@ -148,7 +148,7 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    def save(self, product: Product) -> Product:
+    async def save(self, product: Product) -> Product:
         """
         Saves a new food product or updates an existing one.
 
@@ -165,7 +165,7 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    def delete(self, product_id: ProductId) -> None:
+    async def delete(self, product_id: ProductId) -> None:
         """
         Deletes a food product by its unique identifier.
 
