@@ -1,16 +1,32 @@
+
+# FastAPI and dependencies
 fastapi[standard]
 pydantic
+pydantic-settings
+uvicorn 
+# Database and ORM
 SQLAlchemy
 asyncpg
+psycopg2
 greenlet
+redis[hiredis]
+
+# Testing
 pytest
 pytest-asyncio
-aiosqlite
+
+# Log
 colorlog
+
+# Rate Limiting
 slowapi
-uvicorn 
 python-jose[cryptography] 
-redis[hiredis]
-pydantic-settings
+
+# RabbitMQ
 aio-pika
-psycopg2
+
+# CORS
+fastapi-cors
+
+# ASYNC HTTP
+aiohttp
