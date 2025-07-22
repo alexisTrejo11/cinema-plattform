@@ -177,3 +177,20 @@ class DatabaseException(ApplicationException):
                                                e.g., specific error codes from the DB driver.
         """
         super().__init__(message=message, error_code=error_code, details=details)
+
+
+class AuthorizationException(Exception):
+    """Base class for all auth-specific exceptions."""
+
+    status_code = HTTPStatus.UNAUTHORIZED
+
+    def __init__(
+        self,
+        message: str = "A auth-specific error occurred.",
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        self.message = message
+        self.error_code = error_code or self.__class__.__name__
+        self.details = details
+        super().__init__(self.message)
