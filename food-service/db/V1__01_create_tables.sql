@@ -1,14 +1,14 @@
-CREATE TABLE food_categories (
+CREATE TABLE product_categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc'),
-    CONSTRAINT uq_food_categories_name UNIQUE (name)
+    CONSTRAINT uq_product_categories_name UNIQUE (name)
 );
 
-CREATE TABLE food_products (
-    id SERIAL PRIMARY KEY,
+CREATE TABLE products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(200) NOT NULL,
     description TEXT,
     price NUMERIC(10,2) NOT NULL,
@@ -19,14 +19,14 @@ CREATE TABLE food_products (
     category_id INTEGER NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc'),
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc'),
-    CONSTRAINT fk_food_products_category_id 
+    CONSTRAINT fk_products_category_id 
         FOREIGN KEY (category_id) 
-        REFERENCES food_categories (id)
+        REFERENCES product_categories (id)
         ON DELETE RESTRICT  -- Prevent category deletion if products exist
 );
 
 CREATE TABLE combos (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(200) NOT NULL,
     description VARCHAR(500) DEFAULT '',
     price NUMERIC(10,2) NOT NULL,
@@ -40,9 +40,9 @@ CREATE TABLE combos (
 );
 
 CREATE TABLE combo_items (
-    id SERIAL PRIMARY KEY,
-    combo_id INTEGER NOT NULL,
-    product_id INTEGER NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    combo_id UUID NOT NULL,
+    product_id UUID NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_combo_items_combo_id 
@@ -51,22 +51,22 @@ CREATE TABLE combo_items (
         ON DELETE CASCADE,  -- Delete items when combo is deleted
     CONSTRAINT fk_combo_items_product_id 
         FOREIGN KEY (product_id) 
-        REFERENCES food_products(id)
+        REFERENCES products(id)
         ON DELETE RESTRICT,  -- Prevent product deletion if used in combos
     CONSTRAINT chk_combo_items_quantity CHECK (quantity > 0),
     CONSTRAINT uq_combo_items_product UNIQUE (combo_id, product_id)  -- Prevent duplicate products in same combo
 );
 
--- Indexes for food_categories
-CREATE INDEX IF NOT EXISTS ix_food_categories_id ON food_categories (id);
-CREATE INDEX IF NOT EXISTS ix_food_categories_active ON food_categories (is_active) WHERE is_active = TRUE;
+-- Indexes for product_categories
+CREATE INDEX IF NOT EXISTS idx_product_categories_id ON product_categories (id);
+CREATE INDEX IF NOT EXISTS idx_product_categories_active ON product_categories (is_active) WHERE is_active = TRUE;
 
--- Indexes for food_products
-CREATE INDEX IF NOT EXISTS ix_food_products_id ON food_products (id);
-CREATE INDEX IF NOT EXISTS ix_food_products_category_id ON food_products (category_id);
-CREATE INDEX IF NOT EXISTS ix_food_products_is_available ON food_products (is_available) WHERE is_available = TRUE;
-CREATE INDEX IF NOT EXISTS ix_food_products_price ON food_products (price);
-CREATE INDEX IF NOT EXISTS ix_food_products_name ON food_products (name);
+-- Indexes for products
+CREATE INDEX IF NOT EXISTS idx_products_id ON products (id);
+CREATE INDEX IF NOT EXISTS idx_products_category_id ON products (category_id);
+CREATE INDEX IF NOT EXISTS idx_products_is_available ON products (is_available) WHERE is_available = TRUE;
+CREATE INDEX IF NOT EXISTS idx_products_price ON products (price);
+CREATE INDEX IF NOT EXISTS idx_products_name ON products (name);
 
 -- Indexes for combos
 CREATE INDEX IF NOT EXISTS idx_combo_name ON combos(name);

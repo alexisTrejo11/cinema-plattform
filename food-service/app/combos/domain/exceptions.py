@@ -1,35 +1,56 @@
-from app.utils.exceptions import DomainException
 from decimal import Decimal
-from abc import ABC
-from typing import Any, Optional, Dict
+from typing import Any, Dict
+from app.shared.base_exceptions import (
+    NotFoundException,
+    ApplicationException,
+    ValidationException,
+)
 
-class PriceRangeException(DomainException):
-    """Exception for invalid price ranges."""
-    def __init__(self, min_price: Decimal, max_price: Decimal):
-        message = f"Price must be between {min_price} and {max_price}"
-        super().__init__(message)
 
-class ItemRangeException(DomainException):
-    """Exception for invalid item ranges."""
-    def __init__(self, min_items: int, max_items: int):
-        message = f"Number of items must be between {min_items} and {max_items}"
-        super().__init__(message)
+def ComboNotFoundError(combo_id: str) -> NotFoundException:
+    return NotFoundException("Combo", combo_id)
 
-class PriceSumException(DomainException):
-    """Exception when combo price exceeds sum of product prices."""
-    def __init__(self, product_total_price: Decimal):
-        message = f"The price can't be higher than the product price sum = {product_total_price}"
-        super().__init__(message)
 
-class DiscountPercentageException(DomainException):
-    """Exception for invalid discount percentages."""
-    def __init__(self, expected_percentage: Decimal, details: Optional[Dict[str, Any]] = {}):
-        message = f"Invalid Percentage Provided for that request of products must be {expected_percentage}"
-    
-        super().__init__(message= message, details= details)
+def ComboItemValidationError(reason: str) -> ValidationException:
+    return ValidationException("combo item", reason)
 
-class QuantityRangeException(DomainException):
-    """Exception for invalid quantity ranges."""
-    def __init__(self, product_id: int, min_quantity: int, max_quantity: int):
-        message = f"Item for product {product_id} exceeds the allowed range for quantity that must be between {min_quantity} and {max_quantity}"
-        super().__init__(message)
+
+def ProductValidationError() -> ValidationException:
+    return ValidationException("product", "invalid product provided")
+
+
+def ComboValidationError(reason: str) -> ValidationException:
+    return ValidationException("combo", reason)
+
+
+def PriceRangeException(min: Decimal, max: Decimal) -> ValidationException:
+    return ValidationException("price range", f"invalid price range: {min} - {max}")
+
+
+def ItemRangeException(min: int, max: int) -> ValidationException:
+    return ValidationException("item range", f"invalid item range: {min} - {max}")
+
+
+def PriceSumException(product_total_price: Decimal) -> ValidationException:
+    return ValidationException(
+        "price sum",
+        f"combo price exceeds sum of product prices: {product_total_price}",
+    )
+
+
+def DiscountPercentageException(
+    discount: Decimal, details: Dict[str, Any]
+) -> ValidationException:
+
+    return ValidationException(
+        "discount percentage",
+        f"discount {discount} does not match price ratio",
+        details=details,
+    )
+
+
+def QuantityRangeException(product_id: str, min: int, max: int) -> ValidationException:
+    return ValidationException(
+        "quantity range",
+        f"invalid quantity for product {product_id}: {min} - {max}",
+    )
