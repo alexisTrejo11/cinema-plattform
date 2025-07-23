@@ -12,6 +12,7 @@ from app.products.application.responses import ProductDetails
 from app.products.application.usecases.container import ProductUseCases
 from ..depedencies import get_product_use_cases
 
+
 router = APIRouter(
     prefix="/api/v2/products",
     tags=["Food Products"],
@@ -32,7 +33,7 @@ router = APIRouter(
     summary="Create a new food product",
     description="Creates a new food product with the provided details",
 )
-def create_product(
+async def create_product(
     product_data: CreateProductRequest,
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
@@ -48,7 +49,7 @@ def create_product(
     """
     try:
         command = ProductCreateCommand(**product_data.model_dump())
-        product = usecase.create_product(command)
+        product = await usecase.create_product(command)
         return ApiResponse.success(product)
     except Exception as e:
         raise
@@ -60,7 +61,7 @@ def create_product(
     summary="Get product by ID",
     description="Retrieve detailed information about a specific food product",
 )
-def get_product_by_id(
+async def get_product_by_id(
     product_id: UUID = Path(
         ...,
         description="ID of the product to retrieve",
@@ -75,7 +76,7 @@ def get_product_by_id(
     """
     try:
         query = GetProductByIdQuery(product_id=ProductId(product_id))
-        product = usecase.get_product_by_id(query)
+        product = await usecase.get_product_by_id(query)
         return ApiResponse.success(product, "Food product successfully retrieved")
     except Exception as e:
         raise
@@ -87,7 +88,7 @@ def get_product_by_id(
     summary="Search food products",
     description="Search and filter food products with pagination",
 )
-def search_products(
+async def search_products(
     offset: int = Query(default=0, ge=0, description="Pagination offset", example=0),
     limit: int = Query(
         default=10,
@@ -133,7 +134,7 @@ def search_products(
             name=name_like,
             active_only=available_only,
         )
-        products = usecase.search_products(params)
+        products = await usecase.search_products(params)
         return ApiResponse.success(products, "Food products successfully retrieved")
     except Exception as e:
         raise HTTPException(
@@ -147,7 +148,7 @@ def search_products(
     summary="Update a food product",
     description="Update details of an existing food product",
 )
-def update_product(
+async def update_product(
     update_data: UpdateProductRequest,
     product_id: UUID = Path(..., description="ID of the product to update", example=1),
     usecase: ProductUseCases = Depends(get_product_use_cases),
@@ -162,7 +163,7 @@ def update_product(
         command = ProductUpdateCommand(
             product_id=ProductId(product_id), **update_data.model_dump()
         )
-        product = usecase.update_product(command)
+        product = await usecase.update_product(command)
         return ApiResponse.success(product)
     except Exception as e:
         raise
@@ -175,7 +176,7 @@ def update_product(
     summary="Delete a food product",
     description="Permanently remove a food product from the system",
 )
-def delete_product(
+async def delete_product(
     product_id: UUID = Path(..., description="ID of the product to delete", example=1),
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
@@ -185,7 +186,7 @@ def delete_product(
     - **product_id**: The ID of the product to delete
     """
     try:
-        usecase.soft_delete_product(ProductId(product_id))
+        await usecase.soft_delete_product(ProductId(product_id))
         return ApiResponse.success(None, "Product successfully deleted")
     except Exception as e:
         raise

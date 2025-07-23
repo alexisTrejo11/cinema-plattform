@@ -162,15 +162,17 @@ class AbstractId:
     """Abstract base class for all ID value objects."""
 
     def __init__(self, value: uuid.UUID):
+        if isinstance(value, str):
+            value = uuid.UUID(value)
         if not isinstance(value, uuid.UUID):
             raise ValueError("ID must be a valid UUID")
         self.value = value
 
     @staticmethod
-    def from_string(value: str) -> uuid.UUID:
+    def from_string(value: str) -> "AbstractId":
         """Create a UUID from a string."""
         try:
-            return uuid.UUID(value)
+            return AbstractId(uuid.UUID(value))
         except ValueError:
             raise ValueError("Invalid UUID string format")
 

@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_DB: str
 
+    # Redis Configuration
+    REDIS_URL: str = "redis://localhost:6379"
+
     # RabbitMQ Configuration
     # RABBITMQ_URL: str
     # USER_EVENTS_EXCHANGE: str

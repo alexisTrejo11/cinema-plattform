@@ -48,25 +48,25 @@ class ProductUseCases:
 
     """Use cases for managing food products"""
 
-    def get_product_by_id(self, query: GetProductByIdQuery) -> ProductDetails:
+    async def get_product_by_id(self, query: GetProductByIdQuery) -> ProductDetails:
         """Get a product by its ID"""
-        return self.get_product_by_uc.execute(query)
+        return await self.get_product_by_uc.execute(query)
 
-    def search_products(self, query: SearchProductsQuery) -> List[ProductDetails]:
+    async def search_products(self, query: SearchProductsQuery) -> List[ProductDetails]:
         """Search for products based on parameters"""
-        return self.search_product_uc.execute(query)
+        return await self.search_product_uc.execute(query)
 
-    def create_product(self, create_data: ProductCreateCommand) -> ProductDetails:
+    async def create_product(self, create_data: ProductCreateCommand) -> ProductDetails:
         """Create a new product"""
-        return self.create_product_uc.execute(create_data)
+        return await self.create_product_uc.execute(create_data)
 
-    def update_product(self, update_data: ProductUpdateCommand) -> ProductDetails:
+    async def update_product(self, update_data: ProductUpdateCommand) -> ProductDetails:
         """Update an existing product"""
-        return self.update_product_uc.execute(update_data)
+        return await self.update_product_uc.execute(update_data)
 
-    def soft_delete_product(self, product_id: ProductId) -> None:
+    async def soft_delete_product(self, product_id: ProductId) -> None:
         """Soft delete a product by its ID"""
-        return self.soft_delete_product_uc.execute(product_id)
+        return await self.soft_delete_product_uc.execute(product_id)
 
 
 class ProductCategoryUseCases:

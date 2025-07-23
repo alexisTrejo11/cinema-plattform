@@ -1,6 +1,7 @@
 
 # FastAPI and dependencies
 fastapi[standard]
+fastapi-cache2
 pydantic
 pydantic-settings
 uvicorn 
@@ -9,8 +10,7 @@ SQLAlchemy
 asyncpg
 psycopg2
 greenlet
-redis[hiredis]
-
+redis
 # Testing
 pytest
 pytest-asyncio

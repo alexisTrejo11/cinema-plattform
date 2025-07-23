@@ -11,7 +11,10 @@ from contextlib import asynccontextmanager
 import logging
 from config.registry_service import RegistryMicroservice
 from fastapi.middleware.cors import CORSMiddleware
+from config.redis import RedisManager
 
+from fastapi_cache.decorator import cache
+from fastapi_cache import default_key_builder
 
 setup_logging()
 logger = logging.getLogger("app")
@@ -19,11 +22,13 @@ logger = logging.getLogger("app")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting up Wallet Service...")
+    logger.info("Starting service...")
 
-    # Registry Microservice registration
+    # Registry Microservice
     registry_client = RegistryMicroservice()
     registered, instance_id = await registry_client.perfom_registry()
+
+    await RedisManager.initialize()
 
     if registered:
         logger.info(
@@ -40,6 +45,8 @@ async def lifespan(app: FastAPI):
     if registry_client:
         registry_client.stop_heartbeat_loop()
         logger.info("Heartbeat loop stopped.")
+
+    await RedisManager.close()
 
 
 app = FastAPI(

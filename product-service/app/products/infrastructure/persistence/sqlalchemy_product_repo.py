@@ -1,16 +1,22 @@
+from decimal import Decimal
+import json
+import uuid
+
 from app.products.domain.repositories import ProductRepository
 from app.products.domain.entities.product import Product, ProductId
-from typing import Dict, Optional, List
+from typing import Any, Dict, Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, and_
 from .models import ProductModel
 from app.products.application.queries import SearchProductsQuery
+from ..cache.decorators import multi_key_cache, invalidate_cache
 
 
 class SqlAlchProductRepository(ProductRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
+    @multi_key_cache(primary_key_template="product:{product_id.value}")
     async def get_by_id(self, product_id: ProductId) -> Optional[Product]:
         stmt = select(ProductModel).where(
             and_(
@@ -22,6 +28,7 @@ class SqlAlchProductRepository(ProductRepository):
         model = result.scalar_one_or_none()
         return model.to_domain() if model else None
 
+    @multi_key_cache(primary_key_template="products:batch:{ids_hash}")
     async def get_by_id_in(
         self, product_id_list: List[ProductId]
     ) -> Dict[ProductId, Product]:
@@ -38,6 +45,14 @@ class SqlAlchProductRepository(ProductRepository):
         models = result.scalars().all()
         return {ProductId(model.id): model.to_domain() for model in models}
 
+    @multi_key_cache(
+        primary_key_template="products:search:{params_hash}",
+        related_key_templates=[
+            "products:category:{category}:list",
+            "products:price_range:{min_price}-{max_price}",
+            "products:search_term:{name}",
+        ],
+    )
     async def search(self, food_params: SearchProductsQuery) -> List[Product]:
         stmt = select(ProductModel)
 
@@ -69,12 +84,12 @@ class SqlAlchProductRepository(ProductRepository):
 
     async def save(self, product: Product) -> Product:
         product_dict = product.to_dict()
-        
+
         # Check if product already exists in database
         stmt = select(ProductModel).where(ProductModel.id == str(product.id.value))
         result = await self.session.execute(stmt)
         existing_model = result.scalar_one_or_none()
-        
+
         if existing_model:
             # Update existing product
             for key, value in product_dict.items():

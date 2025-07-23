@@ -14,7 +14,7 @@ class ProductCategoryRepository(ABC):
     """
 
     @abstractmethod
-    def get_by_id(self, category_id: int) -> Optional[ProductCategory]:
+    async def get_by_id(self, category_id: int) -> Optional[ProductCategory]:
         """
         Retrieves a single food category by its unique identifier.
 
@@ -27,7 +27,7 @@ class ProductCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    def list(self) -> List[ProductCategory]:
+    async def list(self) -> List[ProductCategory]:
         """
         Retrieves a list of all food categories.
 
@@ -37,7 +37,7 @@ class ProductCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    def save(self, category: ProductCategory) -> ProductCategory:
+    async def save(self, category: ProductCategory) -> ProductCategory:
         """
         Saves a new food category or updates an existing one.
 
@@ -54,7 +54,7 @@ class ProductCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    def delete(self, category_id: int) -> bool:
+    async def delete(self, category_id: int) -> bool:
         """
         Deletes a food category by its unique identifier.
 
@@ -67,7 +67,7 @@ class ProductCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    def exists_by_id(self, category_id: int) -> bool:
+    async def exists_by_id(self, category_id: int) -> bool:
         """
         Checks if a food category with the given ID exists.
 
@@ -80,7 +80,7 @@ class ProductCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    def exists_by_name(self, category_name: str) -> bool:
+    async def exists_by_name(self, category_name: str) -> bool:
         """
         Checks if a food category with the given name exists.
 

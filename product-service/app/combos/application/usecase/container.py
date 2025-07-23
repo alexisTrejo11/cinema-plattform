@@ -27,19 +27,19 @@ class ComboUseCases:
         self.create = CreateComboUseCase(combo_repository, product_repository)
         self.delete = DeleteComboUseCase(combo_repository)
 
-    def list_active_combos(self, query: PaginationQuery) -> List[ComboResponse]:
-        return self.list_active.execute(query)
+    async def list_active_combos(self, query: PaginationQuery) -> List[ComboResponse]:
+        return await self.list_active.execute(query)
 
-    def get_combo_by_id(self, query: GetComboByIdQuery) -> ComboResponse:
-        return self.get_by_id.execute(query)
+    async def get_combo_by_id(self, query: GetComboByIdQuery) -> ComboResponse:
+        return await self.get_by_id.execute(query)
 
-    def get_combos_by_product(
+    async def get_combos_by_product(
         self, query: GetCombosByProductIdQuery
     ) -> List[ComboResponse]:
-        return self.get_by_product.execute(query)
+        return await self.get_by_product.execute(query)
 
-    def create_combo(self, create_data: ComboCreateComand) -> ComboResponse:
-        return self.create.execute(create_data)
+    async def create_combo(self, create_data: ComboCreateComand) -> ComboResponse:
+        return await self.create.execute(create_data)
 
-    def delete_combo(self, combo_id: ComboId) -> None:
-        return self.delete.execute(combo_id)
+    async def delete_combo(self, combo_id: ComboId) -> None:
+        return await self.delete.execute(combo_id)

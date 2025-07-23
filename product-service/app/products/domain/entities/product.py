@@ -54,6 +54,12 @@ class Product:
         self._validate_price()
         self._validate_preparation_time()
         self._validate_calories()
+        self.validate_id()
+
+    def validate_id(self):
+        """Validate the product ID."""
+        if isinstance(self.id, str):
+            self.id: ProductId = ProductId.from_string(self.id)
 
     def _validate_name(self):
         """Validate name meets business requirements."""
@@ -66,6 +72,8 @@ class Product:
 
     def _validate_price(self):
         """Validate price meets business requirements."""
+        if isinstance(self.price, str):
+            self.price = Decimal(self.price)
         if not isinstance(self.price, (Decimal, int)):
             raise ValueError("Price must be a number")
         if self.price <= Decimal("0.00"):
@@ -96,7 +104,7 @@ class Product:
     def to_dict(self) -> Dict[str, Any]:
         """Converts the FoodProduct instance to a dictionary."""
         return {
-            "id": self.id.value,  # Extract UUID value from ProductId
+            "id": self.id.value,
             "name": self.name,
             "description": self.description,
             "price": str(self.price),

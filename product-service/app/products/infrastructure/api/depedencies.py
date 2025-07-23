@@ -12,19 +12,20 @@ from app.products.application.usecases.container import (
 from app.products.infrastructure.persistence.sqlachemy_category_repo import (
     SQLAlchemyCategoryRepository,
 )
-from app.products.infrastructure.persistence.sqlalchemy_food_repo import (
+from app.products.infrastructure.persistence.sqlalchemy_product_repo import (
     SqlAlchProductRepository,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 # Repository dependencies
 def get_category_repository(
-    session: Session = Depends(get_db),
+    session: AsyncSession = Depends(get_db),
 ) -> ProductCategoryRepository:
     return SQLAlchemyCategoryRepository(session)
 
 
-def get_food_repository(session: Session = Depends(get_db)) -> ProductRepository:
+def get_food_repository(session: AsyncSession = Depends(get_db)) -> ProductRepository:
     return SqlAlchProductRepository(session)
 
 

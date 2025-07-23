@@ -31,7 +31,7 @@ router = APIRouter(
     summary="Create a new combo",
     description="Creates a new combo meal with the provided details",
 )
-def create_combo(
+async def create_combo(
     combo_data: ComboCreateComand,
     usecase: ComboUseCases = Depends(get_combos_uc),
 ):
@@ -43,7 +43,7 @@ def create_combo(
     - **discount_percentage**: Optional discount (0-100)
     """
     try:
-        combo = usecase.create_combo(combo_data)
+        combo = await usecase.create_combo(combo_data)
         return ApiResponse.success(data=combo, message="Combo created successfully")
     except Exception as e:
 
@@ -57,7 +57,7 @@ def create_combo(
     summary="Get combo by ID",
     description="Retrieve detailed information about a specific combo",
 )
-def get_combo_by_id(
+async def get_combo_by_id(
     combo_id: UUID = Path(..., description="ID of the combo to retrieve", example=1),
     pagination: PaginationQuery = Depends(),  # TODO: Implement pagination,
     include_items: bool = Query(
@@ -77,7 +77,7 @@ def get_combo_by_id(
             include_items=include_items,
             pagination=pagination,
         )
-        combo = usecase.get_combo_by_id(query)
+        combo = await usecase.get_combo_by_id(query)
         return ApiResponse.success(data=combo, message="Combo successfully retrieved")
     except Exception as e:
         raise
@@ -89,14 +89,14 @@ def get_combo_by_id(
     summary="List all active combos",
     description="Retrieve a list of all currently available combos",
 )
-def list_active_combos(
+async def list_active_combos(
     pagination: PaginationQuery = Depends(),  # TODO: Implement pagination
     usecase: ComboUseCases = Depends(get_combos_uc),
 ):
     """Retrieve all combos that are currently marked as available"""
     try:
 
-        combo_list = usecase.list_active_combos(pagination)
+        combo_list = await usecase.list_active_combos(pagination)
         return ApiResponse.success(
             data=combo_list, message="Active Combos successfully retrieved"
         )
@@ -110,7 +110,7 @@ def list_active_combos(
     summary="Get combos containing a product",
     description="Find all combos that include the specified product",
 )
-def get_combos_by_product(
+async def get_combos_by_product(
     product_id: UUID = Path(
         ..., description="ID of the product to search for", example=1
     ),
@@ -144,7 +144,7 @@ def get_combos_by_product(
     description="Permanently remove a combo from the system",
     response_model=ApiResponse[None],
 )
-def soft_delete_combo(
+async def soft_delete_combo(
     combo_id: UUID = Path(..., description="ID of the combo to delete", example=1),
     usecase: ComboUseCases = Depends(get_combos_uc),
 ):
@@ -154,7 +154,7 @@ def soft_delete_combo(
     - **combo_id**: The ID of the combo to delete
     """
     try:
-        usecase.delete_combo(ComboId(combo_id))
+        await usecase.delete_combo(ComboId(combo_id))
         ApiResponse.success(data=None, message="combo successfuly soft deleted")
     except Exception as e:
         raise

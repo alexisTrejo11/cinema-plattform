@@ -18,7 +18,7 @@ class GetCategoryByIdUseCase:
     def execute(self, category_id: int) -> CategoryResponse:
         category = self.category_repo.get_by_id(category_id)
         if not category:
-            raise CategoryNotFoundError("Product_Category", category_id)
+            raise CategoryNotFoundError(category_id)
 
         return CategoryResponse(**category.to_dict())
 
@@ -58,7 +58,7 @@ class UpdateCategoryUseCase:
     ) -> CategoryResponse:
         category = self.category_repo.get_by_id(category_id)
         if not category:
-            raise CategoryNotFoundError("Product_Category", category_id)
+            raise CategoryNotFoundError(category_id)
 
         if update_data.name and update_data.name != category.name:
             self._validate_name(update_data.name)
@@ -88,7 +88,7 @@ class SoftDeleteCategoryUseCase:
         if is_soft_delete:
             category = self.category_repo.get_by_id(category_id)
             if not category:
-                raise CategoryNotFoundError("Product_Category", category_id)
+                raise CategoryNotFoundError(category_id)
 
             category.soft_delete()
             self.category_repo.save(category)

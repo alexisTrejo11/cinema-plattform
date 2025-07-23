@@ -11,6 +11,14 @@ class ProductId(AbstractId):
         return str(self.value)
 
     @staticmethod
+    def from_string(value: str) -> "ProductId":
+        """Create a ProductId from a string."""
+        try:
+            return ProductId(UUID(value))
+        except ValueError:
+            raise ValueError("Invalid UUID string format")
+
+    @staticmethod
     def generate() -> "ProductId":
         """Generate a new ProductId."""
         return ProductId(uuid.uuid4())

@@ -88,7 +88,7 @@ class SqlAlchemyComboRepository(ComboRepository):
         select_stmt = select(ComboModel).where(ComboModel.id == combo.id.value)
         result = await self.session.execute(select_stmt)
         existing_combo = result.scalar_one_or_none()
-        
+
         if existing_combo is None:
             # Create new combo
             combo_model = ComboModel(
@@ -128,14 +128,16 @@ class SqlAlchemyComboRepository(ComboRepository):
             self.session.add(item_model)
 
         await self.session.commit()
-        
+
         # Re-fetch with proper eager loading to avoid lazy loading issues
-        stmt = select(ComboModel).where(ComboModel.id == combo.id.value).options(
-            joinedload(ComboModel.items).joinedload(ComboItemModel.product)
+        stmt = (
+            select(ComboModel)
+            .where(ComboModel.id == combo.id.value)
+            .options(joinedload(ComboModel.items).joinedload(ComboItemModel.product))
         )
         result = await self.session.execute(stmt)
         combo_model_with_items = result.unique().scalar_one()
-        
+
         return self._to_domain(combo_model_with_items, True)
 
     async def soft_delete(self, combo_id: ComboId) -> None:
@@ -153,14 +155,18 @@ class SqlAlchemyComboRepository(ComboRepository):
         if include_items:
             # Check if items relationship is loaded to avoid lazy loading
             state = inspect(combo_model)
-            if 'items' in state.unloaded:
+            if "items" in state.unloaded:
                 # Items aren't loaded, return empty list to avoid lazy loading
                 pass  # items remains empty list
             else:
                 # Items are loaded or being loaded, safe to access
                 for item in combo_model.items:
                     items.append(
-                        ComboItem(item.product.to_domain(), ComboItemId(item.id), item.quantity)
+                        ComboItem(
+                            item.product.to_domain(),
+                            ComboItemId(item.id),
+                            item.quantity,
+                        )
                     )
 
         return Combo(
