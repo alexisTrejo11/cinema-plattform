@@ -13,8 +13,6 @@ from config.registry_service import RegistryMicroservice
 from fastapi.middleware.cors import CORSMiddleware
 from config.redis import RedisManager
 
-from fastapi_cache.decorator import cache
-from fastapi_cache import default_key_builder
 
 setup_logging()
 logger = logging.getLogger("app")

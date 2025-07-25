@@ -1,7 +1,10 @@
-from typing import Any, Dict, Optional
+from typing import Optional
 from decimal import Decimal
 from typing import Optional
-from .value_objects import ProductId, ComboId
+from datetime import datetime
+from ..validator import ProductValidator
+from .value_objects import ProductId
+from ..json_mapper import ProductJsonMapper
 
 
 class Product:
@@ -18,6 +21,8 @@ class Product:
         is_available: bool = True,
         preparation_time_mins: Optional[int] = None,
         calories: Optional[int] = None,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
     ):
         """
         Initialize a FoodProduct with validation of all attributes.
@@ -45,72 +50,44 @@ class Product:
         self.preparation_time_mins = preparation_time_mins
         self.calories = calories
         self.category_id = category_id
+        self.created_at = created_at or datetime.now()
+        self.updated_at = updated_at or datetime.now()
 
         self.validate()
 
     def validate(self):
         """Validate all business rules for this product."""
-        self._validate_name()
-        self._validate_price()
-        self._validate_preparation_time()
-        self._validate_calories()
-        self.validate_id()
+        ProductValidator.validate_product(self)
 
-    def validate_id(self):
-        """Validate the product ID."""
-        if isinstance(self.id, str):
-            self.id: ProductId = ProductId.from_string(self.id)
+    def to_dict(self) -> dict:
+        """Convert the product to a dictionary representation."""
+        return ProductJsonMapper.to_dict(self)
 
-    def _validate_name(self):
-        """Validate name meets business requirements."""
-        if not isinstance(self.name, str):
-            raise ValueError("Name must be a string")
-        if not 1 <= len(self.name) <= 200:
-            raise ValueError("Name must be between 1 and 200 characters")
-        if not self.name.strip():
-            raise ValueError("Name cannot be empty or contain only whitespace")
+    def to_json(self) -> dict:
+        """Convert the product to a JSON string."""
+        return ProductJsonMapper.to_json(self)
 
-    def _validate_price(self):
-        """Validate price meets business requirements."""
-        if isinstance(self.price, str):
-            self.price = Decimal(self.price)
-        if not isinstance(self.price, (Decimal, int)):
-            raise ValueError("Price must be a number")
-        if self.price <= Decimal("0.00"):
-            raise ValueError("Price must be greater than 0")
-        if self.price > Decimal("10000"):
-            raise ValueError("Price must be less than 10,000")
+    @classmethod
+    def from_dict(cls, data: dict) -> "Product":
+        """Create a Product instance from a dictionary."""
+        return ProductJsonMapper.from_json(data)
 
-    def _validate_preparation_time(self):
-        """Validate preparation time if provided."""
-        if self.preparation_time_mins is not None:
-            if not isinstance(self.preparation_time_mins, int):
-                raise ValueError("Preparation time must be an integer")
-            if self.preparation_time_mins < 0:
-                raise ValueError("Preparation time cannot be negative")
-            if self.preparation_time_mins > 240:
-                raise ValueError("Preparation time cannot exceed 240 minutes")
+    @classmethod
+    def from_json(cls, json_data: dict) -> "Product":
+        """Create a Product instance from a JSON string."""
+        return ProductJsonMapper.from_json(json_data)
 
-    def _validate_calories(self):
-        """Validate calories if provided."""
-        if self.calories is not None:
-            if not isinstance(self.calories, int):
-                raise ValueError("Calories must be an integer")
-            if self.calories < 0:
-                raise ValueError("Calories cannot be negative")
-            if self.calories > 5000:
-                raise ValueError("Calorie count cannot exceed 5000")
+    def __repr__(self):
+        return f"Product(id={self.id}, name={self.name}, price={self.price}, is_available={self.is_available})"
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Converts the FoodProduct instance to a dictionary."""
-        return {
-            "id": self.id.value,
-            "name": self.name,
-            "description": self.description,
-            "price": str(self.price),
-            "image_url": self.image_url,
-            "is_available": self.is_available,
-            "preparation_time_mins": self.preparation_time_mins,
-            "calories": self.calories,
-            "category_id": self.category_id,
-        }
+    def __eq__(self, other):
+        if not isinstance(other, Product):
+            return NotImplemented
+        return (
+            self.id == other.id
+            and self.name == other.name
+            and self.price == other.price
+        )
+
+    def __hash__(self):
+        return hash((self.id, self.name, self.price))

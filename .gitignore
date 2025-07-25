@@ -7,8 +7,9 @@ ticket-service/env/
 user-service/.env
 user-service/env/
 
-food-service/.env
-food-service/env/
+product-service/.env
+product-service/env/
+product-service/logs/
 
 payment-service/.env
 payment-service/env/
@@ -16,10 +17,19 @@ payment-service/env/
 notification-service/.env
 notification-service/env/
 
-food-service/products/__pycache__/
-food-service/orders/__pycache__/
-food-service/food/__pycache__/
-food-service/promotions/__pycache__/
+product-service/products/__pycache__/
+product-service/orders/__pycache__/
+product-service/promotions/__pycache__/
 
 .gitignore
 
+admin-service/.env
+admin-service/env/
+
+
+wallet-service/.env
+wallet-service/env/
+wallet-service/logs/
+
+/.env
+.env
