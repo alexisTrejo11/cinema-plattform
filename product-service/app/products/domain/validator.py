@@ -1,6 +1,9 @@
 from decimal import Decimal
 from uuid import UUID
-from .entities.product import Product
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .entities.product import Product
 
 
 class ProductValidator:

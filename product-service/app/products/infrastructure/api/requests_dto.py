@@ -1,7 +1,93 @@
+from decimal import Decimal
 from typing import Optional
 from pydantic import BaseModel, Field
-from app.shared.schema import FoodProductBase, FoodCategoryBase
+from app.shared.schema import ProductCategoryBase, ProductBase
 from uuid import UUID
+from enum import Enum
+from pydantic import ConfigDict
+
+
+class ProductSortField(str, Enum):
+    NAME = "name"
+    PRICE = "price"
+    CREATED_AT = "created_at"
+
+
+class SortOrder(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
+
+
+class ProductSearchQuery(BaseModel):
+    offset: int = Field(
+        default=0,
+        ge=0,
+        description="Pagination offset",
+        json_schema_extra={"example": 0},
+    )
+    limit: int = Field(
+        default=10,
+        ge=1,
+        le=100,
+        description="Maximum number of results to return (1-100)",
+        json_schema_extra={"example": 10},
+    )
+    category_id: Optional[int] = Field(
+        default=None,
+        ge=1,
+        description="Filter by category ID",
+        json_schema_extra={"example": 1},
+    )
+    min_price: Optional[Decimal] = Field(
+        default=None,
+        description="Minimum price filter",
+        json_schema_extra={"example": 5.00},
+    )
+    max_price: Optional[Decimal] = Field(
+        default=None,
+        description="Maximum price filter",
+        json_schema_extra={"example": 20.00},
+    )
+    name_like: Optional[str] = Field(
+        default=None,
+        description="Filter by product name (partial match)",
+        json_schema_extra={"example": "pizza"},
+    )
+    available_only: bool = Field(
+        default=True,
+        description="Only include available products",
+        json_schema_extra={"example": True},
+    )
+    sort_by: ProductSortField = Field(
+        default=ProductSortField.NAME,
+        description="Field to sort by",
+        json_schema_extra={"example": "name"},
+    )
+    sort_order: SortOrder = Field(
+        default=SortOrder.ASC,
+        description="Sort order",
+        json_schema_extra={"example": "asc"},
+    )
+
+    # Configuración adicional para Pydantic v2
+    model_config = ConfigDict(
+        json_schema_extra={
+            "description": "Parameters for product search and filtering",
+            "examples": [
+                {
+                    "offset": 0,
+                    "limit": 10,
+                    "category_id": 1,
+                    "min_price": 10.50,
+                    "max_price": 50.00,
+                    "name_like": "pizza",
+                    "available_only": True,
+                    "sort_by": "price",
+                    "sort_order": "desc",
+                }
+            ],
+        }
+    )
 
 
 class UpdateProductRequest(BaseModel):
@@ -59,13 +145,13 @@ class UpdateProductRequest(BaseModel):
     )
 
 
-class CreateProductRequest(FoodProductBase):
+class CreateProductRequest(ProductBase):
     """Schema for creating new food products"""
 
     pass
 
 
-class InsertProductCategoryRequest(FoodCategoryBase):
+class CategoryRequest(ProductCategoryBase):
     """Schema for creating new food categories"""
 
     pass

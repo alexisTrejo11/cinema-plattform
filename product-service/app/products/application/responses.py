@@ -1,10 +1,11 @@
+from typing import List
 from uuid import UUID
-from pydantic import ConfigDict, Field
-from app.shared.schema import FoodProductBase, FoodCategoryBase
-from app.products.domain.entities.product import ProductId
+from pydantic import Field, BaseModel
+from app.shared.schema import ProductBase, ProductCategoryBase
+from app.shared.pagination import PaginationMetadata
 
 
-class ProductDetails(FoodProductBase):
+class ProductDetails(ProductBase):
     """Response model for food products including ID"""
 
     id: UUID = Field(
@@ -37,7 +38,12 @@ class ProductDetails(FoodProductBase):
         return cls(id=product.id.value, **product_dict)
 
 
-class ProductCategoryResponse(FoodCategoryBase):
+class ProductSearchResponse(BaseModel):
+    product_page: List["ProductDetails"]
+    metadata: PaginationMetadata
+
+
+class ProductCategoryResponse(ProductCategoryBase):
     """Response model for food categories including ID"""
 
     id: int = Field(

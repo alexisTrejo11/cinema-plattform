@@ -1,4 +1,3 @@
-from typing import List
 from decimal import Decimal
 from app.products.domain.exceptions import ProductNotFoundError, InvalidCategoryError
 from app.products.domain.repositories import (
@@ -6,7 +5,7 @@ from app.products.domain.repositories import (
     ProductCategoryRepository,
 )
 from app.products.application.queries import SearchProductsQuery, GetProductByIdQuery
-from app.products.application.responses import ProductDetails
+from app.products.application.responses import ProductDetails, ProductSearchResponse
 from ..commands import (
     ProductCreateCommand,
     ProductUpdateCommand,
@@ -34,9 +33,16 @@ class SearchProductUseCase:
 
     async def execute(
         self, product_params: SearchProductsQuery
-    ) -> List[ProductDetails]:
-        product_list = await self.product_repository.search(product_params)
-        return [ProductDetails.from_entity(product) for product in product_list]
+    ) -> ProductSearchResponse:
+        product_list, pagination_metadata = await self.product_repository.search(
+            product_params
+        )
+        return ProductSearchResponse(
+            product_page=[
+                ProductDetails.from_entity(product) for product in product_list
+            ],
+            metadata=pagination_metadata,
+        )
 
 
 class CreateProductUseCase:
@@ -56,6 +62,8 @@ class CreateProductUseCase:
         product_data["price"] = Decimal(str(product_data["price"]))
 
         new_product = Product(**product_data)
+        new_product.validate_product()
+
         product_created = await self.product_repository.save(new_product)
 
         return ProductDetails.from_entity(product_created)
@@ -87,6 +95,8 @@ class UpdateProductUseCase:
             self._validate_category(update_data.category_id)
 
         self._update_fields(product, update_data)
+        product.validate_product()
+
         await self.product_repository.save(product)
 
         return ProductDetails.from_entity(product)

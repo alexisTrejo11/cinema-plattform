@@ -62,21 +62,33 @@ async def handle_auth_exceptions(
 async def handle_pydantic_validation_errors(request: Request, exc: ValidationError):
     logger.warning(f"Pydantic validation error: {exc}", exc_info=exc)
 
+    # Procesar los errores para obtener detalles estructurados
     errors_details = []
     for error in exc.errors():
-        field = ".".join(map(str, error.get("loc", ["unknown_field"])))
-        message = error.get("msg", "Validation error")
-        errors_details.append({"field": field, "message": message})
+        field = ".".join(str(loc) for loc in error.get("loc", []))
+        error_type = error.get("type", "invalid")
+        message = error.get("msg", "Invalid value")
+
+        errors_details.append(
+            {
+                "field": field if field else "request_body",
+                "code": error_type.upper(),
+                "message": message,
+                "context": error.get("ctx", None),
+            }
+        )
 
     error_response = ErrorResponse(
-        code="VALIDATION_ERROR",
-        type="InputValidationError",  # Un tipo más específico para Pydantic
-        message="One or more validation errors occurred in the request data.",
+        code="VALIDATION_FAILED",
+        type="ValidationError",
+        message="Invalid request data. Please check the errors and try again.",
         details=errors_details,
     )
+
     api_response = ApiResponse.failure(
-        error=error_response, message="Request data validation failed."
+        error=error_response, message="Validation error in request data"
     )
+
     return JSONResponse(
         status_code=HTTPStatus.UNPROCESSABLE_ENTITY, content=api_response.model_dump()
     )

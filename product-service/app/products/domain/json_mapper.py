@@ -1,8 +1,10 @@
 from uuid import UUID
-from typing import Dict, Any
+from typing import Dict, Any, TYPE_CHECKING
 from datetime import datetime
 from decimal import Decimal
-from .entities.product import Product, ProductId
+
+if TYPE_CHECKING:
+    from .entities.product import Product, ProductId
 
 
 class ProductJsonMapper:

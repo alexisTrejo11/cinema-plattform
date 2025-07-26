@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 from app.products.domain.entities.product import Product, ProductId
 from app.products.domain.entities.product_category import ProductCategory
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 from app.products.application.queries import SearchProductsQuery, ProductId
+from app.shared.pagination import PaginationMetadata
 
 
 class ProductCategoryRepository(ABC):
@@ -132,12 +133,14 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    async def search(self, food_params: SearchProductsQuery) -> List[Product]:
+    async def search(
+        self, search_params: SearchProductsQuery
+    ) -> Tuple[List[Product], PaginationMetadata]:
         """
         Searches for food products based on various criteria provided in SearchFoodParams.
 
         Args:
-            food_params (SearchFoodParams): An object containing search parameters
+            search_params (SearchProductsQuery): An object containing search parameters
                                             like price range, name, category,
                                             availability, offset, and limit.
 

@@ -1,7 +1,7 @@
 from typing import List
 from app.combos.domain.repository import ComboRepository
 from ..response import ComboResponse, ComboItemResponse
-from app.combos.application.commands import ComboCreateComand, ComboItemCreateCommand
+from app.combos.application.commands import ComboCreateCommand, ComboItemCreateCommand
 from app.combos.domain.exceptions import (
     ComboNotFoundError,
     ComboItemValidationError,
@@ -9,9 +9,10 @@ from app.combos.domain.exceptions import (
 )
 from app.products.domain.repositories import ProductRepository
 from app.combos.domain.entities.combo import Combo, ComboItem
-from ..queries import GetCombosByProductIdQuery, GetComboByIdQuery
 from app.shared.pagination import PaginationQuery
 from app.combos.domain.entities.value_objects import ComboId, ComboItemId
+from app.products.domain.entities.value_objects import ProductId
+from ..queries import GetCombosByProductIdQuery, GetComboByIdQuery
 
 
 class ListActiveComboUseCase:
@@ -58,8 +59,8 @@ class CreateComboUseCase:
         self.combo_repository = combo_repository
         self.product_repository = product_repository
 
-    async def execute(self, create_data: ComboCreateComand) -> ComboResponse:
-        new_combo = Combo(**create_data.model_dump())
+    async def execute(self, create_data: ComboCreateCommand) -> ComboResponse:
+        new_combo = Combo(id=ComboId.generate(), **create_data.model_dump())
 
         items = await self._generate_products(create_data)
         new_combo.items = items
@@ -67,14 +68,14 @@ class CreateComboUseCase:
         new_combo.validate_business_logic()
 
         combo_created = await self.combo_repository.save(new_combo)
-        return ComboResponse(**combo_created.to_dict())
+        return ComboResponse.from_domain(combo_created)
 
     async def _generate_products(
-        self, create_data: ComboCreateComand
+        self, create_data: ComboCreateCommand
     ) -> List[ComboItem]:
         self.validate_items(create_data.items)
         products_map = await self.product_repository.get_by_id_in(
-            [item.product_id for item in create_data.items]
+            [ProductId(item.product_id) for item in create_data.items]
         )
 
         items = []
@@ -82,7 +83,7 @@ class CreateComboUseCase:
             combo_items = ComboItem(
                 id=ComboItemId.generate(),
                 quantity=item.quantity,
-                product=products_map[item.product_id],
+                product=products_map[ProductId(item.product_id)],
             )
             items.append(combo_items)
 
@@ -114,4 +115,5 @@ class DeleteComboUseCase:
         if not combo:
             raise ComboNotFoundError(combo_id.to_string())
 
+        print(f"Deleting combo with ID: {combo}")
         await self.combo_repository.soft_delete(combo_id)

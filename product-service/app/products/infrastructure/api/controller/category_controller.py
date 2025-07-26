@@ -1,24 +1,29 @@
 from fastapi import APIRouter, Depends, status, Path
 from typing import List
+import logging
 from app.shared.response import ApiResponse
 from app.products.application.usecases.container import (
     ProductCategoryUseCases,
-    ProductCategoryInsertCommand as CategoryInsertCommand,
+    CategoryCreateCommand,
+    CategoryUpdateCommand,
 )
 from app.products.application.responses import ProductCategoryResponse
-from ..requests_dto import InsertProductCategoryRequest
+from ..requests_dto import CategoryRequest
 from ..depedencies import get_category_use_cases
+from ..doc_data import (
+    create_category_examples,
+    get_category_examples,
+    list_categories_examples,
+    update_category_examples,
+    delete_category_examples,
+)
+
+logger = logging.getLogger("app")
+
 
 router = APIRouter(
     prefix="/api/v2/categories",
-    tags=["Food Categories"],
-    responses={
-        status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid credentials"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "Not authorized to perform this action"
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Internal server error"},
-    },
+    tags=["Product Categories"],
 )
 
 
@@ -26,24 +31,30 @@ router = APIRouter(
     "/",
     response_model=ApiResponse[ProductCategoryResponse],
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new food category",
-    description="Creates a new food category with the provided details",
+    summary="Create a new product category",
+    description="Creates a new product category with the provided details",
+    responses={**create_category_examples},
 )
-def create_category(
-    category_data: InsertProductCategoryRequest,
+async def create_category(
+    category_data: CategoryRequest,
     useCases: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
     """
-    Create a new food category with the following details:
+    Create a new product category with the following details:
     - **name**: Category name (1-100 characters)
     - **description**: Optional description
     - **is_active**: Active status (default: True)
     """
     try:
-        command = CategoryInsertCommand(**category_data.model_dump())
-        category = useCases.create_category(command)
+        logger.info(f"Creating category with data: {category_data.model_dump()}")
+
+        command = CategoryCreateCommand(**category_data.model_dump())
+        category = await useCases.create_category(command)
+
+        logger.info(f"Category Id {category.id} created successfully")
         return ApiResponse.success(category, "Category succesfully created")
     except Exception as e:
+        logger.error(f"Error creating category: {e}")
         raise
 
 
@@ -51,90 +62,107 @@ def create_category(
     "/{category_id}",
     response_model=ApiResponse[ProductCategoryResponse],
     summary="Get category by ID",
-    description="Retrieve detailed information about a specific food category",
+    description="Retrieve detailed information about a specific product category",
+    responses={**get_category_examples},
 )
-def get_category(
+async def get_category(
     category_id: int = Path(
         ..., description="ID of the category to retrieve", example=1
     ),
     useCases: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
     """
-    Retrieve a food category by its unique identifier.
+    Retrieve a product category by its unique identifier.
 
     - **category_id**: The ID of the category to retrieve
     """
-    category = useCases.get_category_by_id(category_id)
-    return ApiResponse.success(category, "Category succesfully retrieved")
+    try:
+        logger.info(f"Retrieving category with ID: {category_id}")
+        category = await useCases.get_category_by_id(category_id)
+
+        logger.info(f"Category {category_id} retrieved successfully")
+        return ApiResponse.success(category, "Category succesfully retrieved")
+    except Exception as e:
+        logger.error(f"Error retrieving category {category_id}: {e}")
+        raise
 
 
 @router.get(
     "/",
     response_model=ApiResponse[List[ProductCategoryResponse]],
-    summary="List all food categories",
-    description="Retrieve a list of all food categories",
-    responses={
-        status.HTTP_200_OK: {
-            "description": "List of food categories",
-            "content": {
-                "application/json": {
-                    "example": [{"id": 1, "name": "Pizzas", "is_active": True}]
-                }
-            },
-        }
-    },
+    summary="List all product categories",
+    description="Retrieve a list of all product categories",
+    responses={**list_categories_examples},
 )
-def list_categories(useCase: ProductCategoryUseCases = Depends(get_category_use_cases)):
-    """Retrieve all food categories in the system"""
+async def list_categories(
+    useCase: ProductCategoryUseCases = Depends(get_category_use_cases),
+):
+    """Retrieve all product categories in the system"""
     try:
-        categories = useCase.list_categories()
+        logger.info("Listing all product categories")
+        categories = await useCase.list_categories()
+
+        logger.info(f"Retrieved {len(categories)} categories")
         return ApiResponse.success(categories, "Categories succesfully retrieved")
     except Exception as e:
+        logger.error(f"Error listing categories: {e}")
         raise
 
 
 @router.put(
     "/{category_id}",
     response_model=ApiResponse[ProductCategoryResponse],
-    summary="Update a food category",
-    description="Update all details of an existing food category",
+    summary="Update a product category",
+    description="Update all details of an existing product category",
+    responses={**update_category_examples},
 )
-def update_category(
-    update_data: InsertProductCategoryRequest,
+async def update_category(
+    update_data: CategoryRequest,
     category_id: int = Path(..., description="ID of the category to update", example=1),
     useCase: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
     """
-    Update an existing food category with new details.
+    Update an existing product category with new details.
 
     - **category_id**: The ID of the category to update
     - **update_data**: New values for the category
     """
     try:
-        command = CategoryInsertCommand(**update_data.model_dump())
-        category = useCase.update_category(category_id, command)
+        logger.info(
+            f"Updating category {category_id} with data: {update_data.model_dump()}"
+        )
+        command = CategoryUpdateCommand(id=category_id, **update_data.model_dump())
+        category = await useCase.update_category(category_id, command)
+
+        logger.info(f"Category {category_id} updated successfully")
         return ApiResponse.success(category, "Category succesfully updated")
     except Exception as e:
+        logger.error(f"Error updating category {category_id}: {e}")
         raise
 
 
 @router.delete(
     "/{category_id}",
     status_code=status.HTTP_200_OK,
-    summary="Delete a food category",
-    description="Permanently remove a food category from the system",
+    summary="Soft Delete a product category",
+    description="Soft delete a product category from the system",
+    responses={**delete_category_examples},
 )
-def delete_category(
+async def delete_category(
     category_id: int = Path(..., description="ID of the category to delete", example=1),
     useCase: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
     """
-    Delete a food category by its ID.
+    Delete a product category by its ID.
 
     - **category_id**: The ID of the category to delete
     """
     try:
-        useCase.soft_delete_category(category_id)
+        logger.info(f"Soft deleting category with ID: {category_id}")
+        await useCase.soft_delete_category(category_id)
+
+        logger.info(f"Category {category_id} successfully deleted")
         return ApiResponse.success(message="Category Successfully Deleted")
     except Exception as e:
+        logger.error(f"Error deleting category {category_id}: {e}")
         raise

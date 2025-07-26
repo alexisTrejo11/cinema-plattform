@@ -5,7 +5,11 @@ from app.products.domain.repositories import (
 )
 from app.products.application.queries import SearchProductsQuery, GetProductByIdQuery
 from app.products.application.commands import ProductCreateCommand, ProductUpdateCommand
-from app.products.application.responses import ProductDetails, ProductCategoryResponse
+from app.products.application.responses import (
+    ProductDetails,
+    ProductCategoryResponse,
+    ProductSearchResponse,
+)
 from .product_usecases import (
     GetProductByIdUseCase,
     UpdateProductUseCase,
@@ -23,7 +27,8 @@ from .category_usecases import (
 from ..commands import (
     ProductCreateCommand,
     ProductUpdateCommand,
-    ProductCategoryInsertCommand,
+    CategoryCreateCommand,
+    CategoryUpdateCommand,
 )
 from app.products.domain.entities.value_objects import ProductId
 
@@ -52,7 +57,9 @@ class ProductUseCases:
         """Get a product by its ID"""
         return await self.get_product_by_uc.execute(query)
 
-    async def search_products(self, query: SearchProductsQuery) -> List[ProductDetails]:
+    async def search_products(
+        self, query: SearchProductsQuery
+    ) -> ProductSearchResponse:
         """Search for products based on parameters"""
         return await self.search_product_uc.execute(query)
 
@@ -80,26 +87,26 @@ class ProductCategoryUseCases:
 
     """Use cases for managing product categories"""
 
-    def get_category_by_id(self, category_id: int) -> ProductCategoryResponse:
+    async def get_category_by_id(self, category_id: int) -> ProductCategoryResponse:
         """Get a category by its ID"""
-        return self.get_category_by_uc.execute(category_id)
+        return await self.get_category_by_uc.execute(category_id)
 
-    def list_categories(self) -> List[ProductCategoryResponse]:
+    async def list_categories(self) -> List[ProductCategoryResponse]:
         """List all product categories"""
-        return self.list_category_uc.execute()
+        return await self.list_category_uc.execute()
 
-    def create_category(
-        self, create_data: ProductCategoryInsertCommand
+    async def create_category(
+        self, create_data: CategoryCreateCommand
     ) -> ProductCategoryResponse:
         """Create a new product category"""
-        return self.create_category_uc.execute(create_data)
+        return await self.create_category_uc.execute(create_data)
 
-    def update_category(
-        self, category_id: int, update_data: ProductCategoryInsertCommand
+    async def update_category(
+        self, category_id: int, update_data: CategoryUpdateCommand
     ) -> ProductCategoryResponse:
         """Update an existing product category"""
-        return self.update_category_uc.execute(category_id, update_data)
+        return await self.update_category_uc.execute(category_id, update_data)
 
-    def soft_delete_category(self, category_id: int) -> None:
+    async def soft_delete_category(self, category_id: int) -> None:
         """Soft delete a product category by its ID"""
-        self.soft_delete_category_uc.execute(category_id)
+        await self.soft_delete_category_uc.execute(category_id)

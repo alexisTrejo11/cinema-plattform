@@ -3,7 +3,6 @@ import uuid
 from pydantic import BaseModel, ConfigDict, Field
 from decimal import Decimal
 
-
 if TYPE_CHECKING:
     from app.products.domain.entities.value_objects import ProductId
 
@@ -60,7 +59,7 @@ class ComboBase(BaseModel):
 class ComboItemBase(BaseModel):
     """Base model for items included in a combo meal"""
 
-    product_id: "ProductId" = Field(
+    product_id: "uuid.UUID" = Field(
         ...,
         description="ID of the product included in the combo",
         json_schema_extra={"example": "1234567890-abcdef123456-1234567890abcdef"},
@@ -75,7 +74,7 @@ class ComboItemBase(BaseModel):
     )
 
 
-class FoodProductBase(BaseModel):
+class ProductBase(BaseModel):
     """Base model for food products with common attributes"""
 
     name: str = Field(
@@ -132,7 +131,7 @@ class FoodProductBase(BaseModel):
     )
 
 
-class FoodCategoryBase(BaseModel):
+class ProductCategoryBase(BaseModel):
     """Base model for food categories with common attributes"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

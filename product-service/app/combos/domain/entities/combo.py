@@ -62,7 +62,7 @@ class Combo:
         ):
             raise ValueError("discount_percentage must be a Decimal between 0 and 100.")
 
-        self.id = id if id is not None else ComboId.generate()
+        self.id = id
         self.name = name
         self.description = description
         self.price = price

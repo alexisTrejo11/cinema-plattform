@@ -1,10 +1,9 @@
 from app.products.domain.repositories import ProductCategoryRepository
 from app.products.domain.entities.product_category import ProductCategory
 from typing import Optional, List
-from .models import ProductCategoryModel
+from ..sql.models import ProductCategoryModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select
 
 
 class SQLAlchemyCategoryRepository(ProductCategoryRepository):
@@ -32,31 +31,10 @@ class SQLAlchemyCategoryRepository(ProductCategoryRepository):
 
     async def save(self, category: ProductCategory) -> ProductCategory:
         category_dict = category.to_dict()
-        if category.id == 0:
-            # Create new category
-            category_dict.pop("id", None)
-            model = ProductCategoryModel(**category_dict)
-            self.session.add(model)
-            await self.session.flush()
+        if not category.id:
+            return await self._create(category)
         else:
-            # Update existing category
-            stmt = select(ProductCategoryModel).where(
-                ProductCategoryModel.id == category.id
-            )
-            result = await self.session.execute(stmt)
-            model = result.scalars().first()
-
-            if model:
-                for key, value in category_dict.items():
-                    setattr(model, key, value)
-            else:
-                model = ProductCategoryModel(**category_dict)
-                self.session.add(model)
-
-            await self.session.flush()
-
-        await self.session.refresh(model)
-        return model.to_domain()
+            return await self._update(category)
 
     async def delete(self, category_id: int) -> bool:
         stmt = select(ProductCategoryModel).where(
@@ -85,3 +63,27 @@ class SQLAlchemyCategoryRepository(ProductCategoryRepository):
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none() is not None
+
+    async def _create(self, category: ProductCategory) -> ProductCategory:
+        model = ProductCategoryModel(**category.to_dict())
+        self.session.add(model)
+        await self.session.commit()
+        await self.session.refresh(model)
+        return model.to_domain()
+
+    async def _update(self, category: ProductCategory) -> ProductCategory:
+        stmt = select(ProductCategoryModel).where(
+            ProductCategoryModel.id == category.id
+        )
+        result = await self.session.execute(stmt)
+        category_model = result.scalars().first()
+
+        if not category_model:
+            raise ValueError("Category not found")
+
+        for key, value in category.to_dict().items():
+            setattr(category_model, key, value)
+
+        await self.session.flush()
+        await self.session.commit()
+        return category_model.to_domain()

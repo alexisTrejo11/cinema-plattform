@@ -10,8 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.combos.infrastructure.persistence.sqlalchemy_combo_repo import (
     SqlAlchemyComboRepository,
 )
-from app.products.infrastructure.persistence.sqlalchemy_product_repo import (
-    SqlAlchProductRepository,
+from app.products.infrastructure.persistence.db.repositories.sqlalchemy_product_repo import (
+    SqlAlchemyProductRepository,
 )
 
 
@@ -22,7 +22,7 @@ def get_combo_repository(session: AsyncSession = Depends(get_db)) -> ComboReposi
 def get_product_repository(
     session: AsyncSession = Depends(get_db),
 ) -> ProductRepository:
-    return SqlAlchProductRepository(session)
+    return SqlAlchemyProductRepository(session)
 
 
 # Combo Use Cases

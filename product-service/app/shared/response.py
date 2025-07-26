@@ -1,4 +1,4 @@
-from typing import Any, Optional, TypeVar, Generic
+from typing import Any, Optional, TypeVar, Generic, Dict
 from pydantic import BaseModel, Field
 
 T = TypeVar("T")
@@ -63,6 +63,10 @@ class ApiResponse(BaseModel, Generic[T]):
         None,
         description="Details of the error if `is_success` is false. This field will be null if `is_success` is true.",
     )
+    metadata: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Additional metadata about the API response, such as pagination info.",
+    )
 
     class Config:
         """
@@ -95,7 +99,11 @@ class ApiResponse(BaseModel, Generic[T]):
         }
 
     @staticmethod
-    def success(data: Optional[T] = None, message: str = "") -> "ApiResponse[T]":
+    def success(
+        data: Optional[T] = None,
+        message: str = "",
+        metadata: Optional[Dict[str, Any]] = {},
+    ) -> "ApiResponse[T]":
         """
         Creates a new `ApiResponse` instance for a successful API response.
 
@@ -106,10 +114,20 @@ class ApiResponse(BaseModel, Generic[T]):
         Returns:
             ApiResponse[T]: A successful API response instance.
         """
-        return ApiResponse(is_success=True, data=data, message=message, error=None)
+        return ApiResponse(
+            is_success=True,
+            data=data,
+            message=message,
+            error=None,
+            metadata=metadata if metadata is not None else None,
+        )
 
     @staticmethod
-    def failure(error: ErrorResponse, message: str = "") -> "ApiResponse[Any]":
+    def failure(
+        error: ErrorResponse,
+        message: str = "",
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> "ApiResponse[Any]":
         """
         Creates a new `ApiResponse` instance for a failed API response.
 
@@ -123,4 +141,6 @@ class ApiResponse(BaseModel, Generic[T]):
                              allowing the generic `ApiResponse` to be used for error responses
                              regardless of the expected success data type.
         """
-        return ApiResponse(is_success=False, data=None, message=message, error=error)
+        return ApiResponse(
+            is_success=False, data=None, message=message, error=error, metadata=metadata
+        )

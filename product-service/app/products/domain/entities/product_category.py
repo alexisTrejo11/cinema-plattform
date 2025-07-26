@@ -1,4 +1,5 @@
 from typing import Optional, Dict, Any
+from datetime import datetime
 
 
 class ProductCategory:
@@ -6,10 +7,12 @@ class ProductCategory:
 
     def __init__(
         self,
-        id: int = 0,
+        id: Optional[int] = None,
         name: str = "",
         description: Optional[str] = None,
         is_active: bool = True,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
     ):
         """
         Initialize a FoodCategory with validation.
@@ -27,6 +30,8 @@ class ProductCategory:
         self.name = name
         self.description = description
         self.is_active = is_active
+        self.created_at = created_at or datetime.now()
+        self.updated_at = updated_at or datetime.now()
 
         self.validate()
 

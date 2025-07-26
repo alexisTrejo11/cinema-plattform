@@ -1,5 +1,5 @@
 from app.combos.infrastructure.persistence.models import ComboModel, ComboItemModel
-from app.products.infrastructure.persistence.models import (
+from app.products.infrastructure.persistence.db.sql.models import (
     ProductModel,
     ProductCategoryModel,
 )

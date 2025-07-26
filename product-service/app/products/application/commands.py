@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from decimal import Decimal
-from app.shared.schema import FoodProductBase, FoodCategoryBase
+from app.shared.schema import ProductBase, ProductCategoryBase
 from app.products.domain.entities.value_objects import ProductId
 
 
@@ -62,14 +62,20 @@ class ProductUpdateCommand(BaseModel):
     )
 
 
-class ProductCreateCommand(FoodProductBase):
+class ProductCreateCommand(ProductBase):
     """Schema for creating new food products"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
-class ProductCategoryInsertCommand(FoodCategoryBase):
+class CategoryCreateCommand(ProductCategoryBase):
     """Schema for creating new food categories"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    category_id: int = Field(..., description="ID of the category to create")
+
+
+class CategoryUpdateCommand(ProductCategoryBase):
+    """Schema for updating existing food categories"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    id: int = Field(..., description="ID of the category to update")

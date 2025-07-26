@@ -9,7 +9,7 @@ from .usecases import (
 from app.combos.domain.repository import ComboRepository
 from app.products.domain.repositories import ProductRepository
 from app.combos.application.response import ComboResponse
-from app.combos.application.commands import ComboCreateComand
+from app.combos.application.commands import ComboCreateCommand
 from app.combos.application.queries import GetComboByIdQuery, GetCombosByProductIdQuery
 from app.shared.pagination import PaginationQuery
 from app.combos.domain.entities.value_objects import ComboId
@@ -38,7 +38,7 @@ class ComboUseCases:
     ) -> List[ComboResponse]:
         return await self.get_by_product.execute(query)
 
-    async def create_combo(self, create_data: ComboCreateComand) -> ComboResponse:
+    async def create_combo(self, create_data: ComboCreateCommand) -> ComboResponse:
         return await self.create.execute(create_data)
 
     async def delete_combo(self, combo_id: ComboId) -> None:

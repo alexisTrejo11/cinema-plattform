@@ -63,12 +63,15 @@ class ComboResponse(ComboBase):
         """Convert domain model to DTO"""
         items = [
             ComboItemResponse(
-                id=item.id.value, product_id=item.product.id, quantity=item.quantity
+                id=item.id.value,
+                product_id=item.product.id.value,
+                quantity=item.quantity,
             )
             for item in combo.items
         ]
         combo_dict = combo.to_dict()
-        combo_dict.pop("items", None)
+        combo_dict.pop("items")
+        combo_dict.pop("id")
         return cls(id=combo.id.value, combo_items=items, **combo_dict)
 
 

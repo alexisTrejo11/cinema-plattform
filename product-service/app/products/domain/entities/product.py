@@ -2,9 +2,9 @@ from typing import Optional
 from decimal import Decimal
 from typing import Optional
 from datetime import datetime
-from ..validator import ProductValidator
 from .value_objects import ProductId
 from ..json_mapper import ProductJsonMapper
+from ..validator import ProductValidator
 
 
 class Product:
@@ -53,9 +53,7 @@ class Product:
         self.created_at = created_at or datetime.now()
         self.updated_at = updated_at or datetime.now()
 
-        self.validate()
-
-    def validate(self):
+    def validate_product(self):
         """Validate all business rules for this product."""
         ProductValidator.validate_product(self)
 

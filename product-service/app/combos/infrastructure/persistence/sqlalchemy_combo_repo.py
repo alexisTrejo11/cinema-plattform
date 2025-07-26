@@ -16,7 +16,10 @@ class SqlAlchemyComboRepository(ComboRepository):
         self.session = session
 
     async def get_by_id(self, search_query: GetComboByIdQuery) -> Optional[Combo]:
-        stmt = select(ComboModel).where(ComboModel.id == search_query.combo_id.value)
+        stmt = select(ComboModel).where(
+            ComboModel.id == search_query.combo_id.value,
+            ComboModel.is_available == True,
+        )
 
         if search_query.include_items:
             stmt = stmt.options(

@@ -1,58 +1,33 @@
+from fastapi import APIRouter, Depends, Path, status
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
-from typing import List, Optional
-from decimal import Decimal
-from app.shared.response import ApiResponse
-from ..requests_dto import CreateProductRequest, UpdateProductRequest
+from typing import List
+import logging
 
+from app.shared.response import ApiResponse
 from app.products.domain.entities.value_objects import ProductId
 from app.products.application.commands import ProductUpdateCommand, ProductCreateCommand
 from app.products.application.queries import GetProductByIdQuery, SearchProductsQuery
 from app.products.application.responses import ProductDetails
 from app.products.application.usecases.container import ProductUseCases
+
 from ..depedencies import get_product_use_cases
-
-
-router = APIRouter(
-    prefix="/api/v2/products",
-    tags=["Food Products"],
-    responses={
-        status.HTTP_401_UNAUTHORIZED: {"description": "Missing or invalid credentials"},
-        status.HTTP_403_FORBIDDEN: {
-            "description": "Not authorized to perform this action"
-        },
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Internal server error"},
-    },
+from ..requests_dto import (
+    CreateProductRequest,
+    UpdateProductRequest,
+    ProductSearchQuery,
+)
+from ..doc_data import (
+    create_product_examples,
+    create_update_examples,
+    delete_product_examples,
+    get_product_examples,
+    search_products_examples,
 )
 
 
-@router.post(
-    "/",
-    response_model=ApiResponse[ProductDetails],
-    status_code=status.HTTP_201_CREATED,
-    summary="Create a new food product",
-    description="Creates a new food product with the provided details",
-)
-async def create_product(
-    product_data: CreateProductRequest,
-    usecase: ProductUseCases = Depends(get_product_use_cases),
-):
-    """
-    Create a new food product with the following details:
-    - **name**: Product name (1-200 characters)
-    - **price**: Product price (must be positive)
-    - **category_id**: ID of the product category
-    - **description**: Optional description
-    - **image_url**: Optional product image URL
-    - **preparation_time**: Optional prep time in minutes
-    - **calories**: Optional calorie count
-    """
-    try:
-        command = ProductCreateCommand(**product_data.model_dump())
-        product = await usecase.create_product(command)
-        return ApiResponse.success(product)
-    except Exception as e:
-        raise
+logger = logging.getLogger("app")
+
+router = APIRouter(prefix="/api/v2/products", tags=["Food Products"])
 
 
 @router.get(
@@ -60,6 +35,7 @@ async def create_product(
     response_model=ApiResponse[ProductDetails],
     summary="Get product by ID",
     description="Retrieve detailed information about a specific food product",
+    responses={**get_product_examples},
 )
 async def get_product_by_id(
     product_id: UUID = Path(
@@ -79,6 +55,7 @@ async def get_product_by_id(
         product = await usecase.get_product_by_id(query)
         return ApiResponse.success(product, "Food product successfully retrieved")
     except Exception as e:
+        logger.error(f"Error retrieving product {product_id}: {e}")
         raise
 
 
@@ -87,31 +64,10 @@ async def get_product_by_id(
     response_model=ApiResponse[List[ProductDetails]],
     summary="Search food products",
     description="Search and filter food products with pagination",
+    responses={**search_products_examples},
 )
 async def search_products(
-    offset: int = Query(default=0, ge=0, description="Pagination offset", example=0),
-    limit: int = Query(
-        default=10,
-        ge=1,
-        le=100,
-        description="Maximum number of results to return (1-100)",
-        example=10,
-    ),
-    category_id: Optional[int] = Query(
-        None, ge=1, description="Filter by category ID", example=1
-    ),
-    min_price: Optional[Decimal] = Query(
-        None, description="Minimum price filter", example=5.00
-    ),
-    max_price: Optional[Decimal] = Query(
-        None, description="Maximum price filter", example=20.00
-    ),
-    name_like: Optional[str] = Query(
-        None, description="Filter by product name (partial match)", example="pizza"
-    ),
-    available_only: bool = Query(
-        True, description="Only include available products", example=True
-    ),
+    search_params: ProductSearchQuery = Depends(),
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
     """
@@ -125,21 +81,55 @@ async def search_products(
     - **available_only**: Show only available products
     """
     try:
-        params = SearchProductsQuery(
-            offset=offset,
-            limit=limit,
-            min_price=min_price,
-            max_price=max_price,
-            category=category_id,
-            name=name_like,
-            active_only=available_only,
+        logger.info(f"Searching products with params: {search_params.model_dump()}")
+
+        params = SearchProductsQuery(**search_params.model_dump())
+        products_response = await usecase.search_products(params)
+
+        logger.info(f"Found {len(products_response.product_page)} products")
+        return ApiResponse.success(
+            data=products_response.product_page,
+            message="Food products successfully retrieved",
+            metadata={"page": products_response.metadata.model_dump()},
         )
-        products = await usecase.search_products(params)
-        return ApiResponse.success(products, "Food products successfully retrieved")
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
-        )
+        logger.error(f"Error searching products: {e}")
+        raise
+
+
+@router.post(
+    "/",
+    response_model=ApiResponse[ProductDetails],
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new food product",
+    description="Creates a new food product with the provided details",
+    responses={**create_product_examples},
+)
+async def create_product(
+    product_data: CreateProductRequest,
+    usecase: ProductUseCases = Depends(get_product_use_cases),
+):
+    """
+    Create a new food product with the following details:
+    - **name**: Product name (1-200 characters)
+    - **price**: Product price (must be positive)
+    - **category_id**: ID of the product category
+    - **description**: Optional description
+    - **image_url**: Optional product image URL
+    - **preparation_time**: Optional prep time in minutes
+    - **calories**: Optional calorie count
+    """
+    try:
+        logger.info(f"Creating product with data: {product_data.model_dump()}")
+
+        command = ProductCreateCommand(**product_data.model_dump())
+        product = await usecase.create_product(command)
+
+        logger.info(f"Product created successfully: {product.id}")
+        return ApiResponse.success(product)
+    except Exception as e:
+        logger.error(f"Error creating product: {e}")
+        raise
 
 
 @router.patch(
@@ -147,6 +137,7 @@ async def search_products(
     response_model=ApiResponse[ProductDetails],
     summary="Update a food product",
     description="Update details of an existing food product",
+    responses={**create_update_examples},
 )
 async def update_product(
     update_data: UpdateProductRequest,
@@ -160,12 +151,20 @@ async def update_product(
     - **update_data**: New values for the product (all fields optional)
     """
     try:
+        logger.info(
+            f"Updating product {product_id} with data: {update_data.model_dump()}"
+        )
+
         command = ProductUpdateCommand(
             product_id=ProductId(product_id), **update_data.model_dump()
         )
+
         product = await usecase.update_product(command)
+
+        logger.info(f"Product {product_id} updated successfully")
         return ApiResponse.success(product)
     except Exception as e:
+        logger.error(f"Error updating product {product_id}: {e}")
         raise
 
 
@@ -175,6 +174,7 @@ async def update_product(
     status_code=status.HTTP_200_OK,
     summary="Delete a food product",
     description="Permanently remove a food product from the system",
+    responses={**delete_product_examples},
 )
 async def delete_product(
     product_id: UUID = Path(..., description="ID of the product to delete", example=1),
