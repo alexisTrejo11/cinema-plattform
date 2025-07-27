@@ -42,7 +42,7 @@ async def session(engine):
     )
     async with async_session() as session:
         yield session
-        await session.rollback()
+    await session.close()
 
 
 @pytest.fixture(scope="session")
@@ -69,9 +69,13 @@ async def sample_product_data(sample_category) -> Dict[str, Any]:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def sample_product(sample_product_data: Dict[str, Any]) -> Product:
+async def sample_product(sample_product_data: Dict[str, Any], session) -> Product:
     """Create a Product entity from sample data"""
-    return Product(**sample_product_data)
+    product = Product(**sample_product_data)
+    product_model = ProductModel(**product.to_dict())
+    session.add(product_model)
+    await session.commit()
+    return product
 
 
 @pytest_asyncio.fixture(scope="function")

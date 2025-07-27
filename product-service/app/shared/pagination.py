@@ -9,13 +9,13 @@ class SortOrder(str, Enum):
 
 
 class PaginationQuery(BaseModel):
-    offset: int = Field(
+    page: int = Field(
         default=1,
         ge=1,
         description="Page number for pagination, starting from 1",
         json_schema_extra={"example": 1},
     )
-    limit: int = Field(
+    page_size: int = Field(
         default=10,
         ge=1,
         le=100,
@@ -41,12 +41,12 @@ class PaginationMetadata(BaseModel):
         json_schema_extra={"example": 100},
     )
     total_pages: int = Field(
-        ...,
+        default=1,
         description="Total number of pages based on the limit",
         json_schema_extra={"example": 10},
     )
     current_page: int = Field(
-        ...,
+        default=1,
         description="Current page number",
         json_schema_extra={"example": 1},
     )

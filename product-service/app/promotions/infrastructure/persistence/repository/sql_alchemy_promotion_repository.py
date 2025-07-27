@@ -39,30 +39,21 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
         self, query: PaginationQuery
     ) -> Tuple[List[Promotion], PaginationMetadata]:
         try:
-            stmt = select(PromotionModel).where(
-                and_(
-                    PromotionModel.start_date <= datetime.now(),
-                    PromotionModel.end_date >= datetime.now(),
-                    PromotionModel.is_active == True,
-                )
+            where_clause = and_(
+                PromotionModel.start_date <= datetime.now(),
+                PromotionModel.end_date >= datetime.now(),
+                PromotionModel.is_active == True,
             )
-
-            count_stmt = select(func.count()).select_from(ProductModel)
-
-            if query.offset is not None and query.offset >= 0:
-                stmt = stmt.offset(query.offset)
-            if query.limit is not None and query.limit > 0:
-                stmt = stmt.limit(query.limit)
+            stmt = select(PromotionModel).where(where_clause)
+            stmt = self.paginate_query(stmt, query)
 
             result = await self.session.execute(stmt)
-            total_items = (await self.session.execute(count_stmt)).scalar_one()
 
-            pagination_metadata = await self.get_search_pagination_metadata(
-                query, total_items
+            pagination_metadata = await self.get_pagination_metadata(
+                where_clause, query
             )
 
-            promotions = [model.to_domain() for model in result.scalars().all()]
-            return promotions, pagination_metadata
+            return self.return_pageble_entities(result, pagination_metadata)
         except SQLAlchemyError as e:
             logger.error(f"Error getting active promotions: {e}")
             raise DatabaseException("Failed to get active promotions") from e
@@ -71,36 +62,27 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
         self, query: GetPromotionByProductIdQuery
     ) -> Tuple[List[Promotion], PaginationMetadata]:
         try:
-            stmt = (
-                select(PromotionModel)
-                .join(PromotionModel.products)
-                .where(
-                    and_(
-                        ProductModel.id == str(query.product_id.value),
-                        PromotionModel.is_active == True,
-                        PromotionModel.start_date <= func.now(),
-                        PromotionModel.end_date >= func.now(),
-                    )
-                )
+            where_clause = and_(
+                ProductModel.id == str(query.product_id.value),
+                PromotionModel.is_active == True,
+                PromotionModel.start_date <= func.now(),
+                PromotionModel.end_date >= func.now(),
             )
 
-            count_stmt = select(func.count()).select_from(ProductModel)
+            stmt = (
+                select(PromotionModel).join(PromotionModel.products).where(where_clause)
+            )
 
             if query.pagination:
-                if query.pagination.offset is not None and query.pagination.offset >= 0:
-                    stmt = stmt.offset(query.pagination.offset)
-                if query.pagination.limit is not None and query.pagination.limit > 0:
-                    stmt = stmt.limit(query.pagination.limit)
+                stmt = self.paginate_query(stmt, query.pagination)
 
             result = await self.session.execute(stmt)
-            total_items = (await self.session.execute(count_stmt)).scalar_one()
 
-            pagination_metadata = await self.get_search_pagination_metadata(
-                query.pagination, total_items
+            pagination_metadata = await self.get_pagination_metadata(
+                where_clause, query.pagination, True
             )
 
-            promotions = [model.to_domain() for model in result.scalars().all()]
-            return promotions, pagination_metadata
+            return self.return_pageble_entities(result, pagination_metadata)
         except SQLAlchemyError as e:
             logger.error(
                 f"Error getting promotions for product {query.product_id.to_string()}: {e}"
@@ -112,10 +94,34 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
     async def create(self, promotion: Promotion) -> Promotion:
         try:
             promotion_model = PromotionModel.from_domain(promotion)
-            self.session.add(promotion_model)
-            await self.session.flush()
 
-            return promotion
+            product_models_to_associate = []
+            if promotion.applicable_product_ids:
+
+                product_ids_values = [
+                    p_id.value for p_id in promotion.applicable_product_ids
+                ]
+
+                products_stmt = select(ProductModel).where(
+                    ProductModel.id.in_(product_ids_values)
+                )
+                products_result = await self.session.execute(products_stmt)
+                product_models_to_associate = list(products_result.scalars().all())
+
+                if len(product_models_to_associate) != len(
+                    promotion.applicable_product_ids
+                ):
+                    found_ids = {p.id for p in product_models_to_associate}
+                    missing_ids = set(product_ids_values) - found_ids
+                    for missing_id in missing_ids:
+                        logger.warning(
+                            f"Producto con ID {missing_id} no encontrado para la promoción {promotion.id.value}. No se asociará."
+                        )
+
+            promotion_model.products.extend(product_models_to_associate)
+
+            self.session.add(promotion_model)
+            return promotion_model.to_domain()
         except SQLAlchemyError as e:
             logger.error(f"Error creating promotion: {e}")
             raise DatabaseException("Failed to create promotion") from e
@@ -133,7 +139,7 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
 
     async def delete(self, promotion_id: PromotionId) -> bool:
         try:
-            async with self.session.begin():
+            async with self.session.begin_nested():
                 stmt = delete(PromotionModel).where(
                     PromotionModel.id == str(promotion_id.value)
                 )
@@ -145,7 +151,7 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
 
     async def apply_promotion_use(self, promotion_id: PromotionId) -> bool:
         try:
-            async with self.session.begin():
+            async with self.session.begin_nested():
                 stmt = (
                     update(PromotionModel)
                     .where(PromotionModel.id == str(promotion_id.value))
@@ -159,22 +165,34 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
                 f"Failed to apply promotion use {promotion_id}"
             ) from e
 
-    async def get_search_pagination_metadata(
-        self, page_params: PaginationQuery, total_items: int
+    async def get_pagination_metadata(
+        self,
+        where_clause,
+        page_params: PaginationQuery,
+        apply_join_for_count: bool = False,  # New parameter
     ) -> PaginationMetadata:
+        count_stmt = select(func.count(PromotionModel.id.distinct())).select_from(
+            PromotionModel
+        )
+
+        if apply_join_for_count:
+            # ONLY apply join if we are counting for get_by_product
+            count_stmt = count_stmt.join(PromotionModel.products)
+
+        count_stmt = count_stmt.where(where_clause)
+
+        total_items = (await self.session.execute(count_stmt)).scalar_one()
+
         items_per_page = (
-            page_params.limit
-            if page_params.limit and page_params.limit > 0
+            page_params.page_size
+            if page_params.page_size and page_params.page_size > 0
             else total_items
         )
-        current_page = (
-            (page_params.offset // items_per_page) + 1
-            if page_params.offset and items_per_page
-            else 1
-        )
-        total_pages = (
-            math.ceil(total_items / items_per_page) if items_per_page > 0 else 1
-        )
+        current_page = page_params.page
+
+        total_pages = 1
+        if total_items > 0 and items_per_page > 0:
+            total_pages = math.ceil(total_items / items_per_page)
 
         return PaginationMetadata(
             total_items=total_items,
@@ -182,3 +200,16 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
             current_page=current_page,
             items_per_page=items_per_page,
         )
+
+    def paginate_query(self, stmt, page_params: PaginationQuery):
+        if page_params.page is not None and page_params.page >= 0:
+            stmt = stmt.offset((page_params.page - 1) * page_params.page_size)
+        if page_params.page_size is not None and page_params.page_size > 0:
+            stmt = stmt.limit(page_params.page_size)
+        return stmt
+
+    def return_pageble_entities(
+        self, result, page_metadata: PaginationMetadata
+    ) -> Tuple[List[Promotion], PaginationMetadata]:
+        promotions = [model.to_domain() for model in result.scalars().unique().all()]
+        return promotions, page_metadata
