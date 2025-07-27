@@ -9,7 +9,7 @@ from app.products.application.queries import SearchProductsQuery
 class TestSqlAlchProductRepository:
     @pytest.mark.asyncio
     async def test_get_by_id(
-        self, product_repository: SqlAlchProductRepository, sample_product
+        self, product_repository: SqlAlchemyProductRepository, sample_product
     ):
         # Save the product first
         saved_product = await product_repository.save(sample_product)
@@ -24,7 +24,7 @@ class TestSqlAlchProductRepository:
 
     @pytest.mark.asyncio
     async def test_get_by_id_not_found(
-        self, product_repository: SqlAlchProductRepository
+        self, product_repository: SqlAlchemyProductRepository
     ):
         non_existent_id = ProductId.generate()
         assert await product_repository.get_by_id(non_existent_id) is None
@@ -32,7 +32,7 @@ class TestSqlAlchProductRepository:
     @pytest.mark.asyncio
     async def test_get_by_id_in(
         self,
-        product_repository: SqlAlchProductRepository,
+        product_repository: SqlAlchemyProductRepository,
         sample_product,
         another_product,
     ):

@@ -1,7 +1,7 @@
 import json
 from typing import Any, AsyncIterator, List, Optional
 from redis import Redis
-from ...cache.serializer import SerializerService
+from app.shared.cache.serializer import SerializerService
 
 
 class RedisService:

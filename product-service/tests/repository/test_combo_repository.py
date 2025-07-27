@@ -14,7 +14,7 @@ class TestSqlAlchemyComboRepository:
         self, combo_repository, session, sample_product, sample_combo_data
     ):
         # First save a product and combo
-        product_repo = SqlAlchProductRepository(session)
+        product_repo = SqlAlchemyProductRepository(session)
         await product_repo.save(sample_product)
 
         # Create and save combo
@@ -48,7 +48,7 @@ class TestSqlAlchemyComboRepository:
         self, combo_repository, session, sample_product, sample_combo_data
     ):
         # Save product and combo
-        product_repo = SqlAlchProductRepository(session)
+        product_repo = SqlAlchemyProductRepository(session)
         await product_repo.save(sample_product)
 
         combo = Combo(
@@ -91,7 +91,7 @@ class TestSqlAlchemyComboRepository:
         sample_combo_data,
     ):
         # Save products
-        product_repo = SqlAlchProductRepository(session)
+        product_repo = SqlAlchemyProductRepository(session)
         await product_repo.save(sample_product)
         await product_repo.save(another_product)
 
@@ -136,7 +136,7 @@ class TestSqlAlchemyComboRepository:
         self, combo_repository, session, sample_product, sample_combo_data
     ):
         # Save product
-        product_repo = SqlAlchProductRepository(session)
+        product_repo = SqlAlchemyProductRepository(session)
         await product_repo.save(sample_product)
 
         # Create multiple combos
@@ -166,7 +166,7 @@ class TestSqlAlchemyComboRepository:
         self, combo_repository, session, sample_product, sample_combo_data
     ):
         # Save product first
-        product_repo = SqlAlchProductRepository(session)
+        product_repo = SqlAlchemyProductRepository(session)
         await product_repo.save(sample_product)
 
         # Create new combo
@@ -201,7 +201,7 @@ class TestSqlAlchemyComboRepository:
         sample_combo_data,
     ):
         # Save products
-        product_repo = SqlAlchProductRepository(session)
+        product_repo = SqlAlchemyProductRepository(session)
         await product_repo.save(sample_product)
         await product_repo.save(another_product)
 
@@ -245,7 +245,7 @@ class TestSqlAlchemyComboRepository:
         self, combo_repository, session, sample_product, sample_combo_data
     ):
         # Save product
-        product_repo = SqlAlchProductRepository(session)
+        product_repo = SqlAlchemyProductRepository(session)
         await product_repo.save(sample_product)
 
         # Create and save combo

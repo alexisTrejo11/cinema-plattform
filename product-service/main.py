@@ -1,21 +1,26 @@
+from typing import Optional
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
+import logging
+from config.redis import RedisManager
+from config.model_init import *
+from config.logging import setup_logging
+from config import exception_handlers
+from config.registry_service import RegistryMicroservice
+from app.combos.infrastructure.api import combo_controllers
+from fastapi.middleware.cors import CORSMiddleware
 from app.products.infrastructure.api.controller import (
     category_controller,
     product_controller,
 )
-from app.combos.infrastructure.api import combo_controllers
-from config.model_init import *
-from config import exception_handlers
-from config.logging import setup_logging
-from contextlib import asynccontextmanager
-import logging
-from config.registry_service import RegistryMicroservice
-from fastapi.middleware.cors import CORSMiddleware
-from config.redis import RedisManager
-
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
 
 setup_logging()
 logger = logging.getLogger("app")
+limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
+registry_client: Optional[RegistryMicroservice] = None
 
 
 @asynccontextmanager
@@ -62,6 +67,8 @@ origins = [
     "http://localhost:8000",
 ]
 
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

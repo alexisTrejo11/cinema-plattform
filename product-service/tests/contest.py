@@ -1,10 +1,11 @@
+from datetime import datetime, timedelta
 import pytest
 import pytest_asyncio
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from config.postgres_config import Base
 from app.combos.infrastructure.persistence.models import ComboModel, ComboItemModel
-from app.products.infrastructure.persistence.models import (
+from app.products.infrastructure.persistence.db.sql.models import (
     ProductModel,
     ProductCategoryModel,
 )
@@ -12,8 +13,8 @@ from app.products.infrastructure.persistence.models import (
 from typing import Any, Dict
 from decimal import Decimal
 from app.products.domain.entities.product import Product, ProductId
-from app.products.infrastructure.persistence.sqlalchemy_product_repo import (
-    SqlAlchProductRepository,
+from app.products.infrastructure.persistence.db.repositories.sqlalchemy_product_repo import (
+    SqlAlchemyProductRepository,
 )
 from app.combos.infrastructure.persistence.sqlalchemy_combo_repo import (
     SqlAlchemyComboRepository,
@@ -96,15 +97,15 @@ async def another_product(another_product_data: Dict[str, Any]) -> Product:
 
 
 @pytest.fixture(scope="function")
-def product_repository(session) -> SqlAlchProductRepository:
+def product_repository(session) -> SqlAlchemyProductRepository:
     """Fixture to provide a product repository instance"""
-    return SqlAlchProductRepository(session)
+    return SqlAlchemyProductRepository(session)
 
 
 @pytest_asyncio.fixture(scope="function")
 async def sample_category(session):
     """Create a sample category for testing"""
-    from app.products.infrastructure.persistence.models import (
+    from app.products.infrastructure.persistence.db.sql.models import (
         ProductCategoryModel as CategoryModel,
     )
 
@@ -168,4 +169,4 @@ from unittest.mock import AsyncMock, MagicMock
 @pytest.fixture
 def mock_user_repository() -> AsyncMock:
     """Provides an AsyncMock for the UserRepository."""
-    return AsyncMock(spec=SqlAlchProductRepository)
+    return AsyncMock(spec=SqlAlchemyProductRepository)

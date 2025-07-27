@@ -8,7 +8,7 @@ from app.products.domain.repositories import ProductRepository
 from app.products.domain.entities.product import Product, ProductId
 from app.products.application.queries import SearchProductsQuery
 from ..sql.models import ProductModel
-from ...cache import cache
+from app.shared.cache import cache
 from app.shared.pagination import PaginationMetadata
 
 

@@ -21,6 +21,7 @@ from uuid import UUID
 
 if TYPE_CHECKING:
     from app.combos.infrastructure.persistence.models import ComboItemModel
+    from app.promotions.infrastructure.persistence.model.promotion_model import PromotionModel
 
 
 class ProductCategoryModel(Base):
@@ -33,6 +34,7 @@ class ProductCategoryModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
 
     products = relationship("ProductModel", back_populates="category")
+    promotions = relationship("PromotionModel", back_populates="category")
 
     def to_domain(self) -> ProductCategory:
         return ProductCategory(
@@ -66,6 +68,9 @@ class ProductModel(Base):
 
     category = relationship("ProductCategoryModel", back_populates="products")
     combo_items = relationship("ComboItemModel", back_populates="product")
+    promotions = relationship(
+        "PromotionModel", secondary="promotion_products", back_populates="products"
+    )
 
     def to_domain(self) -> Product:
         return Product(

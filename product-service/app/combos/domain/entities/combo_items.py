@@ -1,4 +1,5 @@
-from app.products.domain.entities.product import Product
+from uuid import UUID
+from app.products.domain.entities.product import Product, ProductId
 from ..exceptions import *
 from .value_objects import ComboItemId
 
@@ -25,7 +26,7 @@ class ComboItem:
             if not isinstance(id, ComboItemId):
                 raise TypeError("id must be an ComboItemId instance")
         if not isinstance(product, Product):
-            raise TypeError("product must be an instance of Product")
+            raise TypeError("product id must be an instance of Product")
         if not isinstance(quantity, int):
             raise TypeError("quantity must be an integer")
 
@@ -45,3 +46,47 @@ class ComboItem:
             raise QuantityRangeException(
                 self.product.id.to_string(), min_quantity, max_quantity
             )
+
+    def to_dict(self) -> dict:
+        """Converts ComboItem to dictionary representation."""
+        return {
+            "id": self.id.value,
+            "product_id": self.product.id.value,
+            "quantity": self.quantity,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ComboItem":
+        """Creates a ComboItem instance from a dictionary representation."""
+        if isinstance(data["id"], str):
+            data["id"] = ComboItemId.from_string(data["id"])
+
+        if isinstance(data["id"], UUID):
+            data["id"] = ComboItemId(data["product_id"])
+
+        if isinstance(data["product_id"], str):
+            data["product_id"] = ProductId.from_string(data["product_id"])
+
+        if isinstance(data["product_id"], UUID):
+            data["product_id"] = ProductId(data["product_id"])
+
+        return cls(product=data["product"], id=data["id"], quantity=data["quantity"])
+
+    def to_json(self) -> dict:
+        """Converts ComboItem to JSON serializable dictionary."""
+        return {
+            "id": self.id.to_string(),
+            "product": self.product.to_json(),
+            "quantity": self.quantity,
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> "ComboItem":
+        """Creates a ComboItem instance from a dictionary representation."""
+        if isinstance(data["id"], str):
+            data["id"] = ComboItemId.from_string(data["id"])
+
+        if isinstance(data["product_id"], str):
+            data["product_id"] = ProductId.from_string(data["product_id"])
+
+        return cls(product=data["product"], id=data["id"], quantity=data["quantity"])

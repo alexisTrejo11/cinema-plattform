@@ -184,6 +184,54 @@ class Combo:
             "items": [item.__dict__ for item in self.items],
         }
 
+    def to_json(self) -> Dict[str, Any]:
+        """Converts the Combo to a JSON string representation."""
+        return {
+            "id": self.id.to_string(),
+            "name": self.name,
+            "description": self.description,
+            "price": str(self.price),
+            "discount_percentage": str(self.discount_percentage),
+            "image_url": self.image_url,
+            "is_available": self.is_available,
+            "created_at": self.created_at if self.created_at else None,
+            "updated_at": self.updated_at if self.updated_at else None,
+            "items": [item.__dict__ for item in self.items],
+        }
+
+    def from_json(self, data: Dict[str, Any]) -> "Combo":
+        """Creates a Combo instance from a JSON representation.
+
+        Args:
+            data: Dictionary containing combo attributes
+
+        Returns:
+            Combo: New Combo instance populated with data
+        """
+        if isinstance(data["id"], str):
+            data["id"] = ComboId.from_string(data["id"])
+        if isinstance(data["price"], str):
+            data["price"] = Decimal(data["price"])
+        if isinstance(data["discount_percentage"], str):
+            data["discount_percentage"] = Decimal(data["discount_percentage"])
+        if isinstance(data.get("created_at"), str):
+            data["created_at"] = datetime.fromisoformat(data["created_at"])
+        if isinstance(data.get("updated_at"), str):
+            data["updated_at"] = datetime.fromisoformat(data["updated_at"])
+
+        return Combo(
+            id=data["id"],
+            name=data["name"],
+            price=data["price"],
+            description=data.get("description"),
+            discount_percentage=data["discount_percentage"],
+            image_url=data.get("image_url"),
+            is_available=data.get("is_available", True),
+            items=[ComboItem(**item) for item in data.get("items", [])],
+            created_at=data.get("created_at"),
+            updated_at=data.get("updated_at"),
+        )
+
     def __repr__(self):
         """Returns a string representation of the Combo."""
         return f"Combo(id={self.id}, name='{self.name}', price={self.price}, discount_percentage={self.discount_percentage})"
