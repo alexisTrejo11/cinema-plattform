@@ -125,7 +125,7 @@ class ApiResponse(BaseModel, Generic[T]):
     @staticmethod
     def failure(
         error: ErrorResponse,
-        message: str = "",
+        message: str = "error",
         metadata: Optional[Dict[str, Any]] = None,
     ) -> "ApiResponse[Any]":
         """

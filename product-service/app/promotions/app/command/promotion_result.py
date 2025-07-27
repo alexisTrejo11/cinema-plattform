@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from app.shared.response import ErrorResponse
 
 
 @dataclass
@@ -20,3 +21,12 @@ class PromotionCommandResult:
     ) -> "PromotionCommandResult":
         """Returns a new instance with a success message."""
         return cls(promotion_id=promotion_id, is_success=True, message=message)
+
+    @classmethod
+    def error_details(cls, message: str = "error") -> "ErrorResponse":
+        return ErrorResponse(
+            code="PROMOTION_CREATION_ERROR",
+            type="PromotionError",
+            message=cls.message,
+            details={},
+        )

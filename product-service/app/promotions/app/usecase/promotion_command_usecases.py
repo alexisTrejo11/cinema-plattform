@@ -5,7 +5,7 @@ from ..command.promotion_command import PromotionCreateCommand, ExtendPromotionC
 from app.products.domain.repositories import ProductRepository
 from app.shared.base_exceptions import DomainException
 from app.products.domain.entities.product import Product
-from app.promotions.domain.service.
+
 
 class CreatePromotionUseCase:
     def __init__(
@@ -20,7 +20,7 @@ class CreatePromotionUseCase:
         try:
             promotion = command.to_domain()
             promotion.validate_creation()
-        
+
             await self.validate_products(promotion.applicable_product_ids)
 
             await self.promotion_repository.create(promotion)
@@ -38,13 +38,13 @@ class CreatePromotionUseCase:
             raise DomainException("Some products not found")
 
 
-class ExentdPromotionUseCase:
+class ExtendPromotionUseCase:
     def __init__(self, promotion_repository: PromotionRepository):
         self.promotion_repository = promotion_repository
 
     async def execute(self, command: ExtendPromotionCommand) -> CommandResult:
         try:
-            promotion = await self.promotion_repository.get_by_id(command.id``)
+            promotion = await self.promotion_repository.get_by_id(command.id)
             if not promotion:
                 return CommandResult.error(
                     promotion_id=command.id.to_string(), message="Promotion not found"
