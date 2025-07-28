@@ -5,7 +5,7 @@ from app.promotions.domain.repository.promotion_repository import PromotionRepos
 from app.promotions.infrastructure.persistence.repository.sql_alchemy_promotion_repository import (
     SQLAlchemyPromotionRepository,
 )
-from app.promotions.app.usecase.promotions_usecases import PromotionsUseCases
+from app.promotions.application.usecase.promotions_usecases import PromotionsUseCases
 from app.products.infrastructure.api.depedencies import (
     get_food_repository,
     ProductRepository,

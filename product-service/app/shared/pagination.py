@@ -23,12 +23,12 @@ class PaginationQuery(BaseModel):
         json_schema_extra={"example": 10},
     )
     sort_by: Optional[str] = Field(
-        None,
+        default=None,
         description="Field to sort by",
         json_schema_extra={"example": "name"},
     )
     sort_order: Optional[SortOrder] = Field(
-        SortOrder.ASC,
+        default=SortOrder.ASC,
         description="Sort order, either 'asc' or 'desc'",
         json_schema_extra={"example": "asc"},
     )

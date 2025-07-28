@@ -1,21 +1,29 @@
 from typing import Optional
+import logging
+
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-import logging
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.middleware import SlowAPIMiddleware
+
 from config.redis import RedisManager
 from config.model_init import *
 from config.logging import setup_logging
 from config import exception_handlers
 from config.registry_service import RegistryMicroservice
+
 from app.combos.infrastructure.api import combo_controllers
-from fastapi.middleware.cors import CORSMiddleware
 from app.products.infrastructure.api.controller import (
     category_controller,
     product_controller,
 )
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.middleware import SlowAPIMiddleware
+from app.promotions.infrastructure.api.controller import (
+    promotion_command_controller,
+    promotion_query_controllers,
+)
+
 
 setup_logging()
 logger = logging.getLogger("app")
@@ -94,3 +102,5 @@ def perform_health():
 app.include_router(category_controller.router)
 app.include_router(product_controller.router)
 app.include_router(combo_controllers.router)
+app.include_router(promotion_command_controller.router)
+app.include_router(promotion_query_controllers.router)

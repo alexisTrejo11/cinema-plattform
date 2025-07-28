@@ -10,7 +10,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.products.infrastructure.persistence.db.sql.models import ProductModel
 import logging
 from app.shared.base_exceptions import DatabaseException
-from app.promotions.app.queries.promotion_query import GetPromotionByProductIdQuery
+from app.promotions.application.queries.promotion_query import (
+    GetPromotionByProductIdQuery,
+)
 from app.shared.pagination import PaginationMetadata, PaginationQuery
 
 logger = logging.getLogger(__name__)

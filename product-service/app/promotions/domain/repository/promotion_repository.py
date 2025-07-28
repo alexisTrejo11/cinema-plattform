@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
 from ..promotion import Promotion, PromotionId
-from app.promotions.app.queries.promotion_query import GetPromotionByProductIdQuery
+from app.promotions.application.queries.promotion_query import (
+    GetPromotionByProductIdQuery,
+)
 from app.shared.pagination import PaginationMetadata, PaginationQuery
 
 

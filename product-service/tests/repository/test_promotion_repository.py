@@ -3,7 +3,9 @@ from tests.repository.fixture.combos_fixtures import *
 from app.shared.base_exceptions import DatabaseException
 from sqlalchemy.exc import SQLAlchemyError
 from app.shared.pagination import PaginationQuery
-from app.promotions.app.queries.promotion_query import GetPromotionByProductIdQuery
+from app.promotions.application.queries.promotion_query import (
+    GetPromotionByProductIdQuery,
+)
 from app.promotions.infrastructure.persistence.model.promotion_model import (
     PromotionModel,
 )
