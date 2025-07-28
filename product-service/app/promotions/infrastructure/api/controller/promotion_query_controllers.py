@@ -3,6 +3,8 @@ from typing import List
 from fastapi import APIRouter, Depends, Path, Query
 from http import HTTPStatus
 import logging
+from app.promotions.application.queries.promotion_response import PromotionResponse
+from app.promotions.application.usecase.promotions_usecases import PromotionsUseCases
 from app.promotions.application.queries.promotion_query import (
     PromotionId,
     GetPromotionByIdQuery,
@@ -10,13 +12,9 @@ from app.promotions.application.queries.promotion_query import (
     PaginationQuery,
     ProductId,
 )
-from app.promotions.application.queries.promotion_response import (
-    PromotionResponse,
-    PromotionSearchResponse,
-)
-from app.promotions.application.usecase.promotions_usecases import PromotionsUseCases
 from app.shared.response import ApiResponse
 from ..dependecies import get_promotion_use_cases
+from ..docs.examples import get_promotion_by_id_examples, list_promotions_examples
 
 logger = logging.getLogger("app")
 router = APIRouter(prefix="/promotions", tags=["Promotions"])
@@ -27,8 +25,8 @@ router = APIRouter(prefix="/promotions", tags=["Promotions"])
     status_code=HTTPStatus.OK,
     summary="Get all active promotions",
     description="Retrieves a paginated list of all active promotions.",
-    response_model=ApiResponse[List[PromotionSearchResponse]],
-    # responses={**get_active_promotions_examples},
+    response_model=ApiResponse[List[PromotionResponse]],
+    responses={**list_promotions_examples},
 )
 async def get_active_promotions_endpoint(
     pagination: PaginationQuery = Depends(),
@@ -62,7 +60,7 @@ async def get_active_promotions_endpoint(
     status_code=HTTPStatus.OK,
     summary="Get promotion by ID",
     description="Retrieves a single promotion by its unique ID.",
-    # responses={**get_promotion_by_id_examples},
+    responses={**get_promotion_by_id_examples},
 )
 async def get_promotion_by_id_endpoint(
     pagination_query: PaginationQuery = Depends(),
@@ -109,7 +107,7 @@ async def get_promotion_by_id_endpoint(
     summary="Get promotions by product ID",
     description="Retrieves a paginated list of promotions applicable to a specific product.",
     response_model=ApiResponse[List[PromotionResponse]],
-    # responses={**get_promotions_by_product_examples},
+    responses={**list_promotions_examples},
 )
 async def get_promotions_by_product_endpoint(
     product_id: UUID = Path(

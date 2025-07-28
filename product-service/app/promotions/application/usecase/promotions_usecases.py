@@ -3,6 +3,8 @@ from .promotion_command_usecases import (
     ActivatePromotionUseCase,
     DeactivatePromotionUseCase,
     ExtendPromotionUseCase,
+    ApplyPromotionUseCase,
+    DeletePromotionUseCase,
 )
 from .promotion_query_usecases import (
     GetActivePromotionsUseCase,
@@ -10,6 +12,9 @@ from .promotion_query_usecases import (
     GetPromotionByProductIdUseCase,
 )
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
+from app.promotions.domain.service.promotion_product_service import (
+    PromotionProductService,
+)
 from app.products.domain.repositories import ProductRepository
 from ..command.promotion_command import (
     PromotionCreateCommand,
@@ -24,6 +29,7 @@ from ..queries.promotion_query import (
     PromotionId,
 )
 from ..queries.promotion_response import PromotionResponse, PromotionSearchResponse
+from app.products.domain.entities.value_objects import ProductId
 
 
 class PromotionsUseCases:
@@ -32,7 +38,10 @@ class PromotionsUseCases:
         promotion_repository: PromotionRepository,
         product_repository: ProductRepository,
     ):
-        self.create = CreatePromotionUseCase(promotion_repository, product_repository)
+        self.product_service = PromotionProductService()
+        self.create = CreatePromotionUseCase(
+            promotion_repository, product_repository, self.product_service
+        )
         self.activate = ActivatePromotionUseCase(promotion_repository)
         self.deactivate = DeactivatePromotionUseCase(promotion_repository)
         self.extend = ExtendPromotionUseCase(promotion_repository)
@@ -45,6 +54,10 @@ class PromotionsUseCases:
         self.get_by_product = GetPromotionByProductIdUseCase(
             promotion_repository, product_repository
         )
+        self.apply = ApplyPromotionUseCase(
+            promotion_repository, product_repository, self.product_service
+        )
+        self.delete = DeletePromotionUseCase(promotion_repository)
 
     async def create_promotion(self, command: PromotionCreateCommand) -> CommandResult:
         return await self.create.execute(command)
@@ -72,3 +85,11 @@ class PromotionsUseCases:
         self, query: GetPromotionByProductIdQuery
     ) -> PromotionSearchResponse:
         return await self.get_by_product.execute(query)
+
+    async def apply_promotion(
+        self, promotion_id: PromotionId, product_ids: list[ProductId]
+    ) -> CommandResult:
+        return await self.apply.execute(promotion_id, product_ids)
+
+    async def delete_promotion(self, promotion_id: PromotionId) -> CommandResult:
+        return await self.delete.execute(promotion_id)

@@ -38,10 +38,9 @@ class PromotionType(Enum):
 class PromotionRule:
     """Value Object que representa una regla de promoción"""
 
-    min_quantity: Optional[int] = None
-    min_purchase_amount: Optional[Decimal] = None
-    applicable_categories: Optional[List[str]] = None
-    required_products: Optional[List[ProductId]] = None
+    min_quantity: int = 0
+    min_purchase_amount: Decimal = Decimal("0.00")
+    required_products: List[ProductId] = []
 
     def to_dict(self) -> dict:
         """Convert the PromotionRule to a dictionary."""
@@ -51,16 +50,9 @@ class PromotionRule:
     def from_dict(cls, data: dict) -> "PromotionRule":
         """Creates a PromotionRule instance from a dictionary representation"""
         return cls(
-            min_quantity=data.get("min_quantity"),
-            min_purchase_amount=(
-                Decimal(data["min_purchase_amount"])
-                if data.get("min_purchase_amount")
-                else None
-            ),
-            applicable_categories=data.get("applicable_categories"),
+            min_quantity=data.get("min_quantity", 0),
+            min_purchase_amount=(Decimal(data["min_purchase_amount"])),
             required_products=(
                 [ProductId.from_string(pid) for pid in data["required_products"]]
-                if data.get("required_products")
-                else None
             ),
         )

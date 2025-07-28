@@ -55,11 +55,11 @@ class PromotionCreateCommand(BaseModel):
         json_encoders = {Decimal: str}
         from_attributes = True
 
-    def to_domain(self) -> Promotion:
+    def map_to_domain_and_validate_data(self) -> Promotion:
         """
         Converts the Pydantic model to a domain command object.
         """
-        return Promotion(
+        promotion = Promotion(
             name=self.name,
             promotion_type=self.promotion_type,
             discount_value=self.discount_value,
@@ -71,6 +71,8 @@ class PromotionCreateCommand(BaseModel):
             is_active=self.is_active,
             max_uses=self.max_uses,
         )
+        promotion.validate_creation_fields()
+        return promotion
 
 
 class ExtendPromotionCommand(BaseModel):

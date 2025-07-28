@@ -8,6 +8,7 @@ from app.products.domain.entities.product import Product
 
 
 class PromotionProductService:
+    # TODO: Check
     @classmethod
     def apply_promotion(cls, promotion: Promotion, products: List[Product]) -> Decimal:
         """
@@ -55,6 +56,169 @@ class PromotionProductService:
         promotion.current_uses += 1
         promotion.updated_at = datetime.now()
         return discount
+
+    @classmethod
+    def validate_promotion_rule_integrity(
+        cls, promotion: Promotion, products: List[Product]
+    ) -> Optional[PromotionRule]:
+        rule = promotion.rule
+
+        if not set(rule.required_products).intersection([p.id for p in products]):
+            raise DomainException(
+                "Promotion is not applicable to the provided products"
+            )
+
+        prices_allowed_buy_x_yet_free = []
+
+        price = Decimal("0.00")
+        product_total = sum(product.price for product in products)
+
+        for product in products:
+            product_total += price
+
+            price += product.price
+            prices_allowed_buy_x_yet_free.append(price)
+
+        if product_total < promotion.discount_value:
+            raise DomainException(
+                "Total purchase amount does not meet the minimum requirement for the promotion"
+            )
+
+        match promotion.promotion_type:
+            case PromotionType.BUY_X_GET_Y_FREE:
+                prices_allowed_buy_x_yet_free = []
+
+                price = Decimal("0.00")
+                for product in products:
+                    price += product.price
+                    prices_allowed_buy_x_yet_free.append(price)
+
+                if rule.min_quantity - len(promotion.applicable_product_ids) > 3:
+                    raise DomainException(
+                        "For this Promotion type only 3 items can be claimed"
+                    )
+
+                if not len(prices_allowed_buy_x_yet_free) > 4:
+                    if promotion.discount_value not in prices_allowed_buy_x_yet_free:
+                        raise DomainException(
+                            f"""
+                        For this Promotion type de allowed 
+                        prices are {prices_allowed_buy_x_yet_free}
+                        """
+                        )
+                else:
+                    last_3_prices = prices_allowed_buy_x_yet_free[-3]
+                    if promotion.discount_value not in last_3_prices:
+                        raise DomainException(
+                            f"""
+                            For this Promotion type de allowed 
+                            prices are {prices_allowed_buy_x_yet_free[last_3_prices]}
+                            """
+                        )
+            case PromotionType.FIXED_DISCOUNT:
+                MAX_FIXED_DISCOUNT_ALLOWED = 30  # Allow Max 30%
+                purchase_disccount = (
+                    rule.min_purchase_amount * Decimal("100.00")
+                ) / product_total
+                purchase_disccount_applied = 100 - purchase_disccount
+
+                if purchase_disccount_applied > MAX_FIXED_DISCOUNT_ALLOWED:
+                    raise DomainException(
+                        f"""
+                            For this Promotion type the max allowed disccount
+                            are {MAX_FIXED_DISCOUNT_ALLOWED}% 
+                            and requested percentage is
+                            {purchase_disccount_applied}%
+                            """
+                    )
+            case PromotionType.BUNDLE_DISCOUNT:
+                MIN_BUNDLE_QUANTITY = 2
+                MAX_BUNDLE_DISCOUNT_ALLOWED = 50  # Allow Max 50% IN BUNDLE PROMOTION
+                if rule.min_quantity < MIN_BUNDLE_QUANTITY:
+                    raise DomainException(
+                        f"""
+                        Bundle must have at least 2 items to be valid.
+                        """
+                    )
+                purchase_disccount = (
+                    rule.min_purchase_amount * Decimal("100.00")
+                ) / product_total
+                purchase_disccount_applied = 100 - purchase_disccount
+
+                if purchase_disccount_applied > MAX_BUNDLE_DISCOUNT_ALLOWED:
+                    raise DomainException(
+                        f"""
+                            For this Promotion type the max allowed disccount
+                            are {MAX_BUNDLE_DISCOUNT_ALLOWED}% 
+                            and requested percentage is
+                            {purchase_disccount_applied}%
+                            """
+                    )
+            case PromotionType.MINIMUM_QUANTITY_DISCOUNT:
+                MIN_MINIMUM_QUANTITY_DISCOUNT_QUANTITY = (
+                    5  # At least 10 items to apply this promotion are required.
+                )
+                START_PERCENTAGE = 10  # Every 5 products increate to 10%
+                MAX_PERCENTAGE_ALLOWED = 60  # limit
+
+                if len(rule.required_products) < MIN_MINIMUM_QUANTITY_DISCOUNT_QUANTITY:
+                    raise DomainException("At least 5 item are required")
+
+                extra_items = (
+                    len(rule.required_products) - MIN_MINIMUM_QUANTITY_DISCOUNT_QUANTITY
+                )
+
+                # Apply custom disscoount
+                while extra_items > 0:
+                    if START_PERCENTAGE >= MAX_PERCENTAGE_ALLOWED:
+                        break
+
+                    extra_items -= 5
+                    START_PERCENTAGE += 10
+
+                PERCENTAGE_TO_APPLY = START_PERCENTAGE
+
+                # Check Disccount
+                purchase_disccount = (
+                    rule.min_purchase_amount * Decimal("100.00")
+                ) / product_total
+                purchase_disccount_applied = 100 - purchase_disccount
+
+                quantity_required = (product_total * PERCENTAGE_TO_APPLY) / 100
+                if purchase_disccount_applied != PERCENTAGE_TO_APPLY:
+                    raise DomainException(
+                        f"""
+                            For this Promotion type the max allowed disccount
+                            are {PERCENTAGE_TO_APPLY}% 
+                            and requested percentage is
+                            {purchase_disccount_applied}%
+                            
+                            quantity_required {quantity_required}
+                            quantity_provided {purchase_disccount}
+                            """
+                    )
+            case _:  # Default flat percentage disccount
+                MIN_PERCENTAGE_DISCOUNT = 10
+                MAX_PERCENTAGE_DISCOUNT = 90
+
+                purchase_disccount = (
+                    rule.min_purchase_amount * Decimal("100.00")
+                ) / product_total
+                purchase_disccount_applied = 100 - purchase_disccount
+
+                if (
+                    not MIN_PERCENTAGE_DISCOUNT
+                    <= purchase_disccount_applied
+                    <= MAX_PERCENTAGE_DISCOUNT
+                ):
+                    raise DomainException(
+                        f"""
+                            For this Promotion type {promotion.promotion_type} the allowed disccount range is
+                            {MIN_PERCENTAGE_DISCOUNT}%  to {MAX_PERCENTAGE_DISCOUNT}% 
+                            and requested percentage is
+                            {purchase_disccount_applied}%
+                            """
+                    )
 
     @classmethod
     def calculate_product_discount(

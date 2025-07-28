@@ -59,17 +59,16 @@ class Promotion:
         self.created_at = created_at if created_at else datetime.now()
         self.updated_at = updated_at if updated_at else datetime.now()
 
-    def validate_creation(self):
+    def validate_creation_fields(self):
         ValidationService.validate_fields(
             name=self.name,
             discount_value=self.discount_value,
+            rule=self.rule,
             start_date=self.start_date,
             end_date=self.end_date,
             max_uses=self.max_uses,
             current_uses=self.current_uses,
         )
-
-        ValidationService.validate_promotion_rules(self.rule)
 
     def activate(self):
         """Activates the promotion"""
