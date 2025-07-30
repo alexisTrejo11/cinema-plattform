@@ -10,7 +10,7 @@ from uuid import UUID
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 
 if TYPE_CHECKING:
-    from app.products.infrastructure.persistence.models import ProductModel
+    from app.products.infrastructure.persistence.db.sql.models import ProductModel
 
 
 class ComboModel(Base):

@@ -45,7 +45,7 @@ class CreatePromotionUseCase:
         return products
 
     def _validate_buissness_logic(self, promotion, products):
-        self.promotion_product_service.validate_promotion_rule_integrity(
+        self.promotion_product_service.validate_promotion_rule_creation(
             promotion, products
         )
 
@@ -56,6 +56,7 @@ class ExtendPromotionUseCase:
 
     async def execute(self, command: ExtendPromotionCommand) -> CommandResult:
         try:
+
             promotion = await self.promotion_repository.get_by_id(command.id)
             if not promotion:
                 return CommandResult.error(
@@ -79,17 +80,20 @@ class ActivatePromotionUseCase:
 
     async def execute(self, promotion_id: PromotionId) -> CommandResult:
         try:
-            promotion = await self.promotion_repository.get_by_id(promotion_id)
-            if not promotion:
+            promotion_deactivated = await self.promotion_repository.get_by_id(
+                promotion_id, is_active=False
+            )
+            if not promotion_deactivated:
                 return CommandResult.error(
-                    promotion_id=promotion_id.to_string(), message="Promotion not found"
+                    promotion_id=promotion_id.to_string(),
+                    message="Promotion deactivated not found",
                 )
 
-            promotion.activate()
-            await self.promotion_repository.update(promotion)
+            promotion_deactivated.activate()
+            await self.promotion_repository.update(promotion_deactivated)
 
             return CommandResult.success(
-                promotion_id=promotion.id.to_string(),
+                promotion_id=promotion_deactivated.id.to_string(),
                 message="Promotion activated successfully",
             )
         except DomainException as e:
@@ -155,7 +159,9 @@ class ApplyPromotionUseCase:
             )
 
         products = await self._get_products(product_ids)
-        discount = self.promotion_product_service.apply_promotion(promotion, products)
+        discount = self.promotion_product_service.get_promotion_discount(
+            promotion, products
+        )
 
         return CommandResult.success(
             promotion_id=promotion.id.to_string(),

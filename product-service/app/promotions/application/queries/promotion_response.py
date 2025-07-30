@@ -1,4 +1,5 @@
-from pydantic import BaseModel, Field
+from uuid import UUID
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.types import PositiveInt, NonNegativeInt
 from datetime import datetime
 from typing import List, Optional
@@ -11,6 +12,7 @@ from app.promotions.domain.promotion import (
 )
 from app.products.domain.entities.product import Product
 from app.shared.pagination import PaginationMetadata
+from app.products.domain.entities.value_objects import ProductId
 
 
 class PromotionResponse(BaseModel):
@@ -19,14 +21,12 @@ class PromotionResponse(BaseModel):
     This mirrors the domain entity's structure, including system-generated fields.
     """
 
-    id: PromotionId = Field(..., description="Unique identifier of the promotion")
+    id: UUID = Field(..., description="Unique identifier of the promotion")
     name: str = Field(..., description="Descriptive name of the promotion")
     promotion_type: PromotionType = Field(..., description="Type of promotion")
     discount_value: Decimal = Field(..., description="The value of the discount")
 
-    rule: PromotionRule = Field(
-        ..., description="Additional rules for applying the promotion"
-    )
+    rule: dict = Field(..., description="Additional rules for applying the promotion")
     start_date: datetime = Field(
         ..., description="Start date of the promotion's validity"
     )
@@ -47,9 +47,9 @@ class PromotionResponse(BaseModel):
     updated_at: datetime = Field(
         ..., description="Timestamp when the promotion was last updated"
     )
-    products: Optional[List[Product]] = Field(
-        None, description="List of products applicable to this promotion"
-    )
+    # products: Optional[List[Product]] = Field(
+    #    None, description="List of products applicable to this promotion"
+    # )
 
     @classmethod
     def from_domain(
@@ -60,11 +60,11 @@ class PromotionResponse(BaseModel):
         Optionally include products if provided.
         """
         response = cls(
-            id=promotion.id,
+            id=promotion.id.value,
             name=promotion.name,
             promotion_type=promotion.promotion_type,
             discount_value=promotion.discount_value,
-            rule=promotion.rule,
+            rule=promotion.rule.to_dict(),
             start_date=promotion.start_date,
             end_date=promotion.end_date,
             description=promotion.description,
@@ -73,13 +73,12 @@ class PromotionResponse(BaseModel):
             current_uses=promotion.current_uses,
             created_at=promotion.created_at,
             updated_at=promotion.updated_at,
-            products=products,
         )
         return response
 
-    class Config:
-        json_encoders = {Decimal: str}
-        from_attributes = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
 class PromotionSearchResponse(BaseModel):
@@ -96,9 +95,9 @@ class PromotionSearchResponse(BaseModel):
         ..., description="Metadata for pagination"
     )
 
-    class Config:
-        json_encoders = {Decimal: str}
-        from_attributes = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
     def from_domain(

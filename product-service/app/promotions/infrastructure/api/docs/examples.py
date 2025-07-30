@@ -14,11 +14,7 @@ create_promotion_examples = {
             }
         },
     },
-    status.HTTP_400_BAD_REQUEST: common_responses[status.HTTP_400_BAD_REQUEST],
-    status.HTTP_404_NOT_FOUND: common_responses[status.HTTP_404_NOT_FOUND],
-    status.HTTP_500_INTERNAL_SERVER_ERROR: common_responses[
-        status.HTTP_500_INTERNAL_SERVER_ERROR
-    ],
+    **common_responses,
 }
 
 activate_promotion_examples = {
@@ -33,11 +29,7 @@ activate_promotion_examples = {
             }
         },
     },
-    status.HTTP_400_BAD_REQUEST: common_responses[status.HTTP_400_BAD_REQUEST],
-    status.HTTP_404_NOT_FOUND: common_responses[status.HTTP_404_NOT_FOUND],
-    status.HTTP_500_INTERNAL_SERVER_ERROR: common_responses[
-        status.HTTP_500_INTERNAL_SERVER_ERROR
-    ],
+    **common_responses,
 }
 
 
@@ -53,11 +45,7 @@ deactivate_promotion_examples = {
             }
         },
     },
-    status.HTTP_400_BAD_REQUEST: common_responses[status.HTTP_400_BAD_REQUEST],
-    status.HTTP_404_NOT_FOUND: common_responses[status.HTTP_404_NOT_FOUND],
-    status.HTTP_500_INTERNAL_SERVER_ERROR: common_responses[
-        status.HTTP_500_INTERNAL_SERVER_ERROR
-    ],
+    **common_responses,
 }
 
 
@@ -73,11 +61,7 @@ extend_promotion_examples = {
             }
         },
     },
-    status.HTTP_400_BAD_REQUEST: common_responses[status.HTTP_400_BAD_REQUEST],
-    status.HTTP_404_NOT_FOUND: common_responses[status.HTTP_404_NOT_FOUND],
-    status.HTTP_500_INTERNAL_SERVER_ERROR: common_responses[
-        status.HTTP_500_INTERNAL_SERVER_ERROR
-    ],
+    **common_responses,
 }
 
 
@@ -118,11 +102,7 @@ get_promotion_by_id_examples = {
             }
         },
     },
-    status.HTTP_400_BAD_REQUEST: common_responses[status.HTTP_400_BAD_REQUEST],
-    status.HTTP_404_NOT_FOUND: common_responses[status.HTTP_404_NOT_FOUND],
-    status.HTTP_500_INTERNAL_SERVER_ERROR: common_responses[
-        status.HTTP_500_INTERNAL_SERVER_ERROR
-    ],
+    **common_responses,
 }
 
 
@@ -189,9 +169,5 @@ list_promotions_examples = {
             }
         },
     },
-    status.HTTP_400_BAD_REQUEST: common_responses[status.HTTP_400_BAD_REQUEST],
-    status.HTTP_404_NOT_FOUND: common_responses[status.HTTP_404_NOT_FOUND],
-    status.HTTP_500_INTERNAL_SERVER_ERROR: common_responses[
-        status.HTTP_500_INTERNAL_SERVER_ERROR
-    ],
+    **common_responses,
 }

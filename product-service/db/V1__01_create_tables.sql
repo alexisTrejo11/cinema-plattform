@@ -25,6 +25,20 @@ CREATE TABLE products (
         ON DELETE RESTRICT  -- Prevent category deletion if products exist
 );
 
+-- Indexes for product_categories
+CREATE INDEX IF NOT EXISTS idx_product_categories_id ON product_categories (id);
+CREATE INDEX IF NOT EXISTS idx_product_categories_active ON product_categories (is_active) WHERE is_active = TRUE;
+
+-- Indexes for products
+CREATE INDEX IF NOT EXISTS idx_products_id ON products (id);
+CREATE INDEX IF NOT EXISTS idx_products_category_id ON products (category_id);
+CREATE INDEX IF NOT EXISTS idx_products_is_available ON products (is_available) WHERE is_available = TRUE;
+CREATE INDEX IF NOT EXISTS idx_products_price ON products (price);
+CREATE INDEX IF NOT EXISTS idx_products_name ON products (name);
+
+
+
+
 CREATE TABLE combos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(200) NOT NULL,
@@ -57,16 +71,6 @@ CREATE TABLE combo_items (
     CONSTRAINT uq_combo_items_product UNIQUE (combo_id, product_id)  -- Prevent duplicate products in same combo
 );
 
--- Indexes for product_categories
-CREATE INDEX IF NOT EXISTS idx_product_categories_id ON product_categories (id);
-CREATE INDEX IF NOT EXISTS idx_product_categories_active ON product_categories (is_active) WHERE is_active = TRUE;
-
--- Indexes for products
-CREATE INDEX IF NOT EXISTS idx_products_id ON products (id);
-CREATE INDEX IF NOT EXISTS idx_products_category_id ON products (category_id);
-CREATE INDEX IF NOT EXISTS idx_products_is_available ON products (is_available) WHERE is_available = TRUE;
-CREATE INDEX IF NOT EXISTS idx_products_price ON products (price);
-CREATE INDEX IF NOT EXISTS idx_products_name ON products (name);
 
 -- Indexes for combos
 CREATE INDEX IF NOT EXISTS idx_combo_name ON combos(name);
@@ -78,3 +82,45 @@ CREATE INDEX IF NOT EXISTS idx_combo_availability ON combos(is_available) WHERE 
 CREATE INDEX IF NOT EXISTS idx_combo_items_combo ON combo_items(combo_id);
 CREATE INDEX IF NOT EXISTS idx_combo_items_product ON combo_items(product_id);
 CREATE INDEX IF NOT EXISTS idx_combo_items_quantity ON combo_items(quantity);
+
+
+
+-- Create Promotion Table
+CREATE TABLE promotions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    promotion_type VARCHAR(50) NOT NULL,
+    discount_value DECIMAL(10, 2) NOT NULL,
+    rule JSONB NOT NULL,
+    start_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    max_uses INTEGER,
+    current_uses INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    category_id INTEGER,
+    CONSTRAINT fk_category
+        FOREIGN KEY (category_id)
+        REFERENCES product_categories(id)
+        ON DELETE SET NULL
+);
+
+CREATE TABLE promotion_products (
+    promotion_id UUID NOT NULL,
+    product_id UUID NOT NULL,
+    PRIMARY KEY (promotion_id, product_id),
+    CONSTRAINT fk_promotion
+        FOREIGN KEY (promotion_id)
+        REFERENCES promotions(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_product
+        FOREIGN KEY (product_id)
+        REFERENCES products(id)
+        ON DELETE CASCADE
+);
+
+-- Indexes for promotions
+CREATE INDEX IF NOT EXISTS idx_promotions_id ON promotions (id);
+CREATE INDEX IF NOT EXISTS idx_promotions_active ON promotions (is_active) WHERE is_active = TRUE;

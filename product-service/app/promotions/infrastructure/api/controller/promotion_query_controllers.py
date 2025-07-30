@@ -6,18 +6,18 @@ import logging
 from app.promotions.application.queries.promotion_response import PromotionResponse
 from app.promotions.application.usecase.promotions_usecases import PromotionsUseCases
 from app.promotions.application.queries.promotion_query import (
-    PromotionId,
     GetPromotionByIdQuery,
     GetPromotionByProductIdQuery,
-    PaginationQuery,
-    ProductId,
 )
+from app.promotions.domain.valueobjects import PromotionId
+from app.products.domain.entities.value_objects import ProductId
+from app.shared.pagination import PaginationQuery
 from app.shared.response import ApiResponse
 from ..dependecies import get_promotion_use_cases
 from ..docs.examples import get_promotion_by_id_examples, list_promotions_examples
 
 logger = logging.getLogger("app")
-router = APIRouter(prefix="/promotions", tags=["Promotions"])
+router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions"])
 
 
 @router.get(
@@ -28,7 +28,7 @@ router = APIRouter(prefix="/promotions", tags=["Promotions"])
     response_model=ApiResponse[List[PromotionResponse]],
     responses={**list_promotions_examples},
 )
-async def get_active_promotions_endpoint(
+async def get_active_promotions(
     pagination: PaginationQuery = Depends(),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
 ):
@@ -60,11 +60,12 @@ async def get_active_promotions_endpoint(
     status_code=HTTPStatus.OK,
     summary="Get promotion by ID",
     description="Retrieves a single promotion by its unique ID.",
+    response_model=ApiResponse[PromotionResponse],
     responses={**get_promotion_by_id_examples},
 )
-async def get_promotion_by_id_endpoint(
+async def get_promotion_by_id(
     pagination_query: PaginationQuery = Depends(),
-    promotion_id: PromotionId = Path(
+    promotion_id: UUID = Path(
         ..., description="ID of the promotion to retrieve", example="promo-123"
     ),
     include_products: bool = Query(
@@ -80,7 +81,7 @@ async def get_promotion_by_id_endpoint(
     """
     try:
         query = GetPromotionByIdQuery(
-            id=promotion_id,
+            id=PromotionId(promotion_id),
             include_products=include_products,
             pagination=pagination_query,
         )
@@ -90,6 +91,7 @@ async def get_promotion_by_id_endpoint(
         )
         response = await use_cases.get_promotion_by_id(query)
 
+        print(f"Response: {response}")
         logger.info(f"Promotion {promotion_id} retrieved successfully.")
         return ApiResponse.success(
             data=response,
@@ -109,8 +111,8 @@ async def get_promotion_by_id_endpoint(
     response_model=ApiResponse[List[PromotionResponse]],
     responses={**list_promotions_examples},
 )
-async def get_promotions_by_product_endpoint(
-    product_id: UUID = Path(
+async def get_promotions_by_product(
+    product_id: str = Path(
         ..., description="ID of the product to find promotions for", example="prod-456"
     ),
     include_products: bool = Query(
@@ -128,7 +130,7 @@ async def get_promotions_by_product_endpoint(
     """
     try:
         query = GetPromotionByProductIdQuery(
-            product_id=ProductId(product_id),
+            product_id=ProductId.from_string(product_id),
             include_products=include_products,
             pagination=pagination_query,
         )

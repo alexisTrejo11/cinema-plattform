@@ -54,7 +54,10 @@ class PromotionModel(Base):
     )
 
     products = relationship(
-        "ProductModel", secondary="promotion_products", back_populates="promotions", lazy="joined"
+        "ProductModel",
+        secondary="promotion_products",
+        back_populates="promotions",
+        lazy="joined",
     )
 
     category_id: Mapped[int] = mapped_column(
@@ -66,20 +69,24 @@ class PromotionModel(Base):
         """Converts the model to a domain entity"""
         # Convert rule dict back to domain objects
         rule_dict = self.rule.copy()
-        
+
         # Convert float back to Decimal
-        if rule_dict.get('min_purchase_amount'):
-            rule_dict['min_purchase_amount'] = Decimal(str(rule_dict['min_purchase_amount']))
-        
+        if rule_dict.get("min_purchase_amount"):
+            rule_dict["min_purchase_amount"] = Decimal(
+                str(rule_dict["min_purchase_amount"])
+            )
+
         # Convert string UUIDs back to ProductId objects
-        if rule_dict.get('required_products'):
-            rule_dict['required_products'] = [ProductId.from_string(pid) for pid in rule_dict['required_products']]
-        
+        if rule_dict.get("required_products"):
+            rule_dict["required_products"] = [
+                ProductId.from_string(pid) for pid in rule_dict["required_products"]
+            ]
+
         return Promotion(
             id=PromotionId(self.id),
             name=self.name,
             description=self.description,
-            promotion_type=PromotionType(int(self.promotion_type)),
+            promotion_type=PromotionType(self.promotion_type),
             discount_value=self.discount_value,
             applicable_product_ids=[ProductId(product.id) for product in self.products],
             rule=PromotionRule(**rule_dict),
@@ -97,15 +104,17 @@ class PromotionModel(Base):
         """Creates a model instance from a domain entity"""
         # Convert PromotionRule to JSON-serializable dict
         rule_dict = asdict(promotion.rule)
-        
+
         # Convert Decimal to float for JSON serialization
-        if rule_dict.get('min_purchase_amount'):
-            rule_dict['min_purchase_amount'] = float(rule_dict['min_purchase_amount'])
-        
+        if rule_dict.get("min_purchase_amount"):
+            rule_dict["min_purchase_amount"] = float(rule_dict["min_purchase_amount"])
+
         # Convert ProductId objects to strings
-        if rule_dict.get('required_products'):
-            rule_dict['required_products'] = [str(pid.value) for pid in promotion.rule.required_products]
-        
+        if rule_dict.get("required_products"):
+            rule_dict["required_products"] = [
+                str(pid.value) for pid in promotion.rule.required_products
+            ]
+
         return cls(
             id=promotion.id.value,
             name=promotion.name,

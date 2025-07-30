@@ -11,7 +11,9 @@ class PromotionRepository(ABC):
     """Abstract interface for the promotion repository"""
 
     @abstractmethod
-    async def get_by_id(self, promotion_id: PromotionId) -> Optional[Promotion]:
+    async def get_by_id(
+        self, promotion_id: PromotionId, is_active: Optional[bool] = True
+    ) -> Optional[Promotion]:
         """Gets a promotion by its ID"""
         pass
 

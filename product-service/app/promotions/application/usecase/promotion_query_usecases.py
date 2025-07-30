@@ -7,6 +7,7 @@ from ..queries.promotion_response import PromotionResponse, PromotionSearchRespo
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
 from app.products.domain.repositories import ProductRepository
 from app.shared.pagination import PaginationQuery
+from app.shared.base_exceptions import NotFoundException
 
 
 class GetPromotionByIdUseCase:
@@ -28,7 +29,7 @@ class GetPromotionByIdUseCase:
         """
         promotion = await self.promotion_query.get_by_id(query.id)
         if not promotion:
-            raise ValueError(f"Promotion with ID {query.id} not found")
+            raise NotFoundException("Promotion", query.id.to_string())
 
         if not query.include_products:
             return PromotionResponse.from_domain(promotion)

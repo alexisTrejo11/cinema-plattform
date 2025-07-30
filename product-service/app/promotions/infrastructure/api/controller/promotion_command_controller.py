@@ -1,3 +1,4 @@
+from uuid import UUID
 from fastapi import APIRouter, Depends, Body, HTTPException, Path
 from http import HTTPStatus
 import logging
@@ -17,9 +18,14 @@ from ..docs.examples import (
     deactivate_promotion_examples,
     extend_promotion_examples,
 )
+from .dto.request import (
+    PromotionCreateRequest,
+    ExtendPromotionRequest,
+    PromotionUpdateRequest,
+)
 
 logger = logging.getLogger("app")
-router = APIRouter(prefix="/promotions", tags=["Promotions"])
+router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions"])
 
 
 @router.post(
@@ -31,7 +37,7 @@ router = APIRouter(prefix="/promotions", tags=["Promotions"])
     responses={**create_promotion_examples},
 )
 async def create_promotion_endpoint(
-    command: PromotionCreateCommand = Body(
+    request: PromotionCreateRequest = Body(
         ..., description="Details for the new promotion"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
@@ -42,10 +48,17 @@ async def create_promotion_endpoint(
     - **command**: The data required to create the promotion.
     """
     try:
-        logger.info(f"Received request to create promotion: {command.name}")
+        logger.info(f"Received request to create promotion: {request.name}")
+
+        command_data = request.model_dump(exclude_unset=True)
+        command_data["applicable_product_ids"] = [
+            ProductId(pid) for pid in command_data.get("applicable_product_ids", [])
+        ]
+        command = PromotionCreateCommand(**command_data)
 
         result = await use_cases.create_promotion(command)
-        if not result.success:
+
+        if not result.is_success:
             logger.error(f"Failed to create promotion: {result.message}")
             raise_response_error(result)
 
@@ -58,7 +71,7 @@ async def create_promotion_endpoint(
         raise
 
 
-@router.put(
+@router.patch(
     "/{promotion_id}/activate",
     status_code=HTTPStatus.OK,
     summary="Activate a promotion",
@@ -67,7 +80,7 @@ async def create_promotion_endpoint(
     responses={**activate_promotion_examples},
 )
 async def activate_promotion_endpoint(
-    promotion_id: PromotionId = Path(
+    promotion_id: str = Path(
         ..., description="ID of the promotion to activate", example="promo-123"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
@@ -79,8 +92,11 @@ async def activate_promotion_endpoint(
     """
     try:
         logger.info(f"Received request to activate promotion ID: {promotion_id}")
-        result = await use_cases.activate_promotion(promotion_id)
-        if not result.success:
+        result = await use_cases.activate_promotion(
+            PromotionId.from_string(promotion_id)
+        )
+
+        if not result.is_success:
             logger.error(
                 f"Failed to activate promotion {promotion_id}: {result.message}"
             )
@@ -93,7 +109,7 @@ async def activate_promotion_endpoint(
         raise
 
 
-@router.put(
+@router.patch(
     "/{promotion_id}/deactivate",
     status_code=HTTPStatus.OK,
     summary="Deactivate a promotion",
@@ -102,7 +118,7 @@ async def activate_promotion_endpoint(
     responses={**deactivate_promotion_examples},
 )
 async def deactivate_promotion_endpoint(
-    promotion_id: PromotionId = Path(
+    promotion_id: str = Path(
         ..., description="ID of the promotion to deactivate", example="promo-123"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
@@ -115,8 +131,11 @@ async def deactivate_promotion_endpoint(
     try:
         logger.info(f"Received request to deactivate promotion ID: {promotion_id}")
 
-        result = await use_cases.deactivate_promotion(promotion_id)
-        if not result.success:
+        result = await use_cases.deactivate_promotion(
+            PromotionId.from_string(promotion_id)
+        )
+
+        if not result.is_success:
             logger.error(
                 f"Failed to deactivate promotion {promotion_id}: {result.message}"
             )
@@ -129,7 +148,7 @@ async def deactivate_promotion_endpoint(
         raise
 
 
-@router.put(
+@router.patch(
     "/extend",
     status_code=HTTPStatus.OK,
     summary="Extend a promotion's end date",
@@ -138,7 +157,7 @@ async def deactivate_promotion_endpoint(
     responses={**extend_promotion_examples},
 )
 async def extend_promotion_endpoint(
-    command: ExtendPromotionCommand = Body(
+    request: ExtendPromotionRequest = Body(
         ..., description="Details for extending the promotion"
     ),
     promotion_id: str = Path(
@@ -153,10 +172,12 @@ async def extend_promotion_endpoint(
     """
     try:
         logger.info(f"Received request to extend promotion ID: {promotion_id}")
-        command.id = PromotionId.from_string(promotion_id)
 
-        result = await use_cases.extend_promotion(command)
-        if not result.success:
+        command_data = request.model_dump(exclude_unset=True)
+        command_data["promotion_id"] = PromotionId.from_string(promotion_id)
+        result = await use_cases.extend_promotion(**command_data)
+
+        if not result.is_success:
             logger.error(f"Failed to extend promotion {promotion_id}: {result.message}")
             raise_response_error(result)
 
@@ -175,10 +196,10 @@ async def extend_promotion_endpoint(
     response_model=ApiResponse[None],
 )
 async def apply_promotion_endpoint(
-    promotion_id: PromotionId = Path(
+    promotion_id: str = Path(
         ..., description="ID of the promotion to apply", example="promo-123"
     ),
-    product_ids: list[ProductId] = Body(
+    product_ids: list[str] = Body(
         ..., description="List of product IDs to apply the promotion to"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
@@ -191,8 +212,13 @@ async def apply_promotion_endpoint(
         logger.info(
             f"Received request to apply promotion {promotion_id} to products: {product_ids}"
         )
-        result = await use_cases.apply_promotion(promotion_id, product_ids)
-        if not result.success:
+
+        result = await use_cases.apply_promotion(
+            PromotionId.from_string(promotion_id),
+            [ProductId.from_string(pid) for pid in product_ids],
+        )
+
+        if not result.is_success:
             logger.error(f"Failed to apply promotion {promotion_id}: {result.message}")
             raise_response_error(result)
 
@@ -213,7 +239,7 @@ async def apply_promotion_endpoint(
     },
 )
 async def delete_promotion_endpoint(
-    promotion_id: PromotionId = Path(
+    promotion_id: UUID = Path(
         ..., description="ID of the promotion to delete", example="promo-123"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
@@ -225,8 +251,8 @@ async def delete_promotion_endpoint(
     """
     try:
         logger.info(f"Received request to delete promotion ID: {promotion_id}")
-        result = await use_cases.delete_promotion(promotion_id)
-        if not result.success:
+        result = await use_cases.delete_promotion(PromotionId(promotion_id))
+        if not result.is_success:
             logger.error(f"Failed to delete promotion {promotion_id}: {result.message}")
             raise_response_error(result)
 
@@ -237,8 +263,10 @@ async def delete_promotion_endpoint(
         raise
 
 
-def raise_response_error(result) -> ApiResponse[None]:
+def raise_response_error(result) -> None:
     raise HTTPException(
         status_code=HTTPStatus.BAD_REQUEST,
-        detail=ApiResponse.failure(result.to_error_response()),
+        detail=ApiResponse.failure(
+            error=result.to_error_response(), message="Promotion operation failed"
+        ).model_dump(),
     )

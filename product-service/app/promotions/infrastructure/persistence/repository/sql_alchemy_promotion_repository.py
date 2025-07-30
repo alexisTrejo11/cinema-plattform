@@ -22,12 +22,14 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get_by_id(self, promotion_id: PromotionId) -> Optional[Promotion]:
+    async def get_by_id(
+        self, promotion_id: PromotionId, is_active: Optional[bool] = True
+    ) -> Optional[Promotion]:
         try:
             stmt = select(PromotionModel).where(
                 and_(
                     PromotionModel.id == str(promotion_id.value),
-                    PromotionModel.is_active == True,
+                    PromotionModel.is_active == is_active,
                 )
             )
             result = await self.session.execute(stmt)
@@ -130,10 +132,10 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
 
     async def update(self, promotion: Promotion) -> Promotion:
         try:
-            async with self.session.begin():
+            async with self.session.begin_nested():
                 promotion_model = PromotionModel.from_domain(promotion)
                 promotion_model = await self.session.merge(promotion_model)
-                await self.session.flush()
+                await self.session.commit()
                 return promotion_model.to_domain()
         except SQLAlchemyError as e:
             logger.error(f"Error updating promotion {promotion.id}: {e}")
@@ -146,7 +148,12 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
                     PromotionModel.id == str(promotion_id.value)
                 )
                 result = await self.session.execute(stmt)
-                return result.rowcount > 0
+                if result.rowcount == 0:
+                    logger.warning(f"No promotion found with ID {promotion_id}")
+                    return False
+
+                await self.session.commit()
+                return True
         except SQLAlchemyError as e:
             logger.error(f"Error deleting promotion {promotion_id}: {e}")
             raise DatabaseException(f"Failed to delete promotion {promotion_id}") from e

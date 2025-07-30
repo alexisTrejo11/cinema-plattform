@@ -2,12 +2,18 @@ from uuid import UUID
 import uuid
 from typing import Any
 from app.shared.schema import AbstractId
+from pydantic import GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import core_schema
 
 
 class ProductId(AbstractId):
     """Value object for product ID."""
 
     def to_string(self) -> str:
+        return str(self.value)
+
+    def __str__(self) -> str:
         return str(self.value)
 
     @staticmethod
@@ -33,6 +39,18 @@ class ProductId(AbstractId):
 
     def __repr__(self) -> str:
         return f"ProductId({self.value})"
+
+    @classmethod
+    def _validate(cls, value: Any) -> "ProductId":
+        """Validate input and convert to ProductId."""
+        if isinstance(value, cls):
+            return value
+        elif isinstance(value, str):
+            return cls.from_string(value)
+        elif isinstance(value, UUID):
+            return cls(value)
+        else:
+            raise ValueError(f"Cannot convert {type(value)} to ProductId")
 
 
 class ComboId(AbstractId):

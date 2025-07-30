@@ -13,7 +13,7 @@ from app.promotions.domain.promotion import (
 from app.products.domain.entities.value_objects import ProductId
 
 
-class PromotionCreateCommand(BaseModel):
+class PromotionCreateRequest(BaseModel):
     """
     Pydantic model for creating a new Promotion.
     Used as input for a 'create promotion' use case.
@@ -33,11 +33,11 @@ class PromotionCreateCommand(BaseModel):
         gt=0,
         description="The value of the discount (e.g., 10 for 10%, 5.00 for $5)",
     )
-    applicable_product_ids: List[ProductId] = Field(
+    applicable_product_ids: List[UUID] = Field(
         default_factory=list,
         description="List of product IDs to which the promotion applies",
     )
-    rule: PromotionRule = Field(
+    rule: "PromotionRuleRequest" = Field(
         ..., description="Additional rules for applying the promotion"
     )
     start_date: datetime = Field(
@@ -56,38 +56,45 @@ class PromotionCreateCommand(BaseModel):
         arbitrary_types_allowed=True,
     )
 
-    def map_to_domain_and_validate_data(self) -> Promotion:
+    class PromotionRuleRequest(BaseModel):
         """
-        Converts the Pydantic model to a domain command object.
+        Pydantic model for defining rules associated with a Promotion.
         """
-        promotion = Promotion(
-            name=self.name,
-            promotion_type=self.promotion_type,
-            discount_value=self.discount_value,
-            applicable_product_ids=self.applicable_product_ids,
-            rule=self.rule,
-            start_date=self.start_date,
-            end_date=self.end_date,
-            description=self.description,
-            is_active=self.is_active,
-            max_uses=self.max_uses,
+
+        required_products: List[UUID] = Field(
+            default_factory=list,
+            description="List of product IDs that must be included for the promotion to apply",
         )
-        promotion.validate_creation_fields()
-        return promotion
+        min_quantity: Optional[int] = Field(
+            None, description="Minimum quantity required for the promotion to apply"
+        )
+        max_quantity: Optional[int] = Field(
+            None, description="Maximum quantity allowed for the promotion"
+        )
+
+        model_config = ConfigDict(
+            arbitrary_types_allowed=True,
+        )
 
 
-@dataclass
-class ExtendPromotionCommand:
+class ExtendPromotionRequest(BaseModel):
     """
     Pydantic model for extending an existing Promotion's validity.
     Used as input for an 'extend promotion' use case.
     """
 
-    id: PromotionId
-    available_until: datetime
+    id: UUID = Field(..., description="Unique identifier of the promotion to extend")
+
+    available_until: datetime = Field(
+        ..., description="New end date for the promotion's validity"
+    )
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
-class PromotionUpdateCommand(BaseModel):
+class PromotionUpdateRequest(BaseModel):
     """
     Pydantic model for updating an existing Promotion.
     All fields are optional, allowing partial updates.
