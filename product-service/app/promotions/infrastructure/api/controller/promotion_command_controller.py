@@ -263,6 +263,33 @@ async def delete_promotion_endpoint(
         raise
 
 
+@router.patch(
+    "{promotion_id}/clear",
+    status_code=HTTPStatus.OK,
+    summary="Clear all promotions",
+    description="Clears all promotions from the system.",
+)
+async def clear_promotions_endpoint(
+    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    promotion_id: UUID = Path(
+        ..., description="ID of the promotion to clear", example="promo-123"
+    ),
+):
+    """Clears all promotions from the system."""
+    try:
+        logger.info("Received request to clear all promotions.")
+        result = await use_cases.clear_promotions(PromotionId(promotion_id))
+        if not result.is_success:
+            logger.error(f"Failed to clear promotions: {result.message}")
+            raise_response_error(result)
+
+        logger.info("All promotions cleared successfully.")
+        return ApiResponse.success(message=result.message)
+    except Exception as e:
+        logger.error(f"Error clearing promotions: {e}", exc_info=True)
+        raise
+
+
 def raise_response_error(result) -> None:
     raise HTTPException(
         status_code=HTTPStatus.BAD_REQUEST,

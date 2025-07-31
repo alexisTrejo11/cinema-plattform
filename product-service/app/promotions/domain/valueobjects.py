@@ -30,7 +30,7 @@ class PromotionId(AbstractId):
         return PromotionId(AbstractId.generate().value)
 
     @classmethod
-    def _validate(cls, value: Any) -> "PromotionId":
+    def validate(cls, value: Any) -> "PromotionId":
         """Validate input and convert to PromotionId."""
         if isinstance(value, cls):
             return value
@@ -50,36 +50,6 @@ class PromotionType(str, Enum):
     """Tipos de promociones soportados por el sistema"""
 
     PERCENTAGE_DISCOUNT = "PERCENTAGE_DISCOUNT"
-    FIXED_DISCOUNT = "FIXED_DISCOUNT"
     BUY_X_GET_Y_FREE = "BUY_X_GET_Y_FREE"
     BUNDLE_DISCOUNT = "BUNDLE_DISCOUNT"
     MINIMUM_QUANTITY_DISCOUNT = "MINIMUM_QUANTITY_DISCOUNT"
-
-
-@dataclass(frozen=True)
-class PromotionRule:
-    """Value Object que representa una regla de promoción"""
-
-    # Quantity
-    quantity: int = 0
-    purchase_amount: Decimal = Decimal("0.00")
-    required_products: List[ProductId] = field(default_factory=list)
-
-    def to_dict(self) -> dict:
-        """Convert the PromotionRule to a dictionary."""
-        self_dict = asdict(self)
-        self_dict["required_products"] = [
-            pid.value for pid in self_dict["required_products"]
-        ]
-        return self_dict
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "PromotionRule":
-        """Creates a PromotionRule instance from a dictionary representation"""
-        return cls(
-            quantity=data.get("quantity", 0),
-            purchase_amount=(Decimal(data["purchase_amount"])),
-            required_products=(
-                [ProductId.from_string(pid) for pid in data["required_products"]]
-            ),
-        )

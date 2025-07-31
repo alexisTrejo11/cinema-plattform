@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple
+
+from app.products.domain.entities.value_objects import ProductId
 from ..promotion import Promotion, PromotionId
 from app.promotions.application.queries.promotion_query import (
     GetPromotionByProductIdQuery,
@@ -39,6 +41,20 @@ class PromotionRepository(ABC):
     @abstractmethod
     async def update(self, promotion: Promotion) -> Promotion:
         """Updates an existing promotion"""
+        pass
+
+    @abstractmethod
+    async def update_products(
+        self, promotion_id: PromotionId, product_ids: List[ProductId]
+    ) -> Promotion:
+        """Updates the products associated with a promotion"""
+        pass
+
+    @abstractmethod
+    async def update_categories(
+        self, promotion_id: PromotionId, category_ids: List[int]
+    ) -> Promotion:
+        """Updates the categories associated with a promotion"""
         pass
 
     @abstractmethod
