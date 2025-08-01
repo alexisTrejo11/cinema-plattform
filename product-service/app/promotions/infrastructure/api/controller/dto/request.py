@@ -7,9 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveInt, NonNegativeInt
 from app.promotions.domain.promotion import (
     PromotionId,
     PromotionType,
-    PromotionRule,
-    Promotion,
 )
+from app.promotions.domain.promotion_rule_factory import PromotionRule
 from app.products.domain.entities.value_objects import ProductId
 
 
@@ -37,9 +36,12 @@ class PromotionCreateRequest(BaseModel):
         default_factory=list,
         description="List of product IDs to which the promotion applies",
     )
-    rule: "PromotionRuleRequest" = Field(
-        ..., description="Additional rules for applying the promotion"
+    applicable_category_id: int = Field(
+        ...,
+        description="ID of the category to which the promotion initialies applies",
     )
+
+    rule: dict = Field(..., description="Additional rules for applying the promotion")
     start_date: datetime = Field(
         ..., description="Start date of the promotion's validity"
     )
@@ -140,6 +142,22 @@ class PromotionUpdateRequest(BaseModel):
     )
     current_uses: Optional[NonNegativeInt] = Field(
         None, description="Current number of times the promotion has been used"
+    )
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+
+class PromotionItemRequest(BaseModel):
+    """
+    Pydantic model for adding a product to a promotion.
+    Used as input for an 'add product to promotion' use case.
+    """
+
+    productId: list[UUID] = Field(..., description="ID of the product to add")
+    promotionId: UUID = Field(
+        ..., description="ID of the promotion to which the product will be added"
     )
 
     model_config = ConfigDict(

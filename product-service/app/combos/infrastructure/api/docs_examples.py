@@ -130,54 +130,6 @@ list_combos_examples = {
 }
 
 
-update_combo_examples = {
-    **common_error_responses,
-    status.HTTP_200_OK: {
-        "description": "Combo updated successfully",
-        "content": {
-            "application/json": {
-                "example": {
-                    "success": True,
-                    "data": {
-                        "id": "c7cdc31d-6682-418a-b9ca-df13a3e85da5 ",
-                        "name": "Updated Family Combo",
-                        "description": "An updated large combo for the whole family",
-                        "items": [
-                            {
-                                "product_id": "c7cdc31d-6682-418a-b9ca-df13a3e85da5 ",
-                                "quantity": 3,
-                            },
-                            {
-                                "product_id": "c7cdc31d-6682-418a-b9ca-df13a3e85da5 ",
-                                "quantity": 1,
-                            },
-                        ],
-                        "price": 34.99,
-                        "image_url": "https://example.com/updated_combo.jpg",
-                        "is_available": True,
-                        "discount_percentage": 15,
-                    },
-                }
-            }
-        },
-    },
-    status.HTTP_404_NOT_FOUND: {
-        "description": "Combo not found",
-        "content": {
-            "application/json": {
-                "example": {
-                    "success": False,
-                    "data": None,
-                    "error": "Combo not found",
-                    "message": "The requested combo does not exist",
-                    "timestamp": "2023-10-01T12:00:00Z",
-                }
-            }
-        },
-    },
-}
-
-
 delete_combo_examples = {
     **common_error_responses,
     status.HTTP_200_OK: {

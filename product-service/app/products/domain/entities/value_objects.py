@@ -53,6 +53,11 @@ class ProductId(AbstractId):
             raise ValueError(f"Cannot convert {type(value)} to ProductId")
 
 
+class CategoryId:
+    def __init__(self, value: int):
+        self.value = value
+
+
 class ComboId(AbstractId):
     """Value object for combo meal ID."""
 

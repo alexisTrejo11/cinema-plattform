@@ -3,16 +3,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.types import PositiveInt, NonNegativeInt
 from datetime import datetime
 from typing import List, Optional
-from decimal import Decimal
 from app.promotions.domain.promotion import (
-    PromotionId,
     PromotionType,
     Promotion,
-    PromotionRule,
 )
 from app.products.domain.entities.product import Product
 from app.shared.pagination import PaginationMetadata
-from app.products.domain.entities.value_objects import ProductId
 
 
 class PromotionResponse(BaseModel):
@@ -24,7 +20,6 @@ class PromotionResponse(BaseModel):
     id: UUID = Field(..., description="Unique identifier of the promotion")
     name: str = Field(..., description="Descriptive name of the promotion")
     promotion_type: PromotionType = Field(..., description="Type of promotion")
-    discount_value: Decimal = Field(..., description="The value of the discount")
 
     rule: dict = Field(..., description="Additional rules for applying the promotion")
     start_date: datetime = Field(
@@ -63,7 +58,6 @@ class PromotionResponse(BaseModel):
             id=promotion.id.value,
             name=promotion.name,
             promotion_type=promotion.promotion_type,
-            discount_value=promotion.discount_value,
             rule=promotion.rule.to_dict(),
             start_date=promotion.start_date,
             end_date=promotion.end_date,

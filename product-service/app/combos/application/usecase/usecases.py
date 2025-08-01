@@ -1,18 +1,18 @@
 from typing import List
+from app.shared.pagination import PaginationQuery
+from app.products.domain.repositories import ProductRepository
 from app.combos.domain.repository import ComboRepository
-from ..response import ComboResponse, ComboItemResponse
 from app.combos.application.commands import ComboCreateCommand, ComboItemCreateCommand
+from app.combos.domain.entities.combo import Combo, ComboItem
+from app.combos.domain.entities.value_objects import ComboId, ComboItemId
 from app.combos.domain.exceptions import (
     ComboNotFoundError,
     ComboItemValidationError,
     ProductValidationError,
 )
-from app.products.domain.repositories import ProductRepository
-from app.combos.domain.entities.combo import Combo, ComboItem
-from app.shared.pagination import PaginationQuery
-from app.combos.domain.entities.value_objects import ComboId, ComboItemId
 from app.products.domain.entities.value_objects import ProductId
 from ..queries import GetCombosByProductIdQuery, GetComboByIdQuery
+from ..response import ComboResponse
 
 
 class ListActiveComboUseCase:
@@ -31,7 +31,7 @@ class GetComboByIdUseCase:
     async def execute(self, query: GetComboByIdQuery) -> ComboResponse:
         combo = await self.combo_repository.get_by_id(query)
         if not combo:
-            raise ComboNotFoundError(query.combo_id.to_string())
+            raise ComboNotFoundError(query.combo_id)
 
         return ComboResponse.from_domain(combo)
 
@@ -113,7 +113,7 @@ class DeleteComboUseCase:
             GetComboByIdQuery(combo_id=combo_id)
         )
         if not combo:
-            raise ComboNotFoundError(combo_id.to_string())
+            raise ComboNotFoundError(combo_id)
 
         print(f"Deleting combo with ID: {combo}")
         await self.combo_repository.soft_delete(combo_id)

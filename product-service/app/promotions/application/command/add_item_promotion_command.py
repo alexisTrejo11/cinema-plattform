@@ -11,6 +11,18 @@ class AddProductsPromotionCommand:
 
 
 @dataclass(frozen=True)
+class RemoveProductsPromotionCommand:
+    product_ids: List[ProductId]
+    promotion_id: PromotionId
+
+
+@dataclass(frozen=True)
 class AddCategoryPromotionCommand:
+    category_id: int
+    promotion_id: PromotionId
+
+
+@dataclass(frozen=True)
+class RemoveCategoryPromotionCommand:
     category_id: int
     promotion_id: PromotionId

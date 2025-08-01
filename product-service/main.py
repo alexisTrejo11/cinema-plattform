@@ -1,14 +1,14 @@
 from typing import Optional
 import logging
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 
-from config.redis import RedisManager
+from config.redis import RedisManager, get_redis
 from config.model_init import *
 from config.logging import setup_logging
 from config import exception_handlers
@@ -23,6 +23,7 @@ from app.promotions.infrastructure.api.controller import (
     promotion_command_controller,
     promotion_query_controllers,
 )
+from app.products.infrastructure.persistence.redis.redis_service import RedisService
 
 
 setup_logging()
@@ -40,6 +41,8 @@ async def lifespan(app: FastAPI):
     registered, instance_id = await registry_client.perfom_registry()
 
     await RedisManager.initialize()
+    client = await get_redis()
+    await RedisService.initialize(client)
 
     if registered:
         logger.info(

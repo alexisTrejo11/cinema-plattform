@@ -2,16 +2,17 @@ from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, delete
 from sqlalchemy.orm import joinedload
-from sqlalchemy import inspect
+
 from app.combos.domain.repository import ComboRepository
 from app.combos.domain.entities.combo import Combo, ComboItem
 from .models import ComboModel, ComboItemModel
 from app.combos.domain.entities.value_objects import ComboId, ComboItemId
 from app.combos.application.queries import GetComboByIdQuery, GetCombosByProductIdQuery
 from app.shared.pagination import PaginationQuery
+from .model_mapper import ModelMapper
 
 
-class SqlAlchemyComboRepository(ComboRepository):
+class SQLAlchemyComboRepository(ComboRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
@@ -34,7 +35,7 @@ class SqlAlchemyComboRepository(ComboRepository):
         if not combo_model:
             return None
 
-        return self._to_domain(
+        return ModelMapper.to_domain(
             combo_model,
             search_query.include_items if search_query.include_items else False,
         )
@@ -65,7 +66,7 @@ class SqlAlchemyComboRepository(ComboRepository):
             combo_models = result.scalars().all()
 
         return [
-            self._to_domain(
+            ModelMapper.to_domain(
                 combo,
                 search_query.include_items if search_query.include_items else False,
             )
@@ -77,15 +78,12 @@ class SqlAlchemyComboRepository(ComboRepository):
             joinedload(ComboModel.items).joinedload(ComboItemModel.product)
         )
 
-        if pagination.limit:
-            stmt = stmt.limit(pagination.limit)
-        if pagination.offset:
-            stmt = stmt.offset(pagination.offset)
+        stmt = self.paginate_query(stmt, pagination)
 
         result = await self.session.execute(stmt)
         combo_models = result.scalars().unique().all()
 
-        return [self._to_domain(combo, True) for combo in combo_models]
+        return [ModelMapper.to_domain(combo, True) for combo in combo_models]
 
     async def save(self, combo: Combo) -> Combo:
         select_stmt = select(ComboModel).where(ComboModel.id == combo.id.value)
@@ -141,7 +139,7 @@ class SqlAlchemyComboRepository(ComboRepository):
         result = await self.session.execute(stmt)
         combo_model_with_items = result.unique().scalar_one()
 
-        return self._to_domain(combo_model_with_items, True)
+        return ModelMapper.to_domain(combo_model_with_items, True)
 
     async def soft_delete(self, combo_id: ComboId) -> None:
         stmt = select(ComboModel).where(ComboModel.id == combo_id.value)
@@ -152,35 +150,9 @@ class SqlAlchemyComboRepository(ComboRepository):
             self.session.add(combo)
             await self.session.commit()
 
-    def _to_domain(self, combo_model: ComboModel, include_items: bool) -> Combo:
-        """Convert SQLAlchemy model to domain model"""
-        items = []
-        if include_items:
-            # Check if items relationship is loaded to avoid lazy loading
-            state = inspect(combo_model)
-            if "items" in state.unloaded:
-                # Items aren't loaded, return empty list to avoid lazy loading
-                pass  # items remains empty list
-            else:
-                # Items are loaded or being loaded, safe to access
-                for item in combo_model.items:
-                    items.append(
-                        ComboItem(
-                            item.product.to_domain(),
-                            ComboItemId(item.id),
-                            item.quantity,
-                        )
-                    )
-
-        return Combo(
-            id=ComboId(combo_model.id),
-            name=combo_model.name,
-            description=combo_model.description,
-            price=combo_model.price,
-            discount_percentage=combo_model.discount_percentage,
-            image_url=combo_model.image_url,
-            is_available=combo_model.is_available,
-            created_at=combo_model.created_at,
-            updated_at=combo_model.updated_at,
-            items=items,
-        )
+    def paginate_query(self, stmt, page_params: PaginationQuery):
+        if page_params.page is not None and page_params.page >= 0:
+            stmt = stmt.offset((page_params.page - 1) * page_params.page_size)
+        if page_params.page_size is not None and page_params.page_size > 0:
+            stmt = stmt.limit(page_params.page_size)
+        return stmt

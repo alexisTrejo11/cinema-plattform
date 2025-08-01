@@ -3,11 +3,8 @@ from decimal import Decimal
 from typing import List, Optional, Any
 from app.shared.schema import AbstractId
 import uuid
-from enum import Enum, auto
+from enum import Enum
 from app.products.domain.entities.value_objects import ProductId
-from pydantic import GetJsonSchemaHandler
-from pydantic.json_schema import JsonSchemaValue
-from pydantic_core import core_schema
 
 
 class PromotionId(AbstractId):

@@ -1,10 +1,11 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from .valueobjects import PromotionId, PromotionType, ProductId
 from app.shared.base_exceptions import DomainException
 
-from .promotion_rule_factory import PromotionRule
+if TYPE_CHECKING:
+    from .promotion_rule_factory import PromotionRule
 
 
 class Promotion:
@@ -14,7 +15,7 @@ class Promotion:
         self,
         name: str,
         promotion_type: PromotionType,
-        rule: PromotionRule,
+        rule: "PromotionRule",
         start_date: datetime,
         end_date: datetime,
         applicable_product_ids: Optional[List[ProductId]] = [],

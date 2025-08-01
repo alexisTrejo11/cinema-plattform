@@ -46,14 +46,14 @@ class PromotionRepository(ABC):
     @abstractmethod
     async def update_products(
         self, promotion_id: PromotionId, product_ids: List[ProductId]
-    ) -> Promotion:
+    ) -> None:
         """Updates the products associated with a promotion"""
         pass
 
     @abstractmethod
     async def update_categories(
         self, promotion_id: PromotionId, category_ids: List[int]
-    ) -> Promotion:
+    ) -> None:
         """Updates the categories associated with a promotion"""
         pass
 

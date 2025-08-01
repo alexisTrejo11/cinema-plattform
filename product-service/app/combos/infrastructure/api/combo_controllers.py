@@ -8,16 +8,17 @@ from app.shared.response import ApiResponse
 from app.combos.application.response import ComboResponse
 from app.combos.application.queries import GetComboByIdQuery, GetCombosByProductIdQuery
 from app.combos.application.usecase.container import ComboUseCases
-from app.combos.application.commands import ComboCreateCommand
 from app.combos.domain.entities.value_objects import ComboId
 from app.products.domain.entities.value_objects import ProductId
 
+
+from .dto.request import ComboCreateRequest
+from .dto.mapper import RequestDataMapper
 from .depedencies import get_combos_uc
 from .docs_examples import (
     create_combo_examples,
     get_combo_examples,
     list_combos_examples,
-    update_combo_examples,
     delete_combo_examples,
 )
 
@@ -35,7 +36,7 @@ router = APIRouter(prefix="/api/v2/combos", tags=["Combos"])
     responses={**create_combo_examples},
 )
 async def create_combo(
-    combo_data: ComboCreateCommand,
+    request_data: ComboCreateRequest,
     usecase: ComboUseCases = Depends(get_combos_uc),
 ):
     """
@@ -46,10 +47,12 @@ async def create_combo(
     - **discount_percentage**: Optional discount (0-100)
     """
     try:
-        logger.info(f"Creating combo with data: {combo_data.model_dump()}")
-        combo = await usecase.create_combo(combo_data)
+        logger.info(f"Creating combo with data: {request_data}")
+        command = RequestDataMapper.to_create_combo_command(request_data)
 
+        combo = await usecase.create_combo(command)
         logger.info(f"Combo created successfully: ID{combo.id}")
+
         return ApiResponse.success(data=combo, message="Combo created successfully")
     except Exception as e:
         logger.error(f"Error creating combo: {e}")
@@ -79,15 +82,13 @@ async def get_combo_by_id(
     """
     try:
         logger.info(f"Retrieving combo with ID: {combo_id}")
-        query = GetComboByIdQuery(
-            combo_id=ComboId(combo_id),
-            include_items=include_items,
-            pagination=pagination,
+        query = RequestDataMapper.to_get_combo_by_id_query(
+            combo_id, include_items, pagination
         )
 
         combo = await usecase.get_combo_by_id(query)
-
         logger.info(f"Combo retrieved successfully: ID{combo.id}")
+
         return ApiResponse.success(data=combo, message="Combo successfully retrieved")
     except Exception as e:
         logger.error(f"Error retrieving combo: {e}")
@@ -102,15 +103,16 @@ async def get_combo_by_id(
     responses={**list_combos_examples},
 )
 async def list_active_combos(
-    pagination: PaginationQuery = Depends(),  # TODO: Implement pagination
+    pagination: PaginationQuery = Depends(),
     usecase: ComboUseCases = Depends(get_combos_uc),
 ):
     """Retrieve all combos that are currently marked as available"""
     try:
         logger.info("Listing all active combos")
-        combo_list = await usecase.list_active_combos(pagination)
 
+        combo_list = await usecase.list_active_combos(pagination)
         logger.info(f"Active combos retrieved: {len(combo_list)} found")
+
         return ApiResponse.success(combo_list, "Active Combos successfully retrieved")
     except Exception as e:
         logger.error(f"Error listing active combos: {e}")
@@ -141,10 +143,8 @@ async def get_combos_by_product(
     - **include_items**: Set to false to exclude item details
     """
     try:
-        query = GetCombosByProductIdQuery(
-            product_id=ProductId(product_id),
-            include_items=include_items,
-            pagination=pagination,
+        query = RequestDataMapper.to_get_combos_by_product_query(
+            product_id, include_items, pagination
         )
         logger.info(f"Retrieving combos for product ID: {product_id}")
 
@@ -182,10 +182,11 @@ async def soft_delete_combo(
     """
     try:
         logger.info(f"Soft deleting combo with ID: {combo_id}")
-        await usecase.delete_combo(ComboId(combo_id))
 
+        await usecase.delete_combo(ComboId(combo_id))
         logger.info(f"Combo successfully soft deleted: ID{combo_id}")
-        return ApiResponse.success(data=None, message="Combo successfully soft deleted")
+
+        return ApiResponse.success(message="Combo successfully soft deleted")
     except Exception as e:
         logger.error(f"Error deleting combo: {e}")
         raise

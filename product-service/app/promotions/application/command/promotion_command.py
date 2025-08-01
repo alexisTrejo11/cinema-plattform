@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
-from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, NonNegativeInt
 from app.promotions.domain.promotion import (
     PromotionId,
@@ -11,6 +10,7 @@ from app.promotions.domain.promotion import (
 )
 from app.products.domain.entities.value_objects import ProductId
 from app.promotions.domain.promotion_rule_factory import PromotionRule
+from app.shared.schema import PydanticUUID
 
 
 class PromotionCreateCommand(BaseModel):
@@ -36,6 +36,10 @@ class PromotionCreateCommand(BaseModel):
     applicable_product_ids: Optional[List[ProductId]] = Field(
         default_factory=list,
         description="List of product IDs to which the promotion applies",
+    )
+    applicable_category_id: int = Field(
+        ...,
+        description="ID of the category to which the promotion applies",
     )
     rule: dict = Field(..., description="Additional rules for applying the promotion")
     start_date: datetime = Field(
@@ -75,12 +79,11 @@ class PromotionCreateCommand(BaseModel):
         return promotion
 
 
-@dataclass
-class ExtendPromotionCommand:
+class ExtendPromotionCommand(BaseModel):
     """
     Pydantic model for extending an existing Promotion's validity.
     Used as input for an 'extend promotion' use case.
     """
 
-    id: PromotionId
+    id: PydanticUUID
     available_until: datetime

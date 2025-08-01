@@ -16,11 +16,14 @@ class SerializerService:
         if isinstance(obj, (str, int, float, bool)):
             return json.dumps(obj)
 
+        if isinstance(obj, datetime):
+            return json.dumps(obj.isoformat())
+
         if is_dataclass(obj):
             return json.dumps(asdict(obj))
 
-        if hasattr(obj, "to_json"):
-            return json.dumps(cls._serialize_dict(obj.to_json()))
+        if hasattr(obj, "to_dict"):
+            return json.dumps(cls._serialize_dict(obj.to_dict()))
 
         if hasattr(obj, "__dict__"):
             return json.dumps(cls._serialize_dict(obj.__dict__))
@@ -74,8 +77,8 @@ def make_object_hook(cls: Type) -> Callable[[dict], Any]:
             return d
 
         # Conversión especial para tipos conocidos
-        if hasattr(cls, "from_json"):
-            return cls.from_json(d)
+        if hasattr(cls, "from_dict"):
+            return cls.from_dict(d)
 
         # Manejo de campos especiales
         for k, v in d.items():
@@ -88,6 +91,12 @@ def make_object_hook(cls: Type) -> Callable[[dict], Any]:
                         and id_type.__origin__ is uuid.UUID
                     ):
                         d[k] = uuid.UUID(v)
+                # Dates reconversion
+                elif k == "created_at" and hasattr(cls, "created_at"):
+                    d[k] = datetime.fromisoformat(v)
+
+                elif k == "updated_at" and hasattr(cls, "updated_at"):
+                    d[k] = datetime.fromisoformat(v)
                 # Reconversión de Decimal
                 elif k in cls.__annotations__ and cls.__annotations__[k] is Decimal:
                     d[k] = Decimal(v)

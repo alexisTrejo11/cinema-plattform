@@ -12,7 +12,6 @@ class ProductCategory:
         description: Optional[str] = None,
         is_active: bool = True,
         created_at: Optional[datetime] = None,
-        updated_at: Optional[datetime] = None,
     ):
         """
         Initialize a FoodCategory with validation.
@@ -31,7 +30,6 @@ class ProductCategory:
         self.description = description
         self.is_active = is_active
         self.created_at = created_at or datetime.now()
-        self.updated_at = updated_at or datetime.now()
 
         self.validate()
 
@@ -57,4 +55,5 @@ class ProductCategory:
             "name": self.name,
             "description": self.description,
             "is_active": self.is_active,
+            "created_at": self.created_at if self.created_at else None,
         }

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from .promotion import PromotionId, Promotion, PromotionType
-from app.products.domain.entities.product import Product, ProductId
+from .promotion import PromotionId, PromotionType
+from app.products.domain.entities.product import Product
 import math
 
 

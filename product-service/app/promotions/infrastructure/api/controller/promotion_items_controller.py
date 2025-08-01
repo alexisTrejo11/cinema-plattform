@@ -1,7 +1,7 @@
-from uuid import UUID
-from fastapi import APIRouter, Depends, Body, HTTPException, Path
-from http import HTTPStatus
 import logging
+from uuid import UUID
+from fastapi import APIRouter, Depends, Body, HTTPException
+from http import HTTPStatus
 from app.products.domain.entities.value_objects import ProductId
 from app.shared.response import ApiResponse
 from app.promotions.application.command.promotion_result import PromotionCommandResult
@@ -10,19 +10,10 @@ from app.promotions.application.usecase.promotions_usecases import PromotionsUse
 from app.promotions.application.command.add_item_promotion_command import (
     AddProductsPromotionCommand,
     AddCategoryPromotionCommand,
+    RemoveCategoryPromotionCommand,
+    RemoveProductsPromotionCommand,
 )
 from ..dependecies import get_promotion_use_cases
-from ..docs.examples import (
-    create_promotion_examples,
-    activate_promotion_examples,
-    deactivate_promotion_examples,
-    extend_promotion_examples,
-)
-from .dto.request import (
-    PromotionCreateRequest,
-    ExtendPromotionRequest,
-    PromotionUpdateRequest,
-)
 
 logger = logging.getLogger("app")
 router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions Items"])
@@ -99,13 +90,13 @@ async def remove_category_from_promotion(
         ..., description="ID of the promotion to remove products from"
     ),
 ) -> ApiResponse[PromotionId]:
-    command = AddCategoryPromotionCommand(
+    command = RemoveCategoryPromotionCommand(
         category_id=category_id,
         promotion_id=PromotionId(promotionId),
     )
 
     result: PromotionCommandResult = await use_cases.remove_category_from_promotion(
-        promotion_id=PromotionId(promotionId), category_id=category_id
+        command
     )
     if not result.is_success:
         logger.error(f"Failed to remove category from promotion: {result.error}")
@@ -123,8 +114,8 @@ async def remove_category_from_promotion(
 @router.delete(
     "/categories/",
     response_model=ApiResponse[PromotionId],
-    summary="Create a new promotion",
-    description="Create a new promotion for a product.",
+    summary="Remove products from a promotion",
+    description="Remove products from a promotion.",
 )
 async def remove_products_from_promotion(
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
@@ -133,11 +124,12 @@ async def remove_products_from_promotion(
         ..., description="ID of the promotion to remove products from"
     ),
 ) -> ApiResponse[PromotionId]:
-
-    result: PromotionCommandResult = await use_cases.remove_products_from_promotion(
-        promotion_id=PromotionId(promotionId),
+    command = RemoveProductsPromotionCommand(
         product_ids=[ProductId(pid) for pid in product_ids],
+        promotion_id=PromotionId(promotionId),
     )
+
+    result = await use_cases.remove_products_from_promotion(command)
     if not result.is_success:
         logger.error(f"Failed to remove products from promotion: {result.error}")
         raise HTTPException(

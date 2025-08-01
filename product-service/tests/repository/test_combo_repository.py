@@ -8,7 +8,7 @@ from app.combos.application.queries import GetComboByIdQuery, GetCombosByProduct
 from app.shared.pagination import PaginationQuery
 
 
-class TestSqlAlchemyComboRepository:
+class TestSQLAlchemyComboRepository:
     @pytest.mark.asyncio
     async def test_get_by_id_with_items(
         self, combo_repository, session, sample_product, sample_combo_data

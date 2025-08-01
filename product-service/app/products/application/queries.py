@@ -3,21 +3,14 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from decimal import Decimal
 from app.products.domain.entities.value_objects import ProductId
+from app.shared.pagination import PaginationQuery
 
 
 class SearchProductsQuery(BaseModel):
     """Parameters for searching food products"""
 
-    offset: Optional[int] = Field(
-        None, ge=0, description="Pagination offset", json_schema_extra={"example": 0}
-    )
-
-    limit: Optional[int] = Field(
-        None,
-        ge=1,
-        le=100,
-        description="Maximum number of results to return (1-100)",
-        json_schema_extra={"example": 10},
+    page: PaginationQuery = Field(
+        default=PaginationQuery(), description="Pagination parameters"
     )
 
     min_price: Optional[Decimal] = Field(

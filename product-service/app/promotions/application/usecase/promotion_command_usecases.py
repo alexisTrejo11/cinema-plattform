@@ -6,8 +6,10 @@ from app.promotions.domain.valueobjects import PromotionType
 from ..command.promotion_result import PromotionCommandResult as CommandResult
 from ..command.promotion_command import PromotionCreateCommand, ExtendPromotionCommand
 from ..command.add_item_promotion_command import (
-    AddProductsToPromotionCommand,
-    AddCategoryToPromotionCommand,
+    AddProductsPromotionCommand,
+    AddCategoryPromotionCommand,
+    RemoveCategoryPromotionCommand,
+    RemoveProductsPromotionCommand,
 )
 from app.products.domain.repositories import (
     ProductRepository,
@@ -69,11 +71,11 @@ class ExtendPromotionUseCase:
 
     async def execute(self, command: ExtendPromotionCommand) -> CommandResult:
         try:
-
-            promotion = await self.promotion_repository.get_by_id(command.id)
+            promotion_id = PromotionId(command.id)
+            promotion = await self.promotion_repository.get_by_id(promotion_id)
             if not promotion:
                 return CommandResult.error(
-                    promotion_id=command.id.to_string(), message="Promotion not found"
+                    promotion_id=promotion_id, message="Promotion not found"
                 )
 
             promotion.extend_validity(command.available_until)
@@ -197,17 +199,18 @@ class RemoveProductsPromotionUseCase:
     def __init__(self, promotion_repository: PromotionRepository):
         self.promotion_repository = promotion_repository
 
-    async def execute(
-        self, promotion_id: PromotionId, product_ids: List[ProductId]
-    ) -> CommandResult:
-        promotion = await self.promotion_repository.get_by_id(promotion_id)
+    async def execute(self, command: RemoveProductsPromotionCommand) -> CommandResult:
+        promotion = await self.promotion_repository.get_by_id(command.promotion_id)
         if not promotion:
             return CommandResult.error(
-                promotion_id=promotion_id.to_string(), message="Promotion not found"
+                promotion_id=command.promotion_id.to_string(),
+                message="Promotion not found",
             )
 
-        promotion.remove_applicable_products(product_ids)
-        await self.promotion_repository.update_products(promotion.id, product_ids)
+        promotion.remove_applicable_products(command.product_ids)
+        await self.promotion_repository.update_products(
+            promotion.id, command.product_ids
+        )
 
         return CommandResult.success(
             promotion_id=promotion.id.to_string(),
@@ -219,16 +222,15 @@ class RemoveCategoryPromotionUseCase:
     def __init__(self, promotion_repository: PromotionRepository):
         self.promotion_repository = promotion_repository
 
-    async def execute(
-        self, promotion_id: PromotionId, category_id: int
-    ) -> CommandResult:
-        promotion = await self.promotion_repository.get_by_id(promotion_id)
+    async def execute(self, command: RemoveCategoryPromotionCommand) -> CommandResult:
+        promotion = await self.promotion_repository.get_by_id(command.promotion_id)
         if not promotion:
             return CommandResult.error(
-                promotion_id=promotion_id.to_string(), message="Promotion not found"
+                promotion_id=command.promotion_id.to_string(),
+                message="Promotion not found",
             )
 
-        promotion.remove_applicable_category(category_id)
+        promotion.remove_applicable_category(command.category_id)
         await self.promotion_repository.update_categories(
             promotion.id, promotion.applicable_categories_ids
         )
@@ -271,7 +273,7 @@ class AddProductsToPromotionUseCase:
         self.product_repository = product_repository
 
     async def execute(
-        self, add_products_command: AddProductsToPromotionCommand
+        self, add_products_command: AddProductsPromotionCommand
     ) -> CommandResult:
         promotion = await self.promotion_repository.get_by_id(
             add_products_command.promotion_id
@@ -306,7 +308,7 @@ class AddCategoryPromotionUseCase:
         self.promotion_repository = promotion_repository
         self.category_repository = category_repository
 
-    async def execute(self, command: AddCategoryToPromotionCommand) -> CommandResult:
+    async def execute(self, command: AddCategoryPromotionCommand) -> CommandResult:
         promotion = await self.promotion_repository.get_by_id(command.promotion_id)
         if not promotion:
             return CommandResult.error(

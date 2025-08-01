@@ -2,13 +2,13 @@ from decimal import Decimal
 from typing import Any, Dict
 from app.shared.base_exceptions import (
     NotFoundException,
-    ApplicationException,
     ValidationException,
 )
+from app.combos.domain.entities.value_objects import ComboId, ComboItemId
 
 
-def ComboNotFoundError(combo_id: str) -> NotFoundException:
-    return NotFoundException("Combo", combo_id)
+def ComboNotFoundError(combo_id: ComboId) -> NotFoundException:
+    return NotFoundException("Combo", combo_id.to_string())
 
 
 def ComboItemValidationError(reason: str) -> ValidationException:

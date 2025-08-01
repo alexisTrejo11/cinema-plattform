@@ -17,7 +17,7 @@ from app.products.infrastructure.persistence.db.repositories.sqlalchemy_product_
     SqlAlchemyProductRepository,
 )
 from app.combos.infrastructure.persistence.sqlalchemy_combo_repo import (
-    SqlAlchemyComboRepository,
+    SQLAlchemyComboRepository,
 )
 
 
@@ -123,9 +123,9 @@ async def sample_category(session):
 
 
 @pytest.fixture(scope="function")
-def combo_repository(session) -> SqlAlchemyComboRepository:
+def combo_repository(session) -> SQLAlchemyComboRepository:
     """Fixture to provide a combo repository instance"""
-    return SqlAlchemyComboRepository(session)
+    return SQLAlchemyComboRepository(session)
 
 
 @pytest.fixture(scope="function")

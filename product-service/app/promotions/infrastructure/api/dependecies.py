@@ -9,6 +9,8 @@ from app.promotions.application.usecase.promotions_usecases import PromotionsUse
 from app.products.infrastructure.api.depedencies import (
     get_food_repository,
     ProductRepository,
+    ProductCategoryRepository,
+    get_category_repository,
 )
 
 
@@ -21,5 +23,6 @@ def get_promotion_repository(
 def get_promotion_use_cases(
     repository: PromotionRepository = Depends(get_promotion_repository),
     product_repo: ProductRepository = Depends(get_food_repository),
+    category_repo: ProductCategoryRepository = Depends(get_category_repository),
 ) -> PromotionsUseCases:
-    return PromotionsUseCases(repository, product_repo)
+    return PromotionsUseCases(repository, product_repo, category_repo)

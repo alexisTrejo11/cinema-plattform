@@ -193,3 +193,21 @@ class AbstractId:
 
     def __hash__(self) -> int:
         return hash(self.value)
+
+
+class PydanticUUID(BaseModel):
+    """
+    Custom Pydantic model for UUID validation.
+    """
+
+    id: uuid.UUID = Field(..., description="UUID string")
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate_uuid
+
+    @classmethod
+    def validate_uuid(cls, value):
+        if not isinstance(value, str) or len(value) != 36:
+            raise ValueError("Invalid UUID format")
+        return value

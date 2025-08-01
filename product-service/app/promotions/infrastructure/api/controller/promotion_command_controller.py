@@ -7,10 +7,6 @@ from app.shared.response import ApiResponse
 from app.promotions.application.command.promotion_result import PromotionCommandResult
 from app.promotions.application.queries.promotion_query import PromotionId
 from app.promotions.application.usecase.promotions_usecases import PromotionsUseCases
-from app.promotions.application.command.promotion_command import (
-    PromotionCreateCommand,
-    ExtendPromotionCommand,
-)
 from ..dependecies import get_promotion_use_cases
 from ..docs.examples import (
     create_promotion_examples,
@@ -18,10 +14,10 @@ from ..docs.examples import (
     deactivate_promotion_examples,
     extend_promotion_examples,
 )
+from .dto.mapper import RequestMapper
 from .dto.request import (
     PromotionCreateRequest,
     ExtendPromotionRequest,
-    PromotionUpdateRequest,
 )
 
 logger = logging.getLogger("app")
@@ -36,7 +32,7 @@ router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions"])
     response_model=ApiResponse[PromotionCommandResult],
     responses={**create_promotion_examples},
 )
-async def create_promotion_endpoint(
+async def create_promotion(
     request: PromotionCreateRequest = Body(
         ..., description="Details for the new promotion"
     ),
@@ -49,15 +45,9 @@ async def create_promotion_endpoint(
     """
     try:
         logger.info(f"Received request to create promotion: {request.name}")
-
-        command_data = request.model_dump(exclude_unset=True)
-        command_data["applicable_product_ids"] = [
-            ProductId(pid) for pid in command_data.get("applicable_product_ids", [])
-        ]
-        command = PromotionCreateCommand(**command_data)
+        command = RequestMapper.create_request_to_command(request)
 
         result = await use_cases.create_promotion(command)
-
         if not result.is_success:
             logger.error(f"Failed to create promotion: {result.message}")
             raise_response_error(result)
@@ -79,8 +69,8 @@ async def create_promotion_endpoint(
     response_model=ApiResponse[PromotionCommandResult],
     responses={**activate_promotion_examples},
 )
-async def activate_promotion_endpoint(
-    promotion_id: str = Path(
+async def activate_promotion(
+    promotion_id: UUID = Path(
         ..., description="ID of the promotion to activate", example="promo-123"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
@@ -92,10 +82,8 @@ async def activate_promotion_endpoint(
     """
     try:
         logger.info(f"Received request to activate promotion ID: {promotion_id}")
-        result = await use_cases.activate_promotion(
-            PromotionId.from_string(promotion_id)
-        )
 
+        result = await use_cases.activate_promotion(PromotionId(promotion_id))
         if not result.is_success:
             logger.error(
                 f"Failed to activate promotion {promotion_id}: {result.message}"
@@ -117,7 +105,7 @@ async def activate_promotion_endpoint(
     response_model=ApiResponse[PromotionCommandResult],
     responses={**deactivate_promotion_examples},
 )
-async def deactivate_promotion_endpoint(
+async def deactivate_promotion(
     promotion_id: str = Path(
         ..., description="ID of the promotion to deactivate", example="promo-123"
     ),
@@ -156,7 +144,7 @@ async def deactivate_promotion_endpoint(
     response_model=ApiResponse[PromotionCommandResult],
     responses={**extend_promotion_examples},
 )
-async def extend_promotion_endpoint(
+async def extend_promotion(
     request: ExtendPromotionRequest = Body(
         ..., description="Details for extending the promotion"
     ),
@@ -172,11 +160,9 @@ async def extend_promotion_endpoint(
     """
     try:
         logger.info(f"Received request to extend promotion ID: {promotion_id}")
+        command = RequestMapper.extend_request_to_command(request)
 
-        command_data = request.model_dump(exclude_unset=True)
-        command_data["promotion_id"] = PromotionId.from_string(promotion_id)
-        result = await use_cases.extend_promotion(**command_data)
-
+        result = await use_cases.extend_promotion(command)
         if not result.is_success:
             logger.error(f"Failed to extend promotion {promotion_id}: {result.message}")
             raise_response_error(result)
@@ -195,7 +181,7 @@ async def extend_promotion_endpoint(
     description="Applies a promotion to specified products.",
     response_model=ApiResponse[None],
 )
-async def apply_promotion_endpoint(
+async def apply_promotion(
     promotion_id: str = Path(
         ..., description="ID of the promotion to apply", example="promo-123"
     ),
@@ -238,7 +224,7 @@ async def apply_promotion_endpoint(
         HTTPStatus.NO_CONTENT: {"description": "Promotion deleted successfully"}
     },
 )
-async def delete_promotion_endpoint(
+async def delete_promotion(
     promotion_id: UUID = Path(
         ..., description="ID of the promotion to delete", example="promo-123"
     ),
@@ -269,7 +255,7 @@ async def delete_promotion_endpoint(
     summary="Clear all promotions",
     description="Clears all promotions from the system.",
 )
-async def clear_promotions_endpoint(
+async def clear_promotions(
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
     promotion_id: UUID = Path(
         ..., description="ID of the promotion to clear", example="promo-123"

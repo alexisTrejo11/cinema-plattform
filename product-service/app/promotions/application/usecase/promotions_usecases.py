@@ -30,7 +30,6 @@ from ..command.promotion_command import (
 from ..command.promotion_result import PromotionCommandResult as CommandResult
 from ..queries.promotion_query import (
     PaginationQuery,
-    PromotionQuery,
     GetPromotionByIdQuery,
     GetPromotionByProductIdQuery,
     PromotionId,
@@ -40,6 +39,8 @@ from app.products.domain.entities.value_objects import ProductId
 from ..command.add_item_promotion_command import (
     AddProductsPromotionCommand,
     AddCategoryPromotionCommand,
+    RemoveCategoryPromotionCommand,
+    RemoveProductsPromotionCommand,
 )
 
 
@@ -129,11 +130,11 @@ class PromotionsUseCases:
         return await self.add_category.execute(command)
 
     async def remove_products_from_promotion(
-        self, promotion_id: PromotionId, product_ids: list[ProductId]
+        self, command: RemoveProductsPromotionCommand
     ) -> CommandResult:
-        return await self.remove_products.execute(promotion_id, product_ids)
+        return await self.remove_products.execute(command)
 
     async def remove_category_from_promotion(
-        self, promotion_id: PromotionId, category_id: int
+        self, command: RemoveCategoryPromotionCommand
     ) -> CommandResult:
-        return await self.remove_category.execute(promotion_id, category_id)
+        return await self.remove_category.execute(command)
