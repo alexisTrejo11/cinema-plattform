@@ -11,6 +11,7 @@ from sqlalchemy import (
     DECIMAL,
     Integer,
     Text,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
@@ -33,17 +34,20 @@ class PromotionModel(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str] = mapped_column(Text)
     promotion_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    discount_value: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
     rule: Mapped[Dict] = mapped_column(JSON, nullable=False)
-    start_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    end_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    start_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    end_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     max_uses: Mapped[int] = mapped_column(Integer, nullable=True)
     current_uses: Mapped[int] = mapped_column(Integer, default=0)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=func.now()
+    )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now(), onupdate=datetime.now()
+        DateTime(timezone=True), default=func.now(), onupdate=func.now()
     )
 
     products = relationship(

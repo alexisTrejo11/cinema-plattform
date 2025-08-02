@@ -3,7 +3,7 @@ from functools import wraps
 from dataclasses import is_dataclass
 import asyncio
 import inspect
-from app.products.infrastructure.persistence.redis.redis_service import RedisService
+from app.shared.redis.redis_service import RedisService
 from .serializer import SerializerService
 import logging
 

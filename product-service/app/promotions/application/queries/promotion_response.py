@@ -3,10 +3,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.types import PositiveInt, NonNegativeInt
 from datetime import datetime
 from typing import List, Optional
-from app.promotions.domain.promotion import (
-    PromotionType,
-    Promotion,
-)
+from app.promotions.domain.promotion import PromotionType, Promotion
 from app.products.domain.entities.product import Product
 from app.shared.pagination import PaginationMetadata
 
@@ -58,7 +55,7 @@ class PromotionResponse(BaseModel):
             id=promotion.id.value,
             name=promotion.name,
             promotion_type=promotion.promotion_type,
-            rule=promotion.rule.to_dict(),
+            rule=promotion.rule,
             start_date=promotion.start_date,
             end_date=promotion.end_date,
             description=promotion.description,

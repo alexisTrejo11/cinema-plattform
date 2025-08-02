@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from pydantic import Field
 from app.combos.domain.entities.combo import Combo
@@ -15,8 +15,8 @@ class ComboResponse(ComboBase):
         json_schema_extra={"example": "123e4567-e89b-12d3-a456-426614174000"},
     )
 
-    combo_items: List["ComboItemResponse"] = Field(
-        [],
+    combo_items: Optional[List["ComboItemResponse"]] = Field(
+        None,
         description="Detailed information about items in the combo",
         json_schema_extra={
             "example": [
@@ -59,20 +59,27 @@ class ComboResponse(ComboBase):
         }
 
     @classmethod
-    def from_domain(cls, combo: Combo):
+    def from_domain(cls, combo: Combo, include_items: Optional[bool] = False):
         """Convert domain model to DTO"""
-        items = [
-            ComboItemResponse(
-                id=item.id.value,
-                product_id=item.product.id.value,
-                quantity=item.quantity,
-            )
-            for item in combo.items
-        ]
+        items = []
+        if include_items:
+            items = [
+                ComboItemResponse(
+                    id=item.id.value,
+                    product_id=item.product.id.value,
+                    quantity=item.quantity,
+                )
+                for item in combo.items
+            ]
         combo_dict = combo.to_dict()
         combo_dict.pop("items")
         combo_dict.pop("id")
-        return cls(id=combo.id.value, combo_items=items, **combo_dict)
+
+        return cls(
+            id=combo.id.value,
+            combo_items=items if include_items else None,
+            **combo_dict
+        )
 
 
 class ComboItemResponse(ComboItemBase):

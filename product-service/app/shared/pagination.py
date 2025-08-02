@@ -1,7 +1,22 @@
 import math
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, TypeVar, Generic
 from enum import Enum
+from dataclasses import dataclass
+
+T = TypeVar("T")
+
+
+@dataclass
+class Page(Generic[T]):
+    items: List[T]
+    metadata: "PaginationMetadata"
+
+    def map(self, func):
+        return Page(
+            items=[func(item) for item in self.items],
+            metadata=self.metadata,
+        )
 
 
 class SortOrder(str, Enum):
@@ -74,11 +89,7 @@ class PaginationMetadata(BaseModel):
             if page_data.page_size and page_data.page_size > 0
             else total_items
         )
-        current_page = (
-            (page_data.page * items_per_page) + 1
-            if page_data.page and items_per_page
-            else 1
-        )
+        current_page = page_data.page
         total_pages = (
             math.ceil(total_items / items_per_page) if items_per_page > 0 else 1
         )

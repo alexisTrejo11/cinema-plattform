@@ -10,7 +10,7 @@ from app.products.domain.entities.value_objects import ProductId
 class PromotionId(AbstractId):
     """Value object for Promotion ID."""
 
-    def __init__(self, value: uuid.UUID):
+    def __init__(self, value: Any):
         super().__init__(value)
 
     def __str__(self):
@@ -27,7 +27,7 @@ class PromotionId(AbstractId):
         return PromotionId(AbstractId.generate().value)
 
     @classmethod
-    def validate(cls, value: Any) -> "PromotionId":
+    def _validate(cls, value: Any) -> "PromotionId":
         """Validate input and convert to PromotionId."""
         if isinstance(value, cls):
             return value

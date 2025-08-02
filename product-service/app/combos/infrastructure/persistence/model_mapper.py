@@ -1,6 +1,9 @@
 from sqlalchemy import inspect
 from .models import ComboModel, ComboItemModel
 from app.combos.domain.entities.combo import Combo, ComboItem, ComboItemId, ComboId
+from app.products.infrastructure.persistence.repositories.mapper import (
+    ModelMapper as ProductMapper,
+)
 
 
 class ModelMapper:
@@ -9,17 +12,14 @@ class ModelMapper:
         """Convert SQLAlchemy model to domain model"""
         items = []
         if include_items:
-            # Check if items relationship is loaded to avoid lazy loading
             state = inspect(combo_model)
             if "items" in state.unloaded:
-                # Items aren't loaded, return empty list to avoid lazy loading
-                pass  # items remains empty list
+                pass
             else:
-                # Items are loaded or being loaded, safe to access
                 for item in combo_model.items:
                     items.append(
                         ComboItem(
-                            item.product.to_domain(),
+                            ProductMapper.to_domain(item.product),
                             ComboItemId(item.id),
                             item.quantity,
                         )

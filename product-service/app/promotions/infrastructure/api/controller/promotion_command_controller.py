@@ -1,12 +1,14 @@
+import logging
 from uuid import UUID
 from fastapi import APIRouter, Depends, Body, HTTPException, Path
 from http import HTTPStatus
-import logging
+
 from app.products.domain.entities.value_objects import ProductId
 from app.shared.response import ApiResponse
 from app.promotions.application.command.promotion_result import PromotionCommandResult
 from app.promotions.application.queries.promotion_query import PromotionId
 from app.promotions.application.usecase.promotions_usecases import PromotionsUseCases
+
 from ..dependecies import get_promotion_use_cases
 from ..docs.examples import (
     create_promotion_examples,
@@ -29,7 +31,7 @@ router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions"])
     status_code=HTTPStatus.CREATED,
     summary="Create a new promotion",
     description="Creates a new promotion in the system.",
-    response_model=ApiResponse[PromotionCommandResult],
+    response_model=ApiResponse[UUID],
     responses={**create_promotion_examples},
 )
 async def create_promotion(
@@ -53,9 +55,7 @@ async def create_promotion(
             raise_response_error(result)
 
         logger.info(f"Promotion '{command.name}' created successfully.")
-        return ApiResponse.success(
-            message=result.message, data={"id": result.promotion_id}
-        )
+        return ApiResponse.success(message=result.message, data=result.promotion_id)
     except Exception as e:
         logger.error(f"Error creating promotion: {e}", exc_info=True)
         raise
@@ -66,7 +66,7 @@ async def create_promotion(
     status_code=HTTPStatus.OK,
     summary="Activate a promotion",
     description="Activates an existing promotion by its ID.",
-    response_model=ApiResponse[PromotionCommandResult],
+    response_model=ApiResponse[None],
     responses={**activate_promotion_examples},
 )
 async def activate_promotion(
@@ -102,7 +102,7 @@ async def activate_promotion(
     status_code=HTTPStatus.OK,
     summary="Deactivate a promotion",
     description="Deactivates an existing promotion by its ID.",
-    response_model=ApiResponse[PromotionCommandResult],
+    response_model=ApiResponse[None],
     responses={**deactivate_promotion_examples},
 )
 async def deactivate_promotion(
@@ -141,7 +141,7 @@ async def deactivate_promotion(
     status_code=HTTPStatus.OK,
     summary="Extend a promotion's end date",
     description="Extends the end date of an existing promotion.",
-    response_model=ApiResponse[PromotionCommandResult],
+    response_model=ApiResponse[None],
     responses={**extend_promotion_examples},
 )
 async def extend_promotion(
@@ -217,12 +217,10 @@ async def apply_promotion(
 
 @router.delete(
     "/{promotion_id}",
-    status_code=HTTPStatus.NO_CONTENT,
+    status_code=HTTPStatus.OK,
     summary="Delete a promotion",
     description="Deletes an existing promotion by its ID.",
-    responses={
-        HTTPStatus.NO_CONTENT: {"description": "Promotion deleted successfully"}
-    },
+    responses={HTTPStatus.OK: {"description": "Promotion deleted successfully"}},
 )
 async def delete_promotion(
     promotion_id: UUID = Path(

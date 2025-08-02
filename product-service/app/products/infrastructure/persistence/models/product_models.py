@@ -14,7 +14,6 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from config.postgres_config import Base
 from sqlalchemy.orm import relationship, mapped_column, Mapped
-from app.products.domain.entities.product import Product, ProductId
 from app.products.domain.entities.product_category import ProductCategory
 from uuid import UUID
 

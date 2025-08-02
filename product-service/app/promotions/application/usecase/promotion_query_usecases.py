@@ -57,11 +57,11 @@ class GetActivePromotionsUseCase:
         """
         Execute the use case to get a promotion by its ID.
         """
-        promotion, pagination_metadata = (
-            await self.promotion_query.get_active_promotions(query)
-        )
+        promotion_page = await self.promotion_query.get_active_promotions(query)
 
-        return PromotionSearchResponse.from_domain(promotion, pagination_metadata)
+        return PromotionSearchResponse.from_domain(
+            promotion_page.items, promotion_page.metadata
+        )
 
 
 class GetPromotionByProductIdUseCase:
@@ -83,8 +83,8 @@ class GetPromotionByProductIdUseCase:
         """
         Execute the use case to search for promotions based on the provided query.
         """
-        promotion_list, pagination_metadata = (
-            await self.promotion_repository.get_by_product(query)
-        )
+        promotion_page = await self.promotion_repository.get_by_product(query)
 
-        return PromotionSearchResponse.from_domain(promotion_list, pagination_metadata)
+        return PromotionSearchResponse.from_domain(
+            promotion_page.items, promotion_page.metadata
+        )

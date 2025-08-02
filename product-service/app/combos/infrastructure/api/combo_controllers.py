@@ -11,7 +11,6 @@ from app.combos.application.usecase.container import ComboUseCases
 from app.combos.domain.entities.value_objects import ComboId
 from app.products.domain.entities.value_objects import ProductId
 
-
 from .dto.request import ComboCreateRequest
 from .dto.mapper import RequestDataMapper
 from .depedencies import get_combos_uc
@@ -29,7 +28,7 @@ router = APIRouter(prefix="/api/v2/combos", tags=["Combos"])
 
 @router.post(
     "/",
-    response_model=ApiResponse[ComboResponse],
+    response_model=ApiResponse[UUID],
     status_code=status.HTTP_201_CREATED,
     summary="Create a new combo",
     description="Creates a new combo meal with the provided details",
@@ -50,10 +49,12 @@ async def create_combo(
         logger.info(f"Creating combo with data: {request_data}")
         command = RequestDataMapper.to_create_combo_command(request_data)
 
-        combo = await usecase.create_combo(command)
-        logger.info(f"Combo created successfully: ID{combo.id}")
+        result = await usecase.create_combo(command)
+        logger.info(f"Combo created successfully: ID{result.combo_id}")
 
-        return ApiResponse.success(data=combo, message="Combo created successfully")
+        return ApiResponse.success(
+            data=result.combo_id, message="Combo created successfully"
+        )
     except Exception as e:
         logger.error(f"Error creating combo: {e}")
         raise
@@ -70,7 +71,9 @@ async def get_combo_by_id(
     combo_id: UUID = Path(..., description="ID of the combo to retrieve", example=1),
     pagination: PaginationQuery = Depends(),
     include_items: bool = Query(
-        True, description="Whether to include combo items in the response", example=True
+        False,
+        description="Whether to include combo items in the response",
+        example=True,
     ),
     usecase: ComboUseCases = Depends(get_combos_uc),
 ):
@@ -89,7 +92,10 @@ async def get_combo_by_id(
         combo = await usecase.get_combo_by_id(query)
         logger.info(f"Combo retrieved successfully: ID{combo.id}")
 
-        return ApiResponse.success(data=combo, message="Combo successfully retrieved")
+        metadata = {"request_params": query.to_dict()}
+        return ApiResponse.success(
+            data=combo, message="Combo successfully retrieved", metadata=metadata
+        )
     except Exception as e:
         logger.error(f"Error retrieving combo: {e}")
         raise
@@ -104,16 +110,32 @@ async def get_combo_by_id(
 )
 async def list_active_combos(
     pagination: PaginationQuery = Depends(),
+    include_items: bool = Query(
+        False,
+        description="Whether to include combo items in the response",
+        example=True,
+    ),
     usecase: ComboUseCases = Depends(get_combos_uc),
 ):
     """Retrieve all combos that are currently marked as available"""
     try:
-        logger.info("Listing all active combos")
+        logger.info(
+            f"Listing active combos: page {pagination.page}, size {pagination.page_size}"
+        )
 
-        combo_list = await usecase.list_active_combos(pagination)
-        logger.info(f"Active combos retrieved: {len(combo_list)} found")
+        combo_page = await usecase.list_active_combos(pagination, include_items)
 
-        return ApiResponse.success(combo_list, "Active Combos successfully retrieved")
+        request = pagination.model_dump()
+        request["include_items"] = include_items
+        metadata = {
+            "request_params": request,
+            "pagination": combo_page.metadata,
+        }
+
+        logger.info(f"Active combos retrieved: {len(combo_page.items)} items")
+        return ApiResponse.success(
+            combo_page.items, "Active Combos successfully retrieved", metadata=metadata
+        )
     except Exception as e:
         logger.error(f"Error listing active combos: {e}")
         raise
@@ -131,7 +153,9 @@ async def get_combos_by_product(
         ..., description="ID of the product to search for", example=1
     ),
     include_items: bool = Query(
-        True, description="Whether to include combo items in the response", example=True
+        False,
+        description="Whether to include combo items in the response",
+        example=True,
     ),
     pagination: PaginationQuery = Depends(),
     usecase: ComboUseCases = Depends(get_combos_uc),

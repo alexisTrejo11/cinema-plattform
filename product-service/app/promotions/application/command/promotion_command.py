@@ -1,10 +1,7 @@
-from dataclasses import dataclass
 from datetime import datetime
-from decimal import Decimal
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, NonNegativeInt
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 from app.promotions.domain.promotion import (
-    PromotionId,
     PromotionType,
     Promotion,
 )
@@ -28,16 +25,11 @@ class PromotionCreateCommand(BaseModel):
     promotion_type: PromotionType = Field(
         ..., description="Type of promotion (e.g., PERCENTAGE_DISCOUNT, FIXED_DISCOUNT)"
     )
-    discount_value: Decimal = Field(
-        ...,
-        gt=0,
-        description="The value of the discount (e.g., 10 for 10%, 5.00 for $5)",
-    )
     applicable_product_ids: Optional[List[ProductId]] = Field(
         default_factory=list,
         description="List of product IDs to which the promotion applies",
     )
-    applicable_category_id: int = Field(
+    applicable_category_id: Optional[int] = Field(
         ...,
         description="ID of the category to which the promotion applies",
     )
@@ -68,7 +60,7 @@ class PromotionCreateCommand(BaseModel):
             applicable_product_ids=(
                 self.applicable_product_ids if self.applicable_product_ids else []
             ),
-            rule=PromotionRule.from_dict(**self.rule),
+            rule=self.rule,
             start_date=self.start_date,
             end_date=self.end_date,
             description=self.description,
@@ -76,6 +68,7 @@ class PromotionCreateCommand(BaseModel):
             max_uses=self.max_uses,
         )
         promotion.validate_creation_fields()
+        promotion.rule["promotion_id"] = promotion.id
         return promotion
 
 

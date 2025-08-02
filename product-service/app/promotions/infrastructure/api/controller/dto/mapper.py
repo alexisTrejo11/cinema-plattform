@@ -5,7 +5,6 @@ from app.promotions.application.command.promotion_command import (
 from app.promotions.infrastructure.api.controller.dto.request import (
     PromotionCreateRequest,
     ExtendPromotionRequest,
-    PromotionUpdateRequest,
 )
 from app.promotions.domain.valueobjects import ProductId, PromotionId
 from app.shared.schema import PydanticUUID
@@ -25,11 +24,16 @@ class RequestMapper:
             is_active=request.is_active,
             max_uses=request.max_uses,
             end_date=request.end_date,
-            discount_value=request.discount_value,
-            applicable_product_ids=[
-                ProductId(pid) for pid in request.applicable_product_ids
-            ],
-            applicable_category_id=request.applicable_category_id,
+            applicable_product_ids=(
+                [ProductId(pid) for pid in request.applicable_product_ids]
+                if request.applicable_product_ids
+                else []
+            ),
+            applicable_category_id=(
+                request.applicable_category_id
+                if request.applicable_category_id
+                else None
+            ),
         )
 
     @staticmethod

@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import Any, Dict
+from uuid import UUID
 from app.shared.base_exceptions import (
     NotFoundException,
     ValidationException,
@@ -7,8 +8,8 @@ from app.shared.base_exceptions import (
 from app.combos.domain.entities.value_objects import ComboId, ComboItemId
 
 
-def ComboNotFoundError(combo_id: ComboId) -> NotFoundException:
-    return NotFoundException("Combo", combo_id.to_string())
+def ComboNotFoundError(combo_id: ComboId | UUID) -> NotFoundException:
+    return NotFoundException("Combo", str(combo_id))
 
 
 def ComboItemValidationError(reason: str) -> ValidationException:

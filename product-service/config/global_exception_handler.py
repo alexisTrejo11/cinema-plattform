@@ -35,9 +35,16 @@ async def handle_application_exceptions(request: Request, exc: ApplicationExcept
     )
     api_response = ApiResponse.failure(
         error=error_response,
-        message=f"An application error occurred: {exc.message}",
+        message=f"An application error occurred",
     )
-    return JSONResponse(status_code=exc.status_code, content=api_response.model_dump())
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=api_response.model_dump(),
+        headers={
+            "X-Error-Type": exc.__class__.__name__,
+            "X-Error-Code": exc.error_code,
+        },
+    )
 
 
 @app.exception_handler(AuthorizationException)

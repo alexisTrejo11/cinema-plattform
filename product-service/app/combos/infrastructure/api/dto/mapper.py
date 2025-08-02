@@ -21,7 +21,7 @@ class RequestDataMapper:
         """
         Maps ComboCreateRequest to ComboCreateCommand.
         """
-        return ComboCreateCommand.model_validate(request_data)
+        return ComboCreateCommand(**request_data.model_dump())
 
     @staticmethod
     def to_get_combo_by_id_query(

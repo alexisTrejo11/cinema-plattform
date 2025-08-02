@@ -1,7 +1,5 @@
-from typing import List
-from app.products.domain.entities.value_objects import ProductId
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
-from app.promotions.domain.promotion import Promotion, PromotionId
+from app.promotions.domain.promotion import PromotionId
 from app.promotions.domain.valueobjects import PromotionType
 from ..command.promotion_result import PromotionCommandResult as CommandResult
 from ..command.promotion_command import PromotionCreateCommand, ExtendPromotionCommand
@@ -47,7 +45,7 @@ class CreatePromotionUseCase:
             await self.promotion_repository.create(promotion)
 
             return CommandResult.success(
-                promotion_id=promotion.id.to_string(),
+                promotion_id=promotion.id,
                 message="Promotion created successfully",
             )
         except DomainException as e:
@@ -82,7 +80,7 @@ class ExtendPromotionUseCase:
             await self.promotion_repository.update(promotion)
 
             return CommandResult.success(
-                promotion_id=promotion.id.to_string(),
+                promotion_id=promotion.id,
                 message="Promotion updated successfully",
             )
         except DomainException as e:
@@ -100,7 +98,7 @@ class ActivatePromotionUseCase:
             )
             if not promotion_deactivated:
                 return CommandResult.error(
-                    promotion_id=promotion_id.to_string(),
+                    promotion_id=promotion_id,
                     message="Promotion deactivated not found",
                 )
 
@@ -108,7 +106,7 @@ class ActivatePromotionUseCase:
             await self.promotion_repository.update(promotion_deactivated)
 
             return CommandResult.success(
-                promotion_id=promotion_deactivated.id.to_string(),
+                promotion_id=promotion_deactivated.id,
                 message="Promotion activated successfully",
             )
         except DomainException as e:
@@ -123,14 +121,14 @@ class DeactivatePromotionUseCase:
         promotion = await self.promotion_repository.get_by_id(promotion_id)
         if not promotion:
             return CommandResult.error(
-                promotion_id=promotion_id.to_string(), message="Promotion not found"
+                promotion_id=promotion_id, message="Promotion not found"
             )
 
         promotion.deactivate()
         await self.promotion_repository.update(promotion)
 
         return CommandResult.success(
-            promotion_id=promotion.id.to_string(),
+            promotion_id=promotion.id,
             message="Promotion deactivated successfully",
         )
 
@@ -143,12 +141,12 @@ class DeletePromotionUseCase:
         promotion = await self.promotion_repository.get_by_id(promotion_id)
         if not promotion:
             return CommandResult.error(
-                promotion_id=promotion_id.to_string(), message="Promotion not found"
+                promotion_id=promotion_id, message="Promotion not found"
             )
 
         await self.promotion_repository.delete(promotion.id)
         return CommandResult.success(
-            promotion_id=promotion.id.to_string(),
+            promotion_id=promotion.id,
             message="Promotion deleted successfully",
         )
 
@@ -168,12 +166,12 @@ class ApplyPromotionUseCase:
         promotion = await self.promotion_repository.get_by_id(promotion_id)
         if not promotion:
             return CommandResult.error(
-                promotion_id=promotion_id.to_string(), message="Promotion not found"
+                promotion_id=promotion_id, message="Promotion not found"
             )
 
         if not promotion.is_active:
             return CommandResult.error(
-                promotion_id=promotion_id.to_string(),
+                promotion_id=promotion_id,
                 message="Promotion is not active",
             )
 
@@ -182,7 +180,7 @@ class ApplyPromotionUseCase:
         products = await self._get_products(product_ids)
 
         return CommandResult.success(
-            promotion_id=promotion.id.to_string(),
+            promotion_id=promotion.id,
             message=f"Promotion applied successfully. Discount Applied to {len(products)} products.",
         )
 
@@ -203,7 +201,7 @@ class RemoveProductsPromotionUseCase:
         promotion = await self.promotion_repository.get_by_id(command.promotion_id)
         if not promotion:
             return CommandResult.error(
-                promotion_id=command.promotion_id.to_string(),
+                promotion_id=command.promotion_id,
                 message="Promotion not found",
             )
 
@@ -213,7 +211,7 @@ class RemoveProductsPromotionUseCase:
         )
 
         return CommandResult.success(
-            promotion_id=promotion.id.to_string(),
+            promotion_id=promotion.id,
             message="Products removed from promotion successfully",
         )
 
@@ -226,7 +224,7 @@ class RemoveCategoryPromotionUseCase:
         promotion = await self.promotion_repository.get_by_id(command.promotion_id)
         if not promotion:
             return CommandResult.error(
-                promotion_id=command.promotion_id.to_string(),
+                promotion_id=command.promotion_id,
                 message="Promotion not found",
             )
 
@@ -236,7 +234,7 @@ class RemoveCategoryPromotionUseCase:
         )
 
         return CommandResult.success(
-            promotion_id=promotion.id.to_string(),
+            promotion_id=promotion.id,
             message="Category removed from promotion successfully",
         )
 
@@ -249,7 +247,7 @@ class ClearPromotionUseCase:
         promotion = await self.promotion_repository.get_by_id(promotion_id)
         if not promotion:
             return CommandResult.error(
-                promotion_id=promotion_id.to_string(), message="Promotion not found"
+                promotion_id=promotion_id, message="Promotion not found"
             )
 
         promotion.clear_all()
@@ -258,7 +256,7 @@ class ClearPromotionUseCase:
         await self.promotion_repository.update_products(promotion.id, [])
 
         return CommandResult.success(
-            promotion_id=promotion.id.to_string(),
+            promotion_id=promotion.id,
             message="Promotion cleared successfully",
         )
 
@@ -280,7 +278,7 @@ class AddProductsToPromotionUseCase:
         )
         if not promotion:
             return CommandResult.error(
-                promotion_id=add_products_command.promotion_id.to_string(),
+                promotion_id=add_products_command.promotion_id,
                 message="Promotion not found",
             )
 
@@ -294,7 +292,7 @@ class AddProductsToPromotionUseCase:
         await self.promotion_repository.update(promotion)
 
         return CommandResult.success(
-            promotion_id=promotion.id.to_string(),
+            promotion_id=promotion.id,
             message="Products added to promotion successfully",
         )
 
@@ -312,7 +310,7 @@ class AddCategoryPromotionUseCase:
         promotion = await self.promotion_repository.get_by_id(command.promotion_id)
         if not promotion:
             return CommandResult.error(
-                promotion_id=command.promotion_id.to_string(),
+                promotion_id=command.promotion_id,
                 message="Promotion not found",
             )
 
@@ -326,6 +324,6 @@ class AddCategoryPromotionUseCase:
         await self.promotion_repository.update(promotion)
 
         return CommandResult.success(
-            promotion_id=promotion.id.to_string(),
+            promotion_id=promotion.id,
             message="Category added to promotion successfully",
         )

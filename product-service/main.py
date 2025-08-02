@@ -23,7 +23,7 @@ from app.promotions.infrastructure.api.controller import (
     promotion_command_controller,
     promotion_query_controllers,
 )
-from app.products.infrastructure.persistence.redis.redis_service import RedisService
+from app.shared.redis.redis_service import RedisService
 
 
 setup_logging()

@@ -1,4 +1,6 @@
+from typing import Optional
 from pydantic import BaseModel
+from app.promotions.domain.valueobjects import PromotionId
 from app.shared.response import ErrorResponse
 
 
@@ -14,23 +16,29 @@ class PromotionCommandResult(BaseModel):
 
     @classmethod
     def error(
-        cls, promotion_id: str = "", message: str = "error"
+        cls, promotion_id: Optional[PromotionId] = None, message: str = "error"
     ) -> "PromotionCommandResult":
         """
         Returns a new instance with an error message.
         This is a class method to create an error result.
         """
-        return cls(promotion_id=promotion_id, is_success=False, message=message)
+        return cls(
+            promotion_id=promotion_id.to_string() if promotion_id else "",
+            is_success=False,
+            message=message,
+        )
 
     @classmethod
     def success(
-        cls, promotion_id: str = "", message: str = "success"
+        cls, promotion_id: PromotionId, message: str = "success"
     ) -> "PromotionCommandResult":
         """
         Returns a new instance with a success message.
         This is a class method to create a success result.
         """
-        return cls(promotion_id=promotion_id, is_success=True, message=message)
+        return cls(
+            promotion_id=promotion_id.to_string(), is_success=True, message=message
+        )
 
     def to_error_response(self) -> ErrorResponse:
         """

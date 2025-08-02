@@ -25,29 +25,31 @@ class PromotionRule(ABC):
         """Convert a dictionary to a PromotionRule."""
         pass
 
-    @abstractmethod
-    def create(cls, **kwargs) -> "PromotionRule":
-        """Create a PromotionRule from a Promotion."""
-        pass
-
 
 class PercentageDiscountRule(PromotionRule):
     def __init__(self, promotion_id: PromotionId, percentage_discount: Decimal):
         self.promotion_id = promotion_id
         self.percentage_discount = percentage_discount
 
-    def create(self, **kwargs) -> "PromotionRule":
+    @staticmethod
+    def create(**kwargs) -> "PromotionRule":
         promotion_id = kwargs.get("promotion_id")
         percentage_discount = kwargs.get("percentage_discount")
         if not isinstance(promotion_id, PromotionId):
             raise ValueError("promotion_id must be a PromotionId instance.")
 
+        if isinstance(percentage_discount, str):
+            try:
+                percentage_discount = Decimal(percentage_discount)
+            except ValueError:
+                raise ValueError("percentage_discount must be a valid decimal string.")
+
         if not isinstance(percentage_discount, Decimal):
             raise ValueError("percentage_discount must be a Decimal instance.")
 
         rule = PercentageDiscountRule(
-            promotion_id=self.promotion_id,
-            percentage_discount=self.percentage_discount,
+            promotion_id=promotion_id,
+            percentage_discount=percentage_discount,
         )
         rule.validate()
         return rule
@@ -80,7 +82,8 @@ class BuyXGetYFreeRule(PromotionRule):
         self.buy_quantity = buy_quantity
         self.get_quantity = get_quantity
 
-    def create(self, **kwargs) -> "BuyXGetYFreeRule":
+    @staticmethod
+    def create(**kwargs) -> "BuyXGetYFreeRule":
         promotion_id = kwargs.get("promotion_id")
         buy_quantity = kwargs.get("buy_quantity")
         get_quantity = kwargs.get("get_quantity")
@@ -209,7 +212,8 @@ class BundleDiscountRule(PromotionRule):
             "max_bundle_quantity": self.max_bundle_quantity,
         }
 
-    def create(self, **kwargs) -> "BundleDiscountRule":
+    @staticmethod
+    def create(**kwargs) -> "BundleDiscountRule":
         promotion_id = kwargs.get("promotion_id")
         min_bundle_discount = kwargs.get("min_bundle_discount")
         max_bundle_discount = kwargs.get("max_bundle_discount")
@@ -286,13 +290,35 @@ class MinimumQuantityDiscountRule(PromotionRule):
         self.min_percentage_discount = min_percentage_discount
         self.max_percentage_discount = max_percentage_discount
 
-    def create(self, **kwargs) -> "MinimumQuantityDiscountRule":
+    @staticmethod
+    def create(**kwargs) -> "MinimumQuantityDiscountRule":
+        promotion_id = kwargs.get("promotion_id")
+        min_quantity = kwargs.get("min_quantity")
+        max_quantity = kwargs.get("max_quantity")
+        min_percentage_discount = kwargs.get("min_percentage_discount")
+        max_percentage_discount = kwargs.get("max_percentage_discount")
+
+        if not isinstance(promotion_id, PromotionId):
+            raise ValueError("promotion_id must be a PromotionId instance.")
+
+        if not isinstance(min_quantity, int):
+            raise ValueError("min_quantity must be an integer.")
+
+        if not isinstance(max_quantity, int):
+            raise ValueError("max_quantity must be an integer.")
+
+        if not isinstance(min_percentage_discount, Decimal):
+            raise ValueError("min_percentage_discount must be a Decimal instance.")
+
+        if not isinstance(max_percentage_discount, Decimal):
+            raise ValueError("max_percentage_discount must be a Decimal instance.")
+
         rule = MinimumQuantityDiscountRule(
-            promotion_id=self.promotion_id,
-            min_quantity=self.min_quantity,
-            max_quantity=self.max_quantity,
-            min_percentage_discount=self.min_percentage_discount,
-            max_percentage_discount=self.max_percentage_discount,
+            promotion_id=promotion_id,
+            min_quantity=min_quantity,
+            max_quantity=max_quantity,
+            min_percentage_discount=min_percentage_discount,
+            max_percentage_discount=max_percentage_discount,
         )
         rule.validate()
         return rule

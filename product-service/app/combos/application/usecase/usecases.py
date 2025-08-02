@@ -1,8 +1,12 @@
 from typing import List
-from app.shared.pagination import PaginationQuery
+from app.shared.pagination import Page, PaginationQuery
 from app.products.domain.repositories import ProductRepository
 from app.combos.domain.repository import ComboRepository
-from app.combos.application.commands import ComboCreateCommand, ComboItemCreateCommand
+from app.combos.application.commands import (
+    ComboCreateCommand,
+    ComboItemCreateCommand,
+    ComboCommandResult,
+)
 from app.combos.domain.entities.combo import Combo, ComboItem
 from app.combos.domain.entities.value_objects import ComboId, ComboItemId
 from app.combos.domain.exceptions import (
@@ -19,9 +23,14 @@ class ListActiveComboUseCase:
     def __init__(self, combo_repository: ComboRepository) -> None:
         self.combo_repository = combo_repository
 
-    async def execute(self, pagination: PaginationQuery) -> List[ComboResponse]:
-        combos = await self.combo_repository.list(pagination)
-        return [ComboResponse.from_domain(combo) for combo in combos]
+    async def execute(
+        self, pagination: PaginationQuery, include_items: bool
+    ) -> Page[ComboResponse]:
+        combo_page = await self.combo_repository.list_active(pagination, include_items)
+
+        return combo_page.map(
+            lambda combo: ComboResponse.from_domain(combo, include_items)
+        )
 
 
 class GetComboByIdUseCase:
@@ -33,7 +42,7 @@ class GetComboByIdUseCase:
         if not combo:
             raise ComboNotFoundError(query.combo_id)
 
-        return ComboResponse.from_domain(combo)
+        return ComboResponse.from_domain(combo, query.include_items)
 
 
 class GetCombosByProductUseCase:
@@ -43,13 +52,13 @@ class GetCombosByProductUseCase:
         self.combo_repository = combo_repository
         self.product_repository = product_repository
 
-    async def execute(self, query: GetCombosByProductIdQuery) -> List[ComboResponse]:
+    async def execute(self, query: GetCombosByProductIdQuery) -> Page[ComboResponse]:
         product = await self.product_repository.get_by_id(query.product_id)
         if not product:
             raise ProductValidationError()
 
         combos = await self.combo_repository.list_by_product(query)
-        return [ComboResponse.from_domain(combo) for combo in combos]
+        return combos.map(lambda combo: ComboResponse.from_domain(combo))
 
 
 class CreateComboUseCase:
@@ -59,7 +68,7 @@ class CreateComboUseCase:
         self.combo_repository = combo_repository
         self.product_repository = product_repository
 
-    async def execute(self, create_data: ComboCreateCommand) -> ComboResponse:
+    async def execute(self, create_data: ComboCreateCommand) -> ComboCommandResult:
         new_combo = Combo(id=ComboId.generate(), **create_data.model_dump())
 
         items = await self._generate_products(create_data)
@@ -67,8 +76,8 @@ class CreateComboUseCase:
 
         new_combo.validate_business_logic()
 
-        combo_created = await self.combo_repository.save(new_combo)
-        return ComboResponse.from_domain(combo_created)
+        await self.combo_repository.save(new_combo)
+        return ComboCommandResult.success(new_combo.id, "Combo created successfully")
 
     async def _generate_products(
         self, create_data: ComboCreateCommand
@@ -108,12 +117,13 @@ class DeleteComboUseCase:
     def __init__(self, combo_repository: ComboRepository) -> None:
         self.combo_repository = combo_repository
 
-    async def execute(self, combo_id: ComboId) -> None:
+    async def execute(self, combo_id: ComboId) -> ComboCommandResult:
         combo = await self.combo_repository.get_by_id(
             GetComboByIdQuery(combo_id=combo_id)
         )
         if not combo:
             raise ComboNotFoundError(combo_id)
 
-        print(f"Deleting combo with ID: {combo}")
-        await self.combo_repository.soft_delete(combo_id)
+        await self.combo_repository.delete(combo_id)
+
+        return ComboCommandResult.success(combo_id, "Combo deleted successfully")

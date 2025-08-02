@@ -6,7 +6,7 @@ from ..promotion import Promotion, PromotionId
 from app.promotions.application.queries.promotion_query import (
     GetPromotionByProductIdQuery,
 )
-from app.shared.pagination import PaginationMetadata, PaginationQuery
+from app.shared.pagination import PaginationMetadata, PaginationQuery, Page
 
 
 class PromotionRepository(ABC):
@@ -20,16 +20,14 @@ class PromotionRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_active_promotions(
-        self, query: PaginationQuery
-    ) -> Tuple[List[Promotion], PaginationMetadata]:
+    async def get_active_promotions(self, query: PaginationQuery) -> Page[Promotion]:
         """Gets active promotions (optionally filtered by date)"""
         pass
 
     @abstractmethod
     async def get_by_product(
         self, query: GetPromotionByProductIdQuery
-    ) -> Tuple[List[Promotion], PaginationMetadata]:
+    ) -> Page[Promotion]:
         """Gets promotions applicable to a specific product"""
         pass
 

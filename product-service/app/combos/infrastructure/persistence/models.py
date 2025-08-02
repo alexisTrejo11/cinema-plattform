@@ -10,7 +10,9 @@ from uuid import UUID
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 
 if TYPE_CHECKING:
-    from app.products.infrastructure.persistence.db.sql.models import ProductModel
+    from app.products.infrastructure.persistence.models.product_models import (
+        ProductModel,
+    )
 
 
 class ComboModel(Base):
@@ -50,4 +52,6 @@ class ComboItemModel(Base):
 
     # Relationships
     combo: Mapped["ComboModel"] = relationship(back_populates="items")
-    product: Mapped["ProductModel"] = relationship(back_populates="combo_items")
+    product: Mapped["ProductModel"] = relationship(
+        back_populates="combo_items", lazy="joined"
+    )

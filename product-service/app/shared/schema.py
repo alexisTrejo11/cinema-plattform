@@ -165,6 +165,9 @@ class AbstractId:
             value = uuid.UUID(value)
         if not isinstance(value, uuid.UUID):
             raise ValueError("ID must be a valid UUID")
+        if value is None:
+            raise ValueError("ID cannot be None")
+
         self.value = value
 
     @staticmethod
