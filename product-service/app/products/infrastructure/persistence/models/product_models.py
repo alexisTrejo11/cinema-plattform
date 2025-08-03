@@ -1,4 +1,5 @@
 import __future__
+from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
@@ -12,10 +13,9 @@ from sqlalchemy import (
     ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
-from config.postgres_config import Base
+from config.db.postgres_config import Base
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from app.products.domain.entities.product_category import ProductCategory
-from uuid import UUID
 
 if TYPE_CHECKING:
     from app.combos.infrastructure.persistence.models import ComboItemModel

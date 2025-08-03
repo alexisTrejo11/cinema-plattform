@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Body, HTTPException, Path
 from http import HTTPStatus
 
 from app.shared.response import ApiResponse
+from app.user.auth.auth_dependencies import get_logged_admin_user
 from app.products.domain.entities.value_objects import ProductId
 from app.promotions.application.usecase.promotions_usecases import PromotionsUseCases
 from app.promotions.domain.entities.promotion import PromotionId
@@ -38,6 +39,7 @@ async def create_promotion(
         ..., description="Details for the new promotion"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    admin_user=Depends(get_logged_admin_user),
 ):
     """
     Creates a new promotion.
@@ -45,7 +47,9 @@ async def create_promotion(
     - **command**: The data required to create the promotion.
     """
     try:
-        logger.info(f"Received request to create promotion: {request.name}")
+        logger.info(
+            f"Admin {admin_user.get_id()} is attempting to create promotion: {request.name}"
+        )
         command = RequestMapper.create_request_to_command(request)
 
         result = await use_cases.create_promotion(command)
@@ -73,6 +77,7 @@ async def activate_promotion(
         ..., description="ID of the promotion to activate", example="promo-123"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    admin_user=Depends(get_logged_admin_user),
 ):
     """
     Activates a promotion by its ID.
@@ -80,7 +85,9 @@ async def activate_promotion(
     - **promotion_id**: The ID of the promotion to activate.
     """
     try:
-        logger.info(f"Received request to activate promotion ID: {promotion_id}")
+        logger.info(
+            f"Admin {admin_user.get_id()} is attempting to activate promotion ID: {promotion_id}"
+        )
 
         result = await use_cases.activate_promotion(PromotionId(promotion_id))
         if not result.is_success:
@@ -109,6 +116,7 @@ async def deactivate_promotion(
         ..., description="ID of the promotion to deactivate", example="promo-123"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    admin_user=Depends(get_logged_admin_user),
 ):
     """
     Deactivates a promotion by its ID.
@@ -116,7 +124,9 @@ async def deactivate_promotion(
     - **promotion_id**: The ID of the promotion to deactivate.
     """
     try:
-        logger.info(f"Received request to deactivate promotion ID: {promotion_id}")
+        logger.info(
+            f"Admin {admin_user.get_id()} is attempting to deactivate promotion ID: {promotion_id}"
+        )
 
         result = await use_cases.deactivate_promotion(
             PromotionId.from_string(promotion_id)
@@ -151,6 +161,7 @@ async def extend_promotion(
         ..., description="ID of the promotion to extend", example="promo-123"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    admin_user=Depends(get_logged_admin_user),
 ):
     """
     Extends a promotion's end date.
@@ -158,7 +169,9 @@ async def extend_promotion(
     - **command**: The data required to extend the promotion.
     """
     try:
-        logger.info(f"Received request to extend promotion ID: {promotion_id}")
+        logger.info(
+            f"Admin {admin_user.get_id()} is attempting to extend promotion ID: {promotion_id}"
+        )
         command = RequestMapper.extend_request_to_command(request)
 
         result = await use_cases.extend_promotion(command)
@@ -226,6 +239,7 @@ async def delete_promotion(
         ..., description="ID of the promotion to delete", example="promo-123"
     ),
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    admin_user=Depends(get_logged_admin_user),
 ):
     """
     Deletes a promotion by its ID.
@@ -233,7 +247,9 @@ async def delete_promotion(
     - **promotion_id**: The ID of the promotion to delete.
     """
     try:
-        logger.info(f"Received request to delete promotion ID: {promotion_id}")
+        logger.info(
+            f"Admin {admin_user.get_id()} is attempting to delete promotion ID: {promotion_id}"
+        )
         result = await use_cases.delete_promotion(PromotionId(promotion_id))
         if not result.is_success:
             logger.error(f"Failed to delete promotion {promotion_id}: {result.message}")
@@ -257,10 +273,13 @@ async def clear_promotions(
     promotion_id: UUID = Path(
         ..., description="ID of the promotion to clear", example="promo-123"
     ),
+    admin_user=Depends(get_logged_admin_user),
 ):
     """Clears all promotions from the system."""
     try:
-        logger.info("Received request to clear all promotions.")
+        logger.info(
+            f"Admin {admin_user.get_id()} is attempting to clear all promotions."
+        )
         result = await use_cases.clear_promotions(PromotionId(promotion_id))
         if not result.is_success:
             logger.error(f"Failed to clear promotions: {result.message}")

@@ -1,5 +1,4 @@
-from sqlalchemy.orm import Session
-from config.postgres_config import get_db
+from config.db.postgres_config import get_db
 from fastapi import Depends
 from app.products.domain.repositories import (
     ProductCategoryRepository,

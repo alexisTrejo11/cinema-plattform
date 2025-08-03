@@ -3,7 +3,7 @@ import pytest
 import pytest_asyncio
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from config.postgres_config import Base
+from config.db.postgres_config import Base
 from app.combos.infrastructure.persistence.models import ComboModel, ComboItemModel
 from app.products.infrastructure.persistence.db.sql.models import (
     ProductModel,

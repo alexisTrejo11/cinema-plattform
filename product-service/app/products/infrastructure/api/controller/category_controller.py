@@ -1,7 +1,8 @@
+import logging
 from fastapi import APIRouter, Depends, status, Path
 from typing import List
-import logging
 from app.shared.response import ApiResponse
+from app.user.auth.auth_dependencies import get_logged_admin_user
 from app.products.application.usecases.container import (
     ProductCategoryUseCases,
     CategoryCreateCommand,
@@ -38,6 +39,7 @@ router = APIRouter(
 async def create_category(
     category_data: CategoryRequest,
     useCases: ProductCategoryUseCases = Depends(get_category_use_cases),
+    admin_user=Depends(get_logged_admin_user),
 ):
     """
     Create a new product category with the following details:
@@ -46,7 +48,9 @@ async def create_category(
     - **is_active**: Active status (default: True)
     """
     try:
-        logger.info(f"Creating category with data: {category_data.model_dump()}")
+        logger.info(
+            f"Admin {admin_user.get_id()} attempting to create category with data: {category_data.model_dump()}"
+        )
 
         command = CategoryCreateCommand(**category_data.model_dump())
         category = await useCases.create_category(command)
@@ -118,6 +122,7 @@ async def list_categories(
 )
 async def update_category(
     update_data: CategoryRequest,
+    admin_user=Depends(get_logged_admin_user),
     category_id: int = Path(..., description="ID of the category to update", example=1),
     useCase: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
@@ -129,7 +134,7 @@ async def update_category(
     """
     try:
         logger.info(
-            f"Updating category {category_id} with data: {update_data.model_dump()}"
+            f"Admin {admin_user.get_id()} updating is attempting to update category {category_id} with data: {update_data.model_dump()}"
         )
         command = CategoryUpdateCommand(id=category_id, **update_data.model_dump())
         category = await useCase.update_category(category_id, command)
@@ -150,6 +155,7 @@ async def update_category(
 )
 async def delete_category(
     category_id: int = Path(..., description="ID of the category to delete", example=1),
+    admin_user=Depends(get_logged_admin_user),
     useCase: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
     """
@@ -158,7 +164,9 @@ async def delete_category(
     - **category_id**: The ID of the category to delete
     """
     try:
-        logger.info(f"Soft deleting category with ID: {category_id}")
+        logger.info(
+            f"Admin {admin_user.get_id()} soft deleting category with ID: {category_id}"
+        )
         await useCase.soft_delete_category(category_id)
 
         logger.info(f"Category {category_id} successfully deleted")

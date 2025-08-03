@@ -13,7 +13,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
-from config.postgres_config import Base
+from config.db.postgres_config import Base
 
 if TYPE_CHECKING:
     from app.products.infrastructure.persistence.models.product_models import (

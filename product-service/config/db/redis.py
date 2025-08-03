@@ -3,7 +3,7 @@ import logging
 from redis.asyncio.client import Redis
 
 logger = logging.getLogger("app")
-from config.app_config import settings
+from config.app.app_config import settings
 from redis import asyncio as aioredis
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend

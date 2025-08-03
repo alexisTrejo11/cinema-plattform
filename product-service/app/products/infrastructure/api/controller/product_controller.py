@@ -4,6 +4,7 @@ from typing import List
 import logging
 
 from app.shared.response import ApiResponse
+from app.user.auth.auth_dependencies import get_logged_admin_user
 from app.products.domain.entities.value_objects import ProductId
 from app.products.application.commands import ProductUpdateCommand, ProductCreateCommand
 from app.products.application.queries import GetProductByIdQuery, SearchProductsQuery
@@ -107,6 +108,7 @@ async def search_products(
 )
 async def create_product(
     product_data: CreateProductRequest,
+    admin_user=Depends(get_logged_admin_user),
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
     """
@@ -120,7 +122,9 @@ async def create_product(
     - **calories**: Optional calorie count
     """
     try:
-        logger.info(f"Creating product with data: {product_data.model_dump()}")
+        logger.info(
+            f"Admin {admin_user.get_id()} is attempting to create product: {product_data.model_dump()}"
+        )
 
         command = ProductCreateCommand(**product_data.model_dump())
         product = await usecase.create_product(command)
@@ -143,6 +147,7 @@ async def update_product(
     update_data: UpdateProductRequest,
     product_id: UUID = Path(..., description="ID of the product to update", example=1),
     usecase: ProductUseCases = Depends(get_product_use_cases),
+    admin_user=Depends(get_logged_admin_user),
 ):
     """
     Update an existing food product with new details.
@@ -152,7 +157,7 @@ async def update_product(
     """
     try:
         logger.info(
-            f"Updating product {product_id} with data: {update_data.model_dump()}"
+            f"Admin {admin_user.get_id()} is attempting to update product {product_id} with data: {update_data.model_dump()}"
         )
 
         command = ProductUpdateCommand(
@@ -179,6 +184,7 @@ async def update_product(
 async def delete_product(
     product_id: UUID = Path(..., description="ID of the product to delete", example=1),
     usecase: ProductUseCases = Depends(get_product_use_cases),
+    admin_user=Depends(get_logged_admin_user),
 ):
     """
     Delete a food product by its ID.
@@ -186,6 +192,9 @@ async def delete_product(
     - **product_id**: The ID of the product to delete
     """
     try:
+        logger.info(
+            f"Admin {admin_user.get_id()} is attempting to delete product {product_id}"
+        )
         await usecase.soft_delete_product(ProductId(product_id))
         return ApiResponse.success(None, "Product successfully deleted")
     except Exception as e:

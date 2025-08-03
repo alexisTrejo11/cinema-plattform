@@ -5,9 +5,11 @@ import logging
 
 from app.shared.pagination import PaginationQuery
 from app.shared.response import ApiResponse
+from app.user.auth.auth_dependencies import get_staff_user
 from app.combos.application.response import ComboResponse
 from app.combos.application.usecase.container import ComboUseCases
 from app.combos.domain.entities.value_objects import ComboId
+from app.user.domain.user import User
 
 from .dto.request import ComboCreateRequest
 from .dto.mapper import RequestDataMapper
@@ -22,40 +24,6 @@ from .docs_examples import (
 logger = logging.getLogger("app")
 
 router = APIRouter(prefix="/api/v2/combos", tags=["Combos"])
-
-
-@router.post(
-    "/",
-    response_model=ApiResponse[UUID],
-    status_code=status.HTTP_201_CREATED,
-    summary="Create a new combo",
-    description="Creates a new combo meal with the provided details",
-    responses={**create_combo_examples},
-)
-async def create_combo(
-    request_data: ComboCreateRequest,
-    usecase: ComboUseCases = Depends(get_combos_uc),
-):
-    """
-    Create a new combo with the following details:
-    - **name**: Unique name for the combo (1-200 chars)
-    - **price**: Total price (must be positive)
-    - **items**: List of products in the combo (1-10 items)
-    - **discount_percentage**: Optional discount (0-100)
-    """
-    try:
-        logger.info(f"Creating combo with data: {request_data}")
-        command = RequestDataMapper.to_create_combo_command(request_data)
-
-        result = await usecase.create_combo(command)
-        logger.info(f"Combo created successfully: ID{result.combo_id}")
-
-        return ApiResponse.success(
-            data=result.combo_id, message="Combo created successfully"
-        )
-    except Exception as e:
-        logger.error(f"Error creating combo: {e}")
-        raise
 
 
 @router.get(
@@ -181,6 +149,43 @@ async def get_combos_by_product(
         raise
 
 
+@router.post(
+    "/",
+    response_model=ApiResponse[UUID],
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new combo",
+    description="Creates a new combo meal with the provided details",
+    responses={**create_combo_examples},
+)
+async def create_combo(
+    request_data: ComboCreateRequest,
+    usecase: ComboUseCases = Depends(get_combos_uc),
+    staff_user: User = Depends(get_staff_user),
+):
+    """
+    Create a new combo with the following details:
+    - **name**: Unique name for the combo (1-200 chars)
+    - **price**: Total price (must be positive)
+    - **items**: List of products in the combo (1-10 items)
+    - **discount_percentage**: Optional discount (0-100)
+    """
+    try:
+        logger.info(
+            f"User {staff_user.get_id()} is attempting to create combo: {request_data}"
+        )
+        command = RequestDataMapper.to_create_combo_command(request_data)
+
+        result = await usecase.create_combo(command)
+        logger.info(f"Combo created successfully: ID{result.combo_id}")
+
+        return ApiResponse.success(
+            data=result.combo_id, message="Combo created successfully"
+        )
+    except Exception as e:
+        logger.error(f"Error creating combo: {e}")
+        raise
+
+
 @router.delete(
     "/{combo_id}",
     status_code=status.HTTP_200_OK,
@@ -196,6 +201,7 @@ async def soft_delete_combo(
         example="c7cdc31d-6682-418a-b9ca-df13a3e85da5",
     ),
     usecase: ComboUseCases = Depends(get_combos_uc),
+    staff_user: User = Depends(get_staff_user),
 ):
     """
     Soft delete a combo by its ID.
@@ -203,7 +209,9 @@ async def soft_delete_combo(
     - **combo_id**: The ID of the combo to delete
     """
     try:
-        logger.info(f"Soft deleting combo with ID: {combo_id}")
+        logger.info(
+            f"User {staff_user.get_id()} is attempting to soft delete combo with ID: {combo_id}"
+        )
 
         await usecase.delete_combo(ComboId(combo_id))
         logger.info(f"Combo successfully soft deleted: ID{combo_id}")

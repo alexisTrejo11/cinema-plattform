@@ -1,11 +1,12 @@
-from typing import TypeVar, Optional, Callable, Any, cast
+from typing import TypeVar, Optional, Callable, Any, cast, TYPE_CHECKING
 from functools import wraps
-from dataclasses import is_dataclass
-import asyncio
 import inspect
-from app.shared.redis.redis_service import RedisService
 from .serializer import SerializerService
 import logging
+
+if TYPE_CHECKING:
+    from app.shared.redis.redis_service import RedisService
+
 
 logger = logging.getLogger("app")
 

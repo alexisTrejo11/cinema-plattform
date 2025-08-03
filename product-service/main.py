@@ -1,18 +1,18 @@
 from typing import Optional
 import logging
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 
-from config.redis import RedisManager, get_redis
-from config.model_init import *
-from config.logging import setup_logging
-from config import exception_handlers
-from config.registry_service import RegistryMicroservice
+from config import exception_handlers, init_rabbitmq, close_rabbitmq
+from config.db.redis import RedisManager, get_redis
+from config.db.model_init import *
+from config.app.logging import setup_logging
+from config.app.registry_service import RegistryMicroservice
 
 from app.combos.infrastructure.api import combo_controllers
 from app.products.infrastructure.api.controller import (
@@ -37,31 +37,24 @@ registry_client: Optional[RegistryMicroservice] = None
 async def lifespan(app: FastAPI):
     logger.info("Starting service...")
 
-    # Registry Microservice
-    registry_client = RegistryMicroservice()
-    registered, instance_id = await registry_client.perfom_registry()
+    # Move Task
+    await init_redis()
+    logger.info("Redis initialized.")
 
-    await RedisManager.initialize()
-    client = await get_redis()
-    await RedisService.initialize(client)
+    rabbit_task = await init_rabbitmq()
+    logger.info("RabbitMQ initialized.")
 
-    if registered:
-        logger.info(
-            f"Wallet Service successfully registered with instance ID: {instance_id}"
-        )
-        await registry_client.start_heartbeat_loop()
-    else:
-        logger.error("Failed to register Wallet Service. Heartbeats will not be sent.")
-
+    await registry_microservice()
     yield
 
     # Shutdown process
-    logger.info("Shutting down Wallet Service...")
+    logger.info("Shutting down service...")
     if registry_client:
         registry_client.stop_heartbeat_loop()
         logger.info("Heartbeat loop stopped.")
 
     await RedisManager.close()
+    await close_rabbitmq(rabbit_task)
 
 
 app = FastAPI(
@@ -101,6 +94,29 @@ app.add_middleware(
 @app.get("/health", summary="Health Check")
 def perform_health():
     return {"status": "ok", "message": "Product Service API is running"}
+
+
+async def registry_microservice():
+    registry_client = RegistryMicroservice()
+    registered, instance_id = await registry_client.perform_registry()
+
+    if registered:
+        logger.info(
+            f"Wallet Service successfully registered with instance ID: {instance_id}"
+        )
+        await registry_client.start_heartbeat_loop()
+    else:
+        logger.error("Failed to register Wallet Service. Heartbeats will not be sent.")
+
+
+def stop_heartbeat_loop(registry_client: RegistryMicroservice):
+    registry_client.stop_heartbeat_loop()
+
+
+async def init_redis():
+    await RedisManager.initialize()
+    client = await get_redis()
+    await RedisService.initialize(client)
 
 
 app.include_router(category_controller.router)
