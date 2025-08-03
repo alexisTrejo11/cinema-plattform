@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
-
+from typing import List, Optional
+from app.shared.pagination import PaginationQuery, Page
 from app.products.domain.entities.value_objects import ProductId
-from ..promotion import Promotion, PromotionId
 from app.promotions.application.queries.promotion_query import (
     GetPromotionByProductIdQuery,
 )
-from app.shared.pagination import PaginationMetadata, PaginationQuery, Page
+from ...domain.entities.promotion import Promotion, PromotionId
 
 
 class PromotionRepository(ABC):
@@ -14,7 +13,9 @@ class PromotionRepository(ABC):
 
     @abstractmethod
     async def get_by_id(
-        self, promotion_id: PromotionId, is_active: Optional[bool] = True
+        self,
+        promotion_id: PromotionId,
+        is_active: Optional[bool] = True,
     ) -> Optional[Promotion]:
         """Gets a promotion by its ID"""
         pass
@@ -42,6 +43,16 @@ class PromotionRepository(ABC):
         pass
 
     @abstractmethod
+    async def delete(self, promotion_id: PromotionId) -> bool:
+        """Deletes a promotion"""
+        pass
+
+    @abstractmethod
+    async def apply_promotion_use(self, promotion_id: PromotionId) -> bool:
+        """Records a use of the promotion (increments counter)"""
+        pass
+
+    @abstractmethod
     async def update_products(
         self, promotion_id: PromotionId, product_ids: List[ProductId]
     ) -> None:
@@ -53,14 +64,4 @@ class PromotionRepository(ABC):
         self, promotion_id: PromotionId, category_ids: List[int]
     ) -> None:
         """Updates the categories associated with a promotion"""
-        pass
-
-    @abstractmethod
-    async def delete(self, promotion_id: PromotionId) -> bool:
-        """Deletes a promotion"""
-        pass
-
-    @abstractmethod
-    async def apply_promotion_use(self, promotion_id: PromotionId) -> bool:
-        """Records a use of the promotion (increments counter)"""
         pass

@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 from typing import Dict, TYPE_CHECKING
 from uuid import UUID
 from sqlalchemy import (
@@ -8,7 +7,6 @@ from sqlalchemy import (
     DateTime,
     Boolean,
     ForeignKey,
-    DECIMAL,
     Integer,
     Text,
     func,
@@ -16,7 +14,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from config.postgres_config import Base
-from app.promotions.domain.promotion_rule_factory import PromotionRule
 
 if TYPE_CHECKING:
     from app.products.infrastructure.persistence.models.product_models import (

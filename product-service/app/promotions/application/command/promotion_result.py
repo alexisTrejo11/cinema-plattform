@@ -1,6 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
-from app.promotions.domain.valueobjects import PromotionId
+from app.promotions.domain.entities.valueobjects import PromotionId
 from app.shared.response import ErrorResponse
 
 

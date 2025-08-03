@@ -6,7 +6,7 @@ from app.promotions.infrastructure.api.controller.dto.request import (
     PromotionCreateRequest,
     ExtendPromotionRequest,
 )
-from app.promotions.domain.valueobjects import ProductId, PromotionId
+from app.promotions.domain.entities.valueobjects import ProductId
 from app.shared.schema import PydanticUUID
 
 
@@ -20,7 +20,7 @@ class RequestMapper:
             description=request.description,
             start_date=request.start_date,
             promotion_type=request.promotion_type,
-            rule=request.rule,
+            rule=request.rule.model_dump(),
             is_active=request.is_active,
             max_uses=request.max_uses,
             end_date=request.end_date,

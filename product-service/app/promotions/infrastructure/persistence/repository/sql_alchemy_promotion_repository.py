@@ -5,13 +5,14 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select, delete, and_, update
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import selectinload
 
-from app.promotions.domain import promotion
+
 from app.shared.base_exceptions import DatabaseException
 from app.shared.pagination import PaginationMetadata, PaginationQuery, Page
 
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
-from app.promotions.domain.promotion import Promotion, PromotionId, ProductId
+from app.promotions.domain.entities.promotion import Promotion, PromotionId, ProductId
 from app.promotions.application.queries.promotion_query import (
     GetPromotionByProductIdQuery,
 )
@@ -33,7 +34,9 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
         self.session = session
 
     async def get_by_id(
-        self, promotion_id: PromotionId, is_active: Optional[bool] = True
+        self,
+        promotion_id: PromotionId,
+        is_active: Optional[bool] = True,
     ) -> Optional[Promotion]:
         try:
             stmt = select(PromotionModel).where(
@@ -43,6 +46,9 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
                 )
             )
             result = await self.session.execute(stmt)
+
+            stmt = stmt.options(selectinload(PromotionModel.products))
+            stmt = stmt.options(selectinload(PromotionModel.categories))
 
             model = result.unique().scalar_one_or_none()
             return PromotionModelMapper.to_domain(model) if model else None

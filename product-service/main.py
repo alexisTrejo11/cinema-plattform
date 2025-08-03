@@ -22,6 +22,7 @@ from app.products.infrastructure.api.controller import (
 from app.promotions.infrastructure.api.controller import (
     promotion_command_controller,
     promotion_query_controllers,
+    promotion_items_controller,
 )
 from app.shared.redis.redis_service import RedisService
 
@@ -107,3 +108,4 @@ app.include_router(product_controller.router)
 app.include_router(combo_controllers.router)
 app.include_router(promotion_command_controller.router)
 app.include_router(promotion_query_controllers.router)
+app.include_router(promotion_items_controller.router)

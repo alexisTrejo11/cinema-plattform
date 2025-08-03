@@ -1,14 +1,9 @@
-from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
-from app.promotions.domain.promotion import (
-    PromotionType,
-)
-from app.promotions.domain.promotion_rule_factory import PromotionRule
-from app.products.domain.entities.value_objects import ProductId
+from app.promotions.domain.entities.valueobjects import PromotionType
 
 
 class PromotionCreateRequest(BaseModel):
@@ -29,15 +24,17 @@ class PromotionCreateRequest(BaseModel):
     )
 
     applicable_product_ids: Optional[List[UUID]] = Field(
-        default_factory=list,
+        None,
         description="List of product IDs to which the promotion applies",
     )
 
     applicable_category_id: Optional[int] = Field(
-        ...,
+        None,
         description="ID of the category to which the promotion initially applies",
     )
-    rule: dict = Field(..., description="Additional rules for applying the promotion")
+    rule: "PromotionRuleRequest" = Field(
+        ..., description="Additional rules for applying the promotion"
+    )
 
     start_date: datetime = Field(
         ..., description="Start date of the promotion's validity"
@@ -58,6 +55,42 @@ class PromotionCreateRequest(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+    class PromotionRuleRequest(BaseModel):
+        """
+        Pydantic model for the promotion rule.
+        Used as part of the PromotionCreateRequest.
+        """
+
+        min_quantity: Optional[int] = Field(
+            None,
+            ge=1,
+            le=20,
+            description="Minimum quantity of items required for the promotion",
+        )
+
+        max_quantity: Optional[int] = Field(
+            None,
+            ge=1,
+            le=100,
+            description="Maximum quantity of items allowed for the promotion",
+        )
+        min_percentage_discount: Optional[Decimal] = Field(
+            None,
+            ge=0,
+            le=100,
+            description="Minimum percentage discount allowed for the promotion",
+        )
+        max_percentage_discount: Optional[Decimal] = Field(
+            None,
+            ge=0,
+            le=100,
+            description="Maximum percentage discount allowed for the promotion",
+        )
+
+        model_config = ConfigDict(
+            arbitrary_types_allowed=True,
+        )
 
 
 class ExtendPromotionRequest(BaseModel):

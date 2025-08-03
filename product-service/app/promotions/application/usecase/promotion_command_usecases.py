@@ -1,6 +1,13 @@
+from typing import Any, Dict
+from app.shared.base_exceptions import DomainException
+from app.products.domain.repositories import (
+    ProductRepository,
+    ProductCategoryRepository as CategoryRepository,
+)
+from app.promotions.domain.factory.promotion_rule_factory import PromotionRuleFactory
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
-from app.promotions.domain.promotion import PromotionId
-from app.promotions.domain.valueobjects import PromotionType
+from app.promotions.domain.entities.promotion import PromotionId
+from app.promotions.domain.entities.valueobjects import PromotionType
 from ..command.promotion_result import PromotionCommandResult as CommandResult
 from ..command.promotion_command import PromotionCreateCommand, ExtendPromotionCommand
 from ..command.add_item_promotion_command import (
@@ -9,16 +16,6 @@ from ..command.add_item_promotion_command import (
     RemoveCategoryPromotionCommand,
     RemoveProductsPromotionCommand,
 )
-from app.products.domain.repositories import (
-    ProductRepository,
-    ProductCategoryRepository as CategoryRepository,
-)
-from app.shared.base_exceptions import DomainException
-from app.products.domain.entities.product import Product
-from app.promotions.domain.promotion_rule_factory import (
-    PromotionRule,
-    PromotionRuleFactory,
-)
 
 
 class CreatePromotionUseCase:
@@ -26,27 +23,32 @@ class CreatePromotionUseCase:
         self,
         promotion_repository: PromotionRepository,
         product_repository: ProductRepository,
+        category_repository: CategoryRepository,
     ):
         self.promotion_repository = promotion_repository
         self.product_repository = product_repository
+        self.category_repository = category_repository
 
     async def execute(self, command: PromotionCreateCommand) -> CommandResult:
         try:
-            promotion = command.map_to_domain_and_validate_data()
+            promotion = command.map_to_domain()
+            promotion.validate_creation_fields()
 
-            promotion_rule = self.create_rule(command.rule, promotion.promotion_type)
-            promotion.rule = promotion_rule
+            promotion.rule = self.create_rule(command.rule, promotion.promotion_type)
 
             if command.applicable_product_ids:
                 promotion.applicable_product_ids = await self.get_products(
                     command.applicable_product_ids
                 )
 
+            if command.applicable_category_id:
+                self.get_category(command.applicable_category_id)
+
             await self.promotion_repository.create(promotion)
 
             return CommandResult.success(
-                promotion_id=promotion.id,
-                message="Promotion created successfully",
+                promotion.id,
+                "Promotion created successfully",
             )
         except DomainException as e:
             return CommandResult.error(message=f"Error creating promotion: {str(e)}")
@@ -59,8 +61,17 @@ class CreatePromotionUseCase:
 
         return products
 
-    def create_rule(self, rule: dict, promotion_type: PromotionType) -> PromotionRule:
-        return PromotionRuleFactory.create_promotion_rule(promotion_type, rule)
+    def create_rule(self, rule: Dict[str, Any], promotion_type: PromotionType) -> Any:
+        promotion_rule = PromotionRuleFactory.create_promotion_rule(
+            promotion_type, rule
+        )
+        return promotion_rule.to_dict()
+
+    def get_category(self, category_id: int) -> Any:
+        category = self.category_repository.get_by_id(category_id)
+        if not category:
+            raise DomainException(f"Category with ID {category_id} not found")
+        return category
 
 
 class ExtendPromotionUseCase:
@@ -118,19 +129,24 @@ class DeactivatePromotionUseCase:
         self.promotion_repository = promotion_repository
 
     async def execute(self, promotion_id: PromotionId) -> CommandResult:
-        promotion = await self.promotion_repository.get_by_id(promotion_id)
-        if not promotion:
-            return CommandResult.error(
-                promotion_id=promotion_id, message="Promotion not found"
+        try:
+            promotion = await self.promotion_repository.get_by_id(promotion_id)
+            if not promotion:
+                return CommandResult.error(
+                    promotion_id=promotion_id, message="Promotion not found"
+                )
+
+            promotion.deactivate()
+            await self.promotion_repository.update(promotion)
+
+            return CommandResult.success(
+                promotion_id=promotion.id,
+                message="Promotion deactivated successfully",
             )
-
-        promotion.deactivate()
-        await self.promotion_repository.update(promotion)
-
-        return CommandResult.success(
-            promotion_id=promotion.id,
-            message="Promotion deactivated successfully",
-        )
+        except DomainException as e:
+            return CommandResult.error(
+                message=f"Error deactivating promotion: {str(e)}"
+            )
 
 
 class DeletePromotionUseCase:
@@ -208,6 +224,10 @@ class RemoveProductsPromotionUseCase:
         promotion.remove_applicable_products(command.product_ids)
         await self.promotion_repository.update_products(
             promotion.id, command.product_ids
+        )
+
+        await self.promotion_repository.update_products(
+            promotion.id, promotion.applicable_product_ids
         )
 
         return CommandResult.success(
@@ -321,7 +341,9 @@ class AddCategoryPromotionUseCase:
             )
 
         promotion.add_applicable_category(command.category_id)
-        await self.promotion_repository.update(promotion)
+        await self.promotion_repository.update_categories(
+            promotion.id, promotion.applicable_categories_ids
+        )
 
         return CommandResult.success(
             promotion_id=promotion.id,

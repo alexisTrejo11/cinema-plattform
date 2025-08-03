@@ -1,20 +1,24 @@
-from decimal import Decimal
-import json
-from app.promotions.domain.promotion import (
-    Promotion,
-    PromotionId,
-    ProductId,
-    PromotionType,
-)
-from app.promotions.domain.promotion import Promotion
-from app.promotions.domain.promotion_rule_factory import PromotionRule
+from typing import Optional
+from app.products.domain.entities.value_objects import ProductId
+from app.promotions.domain.entities.valueobjects import PromotionId, PromotionType
+from app.promotions.domain.entities.promotion import Promotion
 from .promotion_model import PromotionModel
+from sqlalchemy import inspect
 
 
 class PromotionModelMapper:
     @classmethod
     def to_domain(cls, data: PromotionModel) -> Promotion:
         """Converts the model to a domain entity"""
+        state = inspect(data)
+        if "products" in state.unloaded or "categories" in state.unloaded:
+            applicable_product_ids = []
+            applicable_categories_ids = []
+        else:
+            applicable_product_ids = [
+                ProductId(product.id) for product in data.products
+            ]
+            applicable_categories_ids = [category.id for category in data.categories]
 
         return Promotion(
             id=PromotionId(data.id),
@@ -29,6 +33,8 @@ class PromotionModelMapper:
             current_uses=data.current_uses,
             created_at=data.created_at,
             updated_at=data.updated_at,
+            applicable_categories_ids=applicable_categories_ids,
+            applicable_product_ids=applicable_product_ids,
         )
 
     @classmethod
@@ -39,7 +45,7 @@ class PromotionModelMapper:
             name=promotion.name,
             description=promotion.description,
             promotion_type=str(promotion.promotion_type.value),
-            rule=promotion.rule.to_dict(),
+            rule=promotion.rule,
             start_date=promotion.start_date,
             end_date=promotion.end_date,
             is_active=promotion.is_active,

@@ -20,8 +20,8 @@ router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions Items"])
 
 
 @router.post(
-    "/products/",
-    response_model=ApiResponse[PromotionId],
+    "/products/add",
+    response_model=ApiResponse[UUID],
     summary="Create a new promotion",
     description="Create a new promotion for a product.",
 )
@@ -29,13 +29,13 @@ async def add_products_to_promotion(
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
     productId: list[UUID] = Body(..., description="ID of the product to add"),
     promotionId: UUID = Body(..., description="ID of the promotion to add products to"),
-) -> ApiResponse[PromotionId]:
+) -> ApiResponse[UUID]:
     command = AddProductsPromotionCommand(
         product_ids=[ProductId(pid) for pid in productId],
         promotion_id=PromotionId(promotionId),
     )
 
-    result: PromotionCommandResult = await use_cases.add_products_to_promotion(command)
+    result = await use_cases.add_products_to_promotion(command)
     if not result.is_success:
         logger.error(f"Failed to add products to promotion: {result.error}")
         raise HTTPException(
@@ -49,8 +49,8 @@ async def add_products_to_promotion(
 
 
 @router.post(
-    "/categories/",
-    response_model=ApiResponse[PromotionId],
+    "/categories/add",
+    response_model=ApiResponse[UUID],
     summary="Create a new promotion",
     description="Create a new promotion for a product.",
 )
@@ -58,7 +58,7 @@ async def add_category_to_promotion(
     use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
     category_id: int = Body(..., description="ID of the category to add"),
     promotionId: UUID = Body(..., description="ID of the promotion to add products to"),
-) -> ApiResponse[PromotionId]:
+) -> ApiResponse[UUID]:
     command = AddCategoryPromotionCommand(
         category_id=category_id,
         promotion_id=PromotionId(promotionId),
@@ -78,8 +78,8 @@ async def add_category_to_promotion(
 
 
 @router.delete(
-    "/categories/",
-    response_model=ApiResponse[PromotionId],
+    "/categories/remove",
+    response_model=ApiResponse[UUID],
     summary="Create a new promotion",
     description="Create a new promotion for a product.",
 )
@@ -89,7 +89,7 @@ async def remove_category_from_promotion(
     promotionId: UUID = Body(
         ..., description="ID of the promotion to remove products from"
     ),
-) -> ApiResponse[PromotionId]:
+) -> ApiResponse[UUID]:
     command = RemoveCategoryPromotionCommand(
         category_id=category_id,
         promotion_id=PromotionId(promotionId),
@@ -112,8 +112,8 @@ async def remove_category_from_promotion(
 
 
 @router.delete(
-    "/categories/",
-    response_model=ApiResponse[PromotionId],
+    "/products/remove",
+    response_model=ApiResponse[UUID],
     summary="Remove products from a promotion",
     description="Remove products from a promotion.",
 )
@@ -123,7 +123,7 @@ async def remove_products_from_promotion(
     promotionId: UUID = Body(
         ..., description="ID of the promotion to remove products from"
     ),
-) -> ApiResponse[PromotionId]:
+) -> ApiResponse[UUID]:
     command = RemoveProductsPromotionCommand(
         product_ids=[ProductId(pid) for pid in product_ids],
         promotion_id=PromotionId(promotionId),

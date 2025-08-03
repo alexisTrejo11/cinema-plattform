@@ -63,7 +63,9 @@ class PromotionsUseCases:
         )
 
         # Basic command operations
-        self.create = CreatePromotionUseCase(promotion_repository, product_repository)
+        self.create = CreatePromotionUseCase(
+            promotion_repository, product_repository, category_repository
+        )
         self.activate = ActivatePromotionUseCase(promotion_repository)
         self.deactivate = DeactivatePromotionUseCase(promotion_repository)
         self.extend = ExtendPromotionUseCase(promotion_repository)

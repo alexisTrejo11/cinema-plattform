@@ -3,7 +3,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.types import PositiveInt, NonNegativeInt
 from datetime import datetime
 from typing import List, Optional
-from app.promotions.domain.promotion import PromotionType, Promotion
+from app.promotions.domain.entities.promotion import PromotionType, Promotion
 from app.products.domain.entities.product import Product
 from app.shared.pagination import PaginationMetadata
 
@@ -39,14 +39,15 @@ class PromotionResponse(BaseModel):
     updated_at: datetime = Field(
         ..., description="Timestamp when the promotion was last updated"
     )
-    # products: Optional[List[Product]] = Field(
-    #    None, description="List of products applicable to this promotion"
-    # )
+    applicable_product_ids: Optional[List[UUID]] = Field(
+        None, description="List of products applicable to this promotion"
+    )
+    applicable_category_ids: Optional[List[str]] = Field(
+        None, description="List of categories applicable to this promotion"
+    )
 
     @classmethod
-    def from_domain(
-        cls, promotion: Promotion, products: Optional[List[Product]] = None
-    ):
+    def from_domain(cls, promotion: Promotion):
         """
         Convert a domain Promotion entity to a PromotionResponse model.
         Optionally include products if provided.
@@ -64,6 +65,10 @@ class PromotionResponse(BaseModel):
             current_uses=promotion.current_uses,
             created_at=promotion.created_at,
             updated_at=promotion.updated_at,
+            applicable_product_ids=[p.value for p in promotion.applicable_product_ids],
+            applicable_category_ids=[
+                str(c) for c in promotion.applicable_categories_ids
+            ],
         )
         return response
 

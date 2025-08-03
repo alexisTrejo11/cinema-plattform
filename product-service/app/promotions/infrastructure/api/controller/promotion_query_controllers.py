@@ -1,18 +1,21 @@
 from uuid import UUID
+import logging
 from typing import List
 from fastapi import APIRouter, Depends, Path, Query
 from http import HTTPStatus
-import logging
+
+from app.shared.pagination import PaginationQuery
+from app.shared.response import ApiResponse
+
 from app.promotions.application.queries.promotion_response import PromotionResponse
 from app.promotions.application.usecase.promotions_usecases import PromotionsUseCases
 from app.promotions.application.queries.promotion_query import (
     GetPromotionByIdQuery,
     GetPromotionByProductIdQuery,
 )
-from app.promotions.domain.valueobjects import PromotionId
+from app.promotions.domain.entities.promotion import PromotionId
 from app.products.domain.entities.value_objects import ProductId
-from app.shared.pagination import PaginationQuery
-from app.shared.response import ApiResponse
+
 from ..dependecies import get_promotion_use_cases
 from ..docs.examples import get_promotion_by_id_examples, list_promotions_examples
 

@@ -1,11 +1,7 @@
 from datetime import datetime
-from decimal import Decimal
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional
 from .valueobjects import PromotionId, PromotionType, ProductId
-from app.shared.base_exceptions import DomainException
-
-if TYPE_CHECKING:
-    from .promotion_rule_factory import PromotionRule
+from ..exceptions.promotion_exceptions import *
 
 
 class Promotion:
@@ -15,7 +11,7 @@ class Promotion:
         self,
         name: str,
         promotion_type: PromotionType,
-        rule: "PromotionRule",
+        rule: dict,
         start_date: datetime,
         end_date: datetime,
         applicable_product_ids: Optional[List[ProductId]] = [],
@@ -60,113 +56,181 @@ class Promotion:
         self.updated_at = updated_at if updated_at else datetime.now()
 
     def validate_creation_fields(self):
+        promotion_id_str = str(self.id)
+
         # Name validation
         if not self.name:
-            raise DomainException("The promotion name cannot be empty")
-
-        # Promotion type validation
-        if not isinstance(self.promotion_type, PromotionType):
-            raise DomainException("Invalid promotion type")
-
-        # Applicable products validation
+            raise InvalidPromotionDataError(
+                "The promotion name cannot be empty",
+                field_name="name",
+                promotion_id=promotion_id_str,
+            )
         if not isinstance(self.name, str) or len(self.name) < 3:
-            raise DomainException("Invalid promotion name")
+            raise InvalidPromotionDataError(
+                "Invalid promotion name",
+                field_name="name",
+                promotion_id=promotion_id_str,
+            )
 
-        # Applicable products validation
-        if self.applicable_product_ids != []:
+        if not isinstance(self.promotion_type, PromotionType):
+            raise InvalidPromotionDataError(
+                "Invalid promotion type",
+                field_name="promotion_type",
+                promotion_id=promotion_id_str,
+            )
+
+        if self.applicable_product_ids:
             if not isinstance(self.applicable_product_ids, list) or not all(
                 isinstance(pid, ProductId) for pid in self.applicable_product_ids
             ):
-                raise DomainException("Invalid product IDs in the promotion")
+                raise InvalidPromotionDataError(
+                    "Invalid product IDs in the promotion",
+                    field_name="applicable_product_ids",
+                    promotion_id=promotion_id_str,
+                )
 
-        # Applicable categories validation
-        if self.applicable_categories_ids != []:
+        if self.applicable_categories_ids:
             if not isinstance(self.applicable_categories_ids, list) or not all(
                 isinstance(cid, int) for cid in self.applicable_categories_ids
             ):
-                raise DomainException("Invalid category IDs in the promotion")
+                raise InvalidPromotionDataError(
+                    "Invalid category IDs in the promotion",
+                    field_name="applicable_categories_ids",
+                    promotion_id=promotion_id_str,
+                )
 
-        # Date range validation
         if not isinstance(self.start_date, datetime) or not isinstance(
             self.end_date, datetime
         ):
-            raise DomainException("Start and end dates must be valid datetime objects")
+            raise PromotionDateError(
+                "Start and end dates must be valid datetime objects",
+                promotion_id=promotion_id_str,
+            )
 
-        if isinstance(self.start_date, datetime) and isinstance(
-            self.end_date, datetime
-        ):
-            if self.start_date >= self.end_date:
-                raise DomainException("The start date must be before the end date")
+        if self.start_date >= self.end_date:
+            raise PromotionDateError(
+                "The start date must be before the end date",
+                promotion_id=promotion_id_str,
+                start_date=self.start_date,
+                end_date=self.end_date,
+            )
 
-        # Maximum uses validation
         if self.max_uses is not None and not isinstance(self.max_uses, int):
-            raise DomainException("Maximum uses must be an integer")
+            raise InvalidPromotionDataError(
+                "Maximum uses must be an integer",
+                field_name="max_uses",
+                promotion_id=promotion_id_str,
+            )
 
-        # Current uses validation
-        if self.current_uses is not None and not isinstance(self.current_uses, int):
-            raise DomainException("Current uses must be an integer")
+        if not isinstance(self.current_uses, int):
+            raise InvalidPromotionDataError(
+                "Current uses must be an integer",
+                field_name="current_uses",
+                promotion_id=promotion_id_str,
+            )
 
         if self.current_uses < 0:
-            raise DomainException("The current number of uses cannot be negative")
+            raise InvalidPromotionDataError(
+                "The current number of uses cannot be negative",
+                field_name="current_uses",
+                promotion_id=promotion_id_str,
+            )
 
-        if self.current_uses > (
-            self.max_uses if self.max_uses is not None else float("inf")
-        ):
-            raise DomainException(
-                "The current number of uses cannot exceed the maximum allowed"
+        if self.max_uses is not None and self.current_uses > self.max_uses:
+            raise InvalidPromotionDataError(
+                "The current number of uses cannot exceed the maximum allowed",
+                field_name="current_uses",
+                promotion_id=promotion_id_str,
+                details={"max_uses": self.max_uses, "current_uses": self.current_uses},
             )
 
     def activate(self):
         """Activates the promotion"""
         if self.is_active:
-            raise DomainException("The promotion is already active")
+            raise PromotionAlreadyActiveError(promotion_id=str(self.id))
         self.is_active = True
         self.updated_at = datetime.now()
 
     def deactivate(self):
         """Deactivates the promotion"""
         if not self.is_active:
-            raise DomainException("The promotion is already inactive")
+            raise PromotionAlreadyInactiveError(promotion_id=str(self.id))
         self.is_active = False
         self.updated_at = datetime.now()
 
     def extend_validity(self, new_end_date: datetime):
         """Extends the validity of the promotion"""
+        promotion_id_str = str(self.id)
         if new_end_date <= self.end_date:
-            raise DomainException("The new date must be after the current end date")
+            raise PromotionDateError(
+                "The new end date must be after the current end date",
+                promotion_id=promotion_id_str,
+                end_date=self.end_date,
+                details={"new_end_date": new_end_date.isoformat()},
+            )
         self.end_date = new_end_date
         self.updated_at = datetime.now()
 
     def add_applicable_products(self, product_ids: List[ProductId]):
         """Adds a list of products to the promotion"""
+        promotion_id_str = str(self.id)
         for product_id in product_ids:
             if product_id in self.applicable_product_ids:
-                raise DomainException(
-                    f"Product {product_id} is already in the promotion"
+                raise PromotionProductAlreadyIncludedError(
+                    f"Product {product_id} is already in the promotion",
+                    promotion_id=promotion_id_str,
+                    product_id=str(product_id),
                 )
             self.applicable_product_ids.append(product_id)
         self.updated_at = datetime.now()
 
     def add_applicable_product(self, product_id: ProductId):
         """Adds a product to the list of applicable products"""
+        promotion_id_str = str(self.id)
         if product_id in self.applicable_product_ids:
-            raise DomainException("The product is already in the promotion")
+            raise PromotionProductAlreadyIncludedError(
+                "The product is already in the promotion",
+                promotion_id=promotion_id_str,
+                product_id=str(product_id),
+            )
         self.applicable_product_ids.append(product_id)
         self.updated_at = datetime.now()
 
     def add_applicable_category(self, category_id: int):
         """Adds a category to the list of applicable categories"""
+        promotion_id_str = str(self.id)
         if category_id in self.applicable_categories_ids:
-            raise DomainException("The category is already in the promotion")
+            raise PromotionCategoryAlreadyIncludedError(
+                "The category is already in the promotion",
+                promotion_id=promotion_id_str,
+                category_id=category_id,
+            )
         self.applicable_categories_ids.append(category_id)
         self.updated_at = datetime.now()
 
     def apply(self, quantity: int):
         """Applies the promotion to a given quantity of products"""
+        promotion_id_str = str(self.id)
         if not self.is_active:
-            raise DomainException("Cannot apply an inactive promotion")
+            raise PromotionAlreadyInactiveError(
+                "Cannot apply an inactive promotion", promotion_id=promotion_id_str
+            )
+
+        # Check if promotion has expired
+        if datetime.now() > self.end_date:
+            raise PromotionExpiredError(
+                "Cannot apply promotion: promotion has expired",
+                promotion_id=promotion_id_str,
+                end_date=self.end_date,
+            )
+
         if self.max_uses is not None and self.current_uses + quantity > self.max_uses:
-            raise DomainException("Cannot apply promotion: maximum uses exceeded")
+            raise PromotionMaxUsesExceededError(
+                "Cannot apply promotion: maximum uses exceeded",
+                promotion_id=promotion_id_str,
+                max_uses=self.max_uses,
+                current_uses=self.current_uses,
+            )
         self.current_uses += quantity
         self.updated_at = datetime.now()
 
@@ -177,30 +241,42 @@ class Promotion:
 
     def validate_applicable_products(self, product_ids: List[ProductId]):
         """Validates that the provided product IDs are applicable to the promotion"""
+        promotion_id_str = str(self.id)
         if not self.applicable_product_ids:
-            raise DomainException("No applicable products defined for this promotion")
+            raise PromotionNotApplicableError(
+                "No specific applicable products defined for this promotion to validate against.",
+                promotion_id=promotion_id_str,
+            )
 
         for product_id in product_ids:
             if product_id not in self.applicable_product_ids:
-                raise DomainException(
-                    f"Product {product_id} is not applicable to this promotion"
+                raise PromotionNotApplicableError(
+                    f"Product {product_id} is not applicable to this promotion",
+                    promotion_id=promotion_id_str,
+                    product_id=str(product_id),
                 )
 
     def remove_applicable_products(self, product_ids: List[ProductId]):
         """Removes a list of products from the promotion"""
+        promotion_id_str = str(self.id)
         for product_id in product_ids:
             if product_id not in self.applicable_product_ids:
-                raise DomainException(
-                    f"Product {product_id} is not applicable to this promotion"
+                raise PromotionProductNotFoundError(
+                    f"Product {product_id} is not found in the promotion's applicable products",
+                    promotion_id=promotion_id_str,
+                    product_id=str(product_id),
                 )
             self.applicable_product_ids.remove(product_id)
         self.updated_at = datetime.now()
 
     def remove_applicable_category(self, category_id: int):
         """Removes a category from the list of applicable categories"""
+        promotion_id_str = str(self.id)
         if category_id not in self.applicable_categories_ids:
-            raise DomainException(
-                f"Category {category_id} is not applicable to this promotion"
+            raise PromotionCategoryNotFoundError(
+                f"Category {category_id} is not found in the promotion's applicable categories",
+                promotion_id=promotion_id_str,
+                category_id=category_id,
             )
         self.applicable_categories_ids.remove(category_id)
         self.updated_at = datetime.now()
@@ -220,7 +296,7 @@ class Promotion:
             "name": self.name,
             "type": self.promotion_type.value,
             "applicable_product_ids": [str(pid) for pid in self.applicable_product_ids],
-            "rule": self.rule.to_dict() if self.rule else None,
+            "rule": self.rule if self.rule else None,
             "start_date": self.start_date.isoformat(),
             "end_date": self.end_date.isoformat(),
             "description": self.description,
@@ -243,7 +319,7 @@ class Promotion:
             applicable_product_ids=[
                 ProductId.from_string(pid) for pid in data["applicable_product_ids"]
             ],
-            rule=PromotionRule.from_dict(**rule_data),
+            rule=rule_data,
             start_date=datetime.fromisoformat(data["start_date"]),
             end_date=datetime.fromisoformat(data["end_date"]),
             description=data.get("description"),

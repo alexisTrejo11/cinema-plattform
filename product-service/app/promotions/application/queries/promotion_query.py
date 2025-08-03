@@ -1,14 +1,14 @@
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-import uuid
-from app.promotions.domain.promotion import (
+from app.shared.pagination import PaginationQuery
+from app.promotions.domain.entities.promotion import (
     PromotionId,
     PromotionType,
     ProductId,
 )
-from app.shared.pagination import PaginationQuery
 
 
 @dataclass

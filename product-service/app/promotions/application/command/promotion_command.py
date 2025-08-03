@@ -1,13 +1,12 @@
 from datetime import datetime
 from typing import List, Optional
+from app.shared.schema import PydanticUUID
+from app.products.domain.entities.value_objects import ProductId
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
-from app.promotions.domain.promotion import (
+from app.promotions.domain.entities.promotion import (
     PromotionType,
     Promotion,
 )
-from app.products.domain.entities.value_objects import ProductId
-from app.promotions.domain.promotion_rule_factory import PromotionRule
-from app.shared.schema import PydanticUUID
 
 
 class PromotionCreateCommand(BaseModel):
@@ -50,7 +49,7 @@ class PromotionCreateCommand(BaseModel):
         arbitrary_types_allowed=True,
     )
 
-    def map_to_domain_and_validate_data(self) -> Promotion:
+    def map_to_domain(self) -> Promotion:
         """
         Converts the Pydantic model to a domain command object.
         """
@@ -67,8 +66,6 @@ class PromotionCreateCommand(BaseModel):
             is_active=self.is_active,
             max_uses=self.max_uses,
         )
-        promotion.validate_creation_fields()
-        promotion.rule["promotion_id"] = promotion.id
         return promotion
 
 

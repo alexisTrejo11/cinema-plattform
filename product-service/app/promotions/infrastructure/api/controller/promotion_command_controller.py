@@ -3,11 +3,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Body, HTTPException, Path
 from http import HTTPStatus
 
-from app.products.domain.entities.value_objects import ProductId
 from app.shared.response import ApiResponse
-from app.promotions.application.command.promotion_result import PromotionCommandResult
-from app.promotions.application.queries.promotion_query import PromotionId
+from app.products.domain.entities.value_objects import ProductId
 from app.promotions.application.usecase.promotions_usecases import PromotionsUseCases
+from app.promotions.domain.entities.promotion import PromotionId
 
 from ..dependecies import get_promotion_use_cases
 from ..docs.examples import (

@@ -6,10 +6,8 @@ import logging
 from app.shared.pagination import PaginationQuery
 from app.shared.response import ApiResponse
 from app.combos.application.response import ComboResponse
-from app.combos.application.queries import GetComboByIdQuery, GetCombosByProductIdQuery
 from app.combos.application.usecase.container import ComboUseCases
 from app.combos.domain.entities.value_objects import ComboId
-from app.products.domain.entities.value_objects import ProductId
 
 from .dto.request import ComboCreateRequest
 from .dto.mapper import RequestDataMapper

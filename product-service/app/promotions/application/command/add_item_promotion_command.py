@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from app.products.domain.entities.value_objects import ProductId
-from app.promotions.domain.valueobjects import PromotionId
+from app.promotions.domain.entities.valueobjects import PromotionId
 from typing import List
 
 
