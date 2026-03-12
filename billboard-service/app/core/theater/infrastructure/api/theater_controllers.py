@@ -17,6 +17,7 @@ from .depdencies import (
     delete_theater_use_case,
     get_theaters_by_cinema_use_case,
 )
+from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
 import logging
 
 logger = logging.getLogger("app")
@@ -90,9 +91,10 @@ async def create_theater(
     new_theater: Theater,
     request: Request,
     use_case: CreateTheaterUseCase = Depends(create_theater_use_case),
+    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
-        f"POST theater started | name:{new_theater.name} | client:{request.client.host if request.client else None}"
+        f"POST theater started | name:{new_theater.name} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         theater = await use_case.execute(new_theater)
@@ -111,9 +113,10 @@ async def update_theater(
     update_theater: Theater,
     request: Request,
     use_case: UpdateTheaterUseCase = Depends(update_theater_use_case),
+    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
-        f"PUT theater started | theater_id:{theater_id} | client:{request.client.host if request.client else None}"
+        f"PUT theater started | theater_id:{theater_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         theater = await use_case.execute(theater_id, update_theater)
@@ -131,9 +134,10 @@ async def delete_theater(
     theater_id: int,
     request: Request,
     use_case: DeleteTheaterUseCase = Depends(delete_theater_use_case),
+    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
-        f"DELETE theater started | theater_id:{theater_id} | client:{request.client.host if request.client else None}"
+        f"DELETE theater started | theater_id:{theater_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         await use_case.execute(theater_id)

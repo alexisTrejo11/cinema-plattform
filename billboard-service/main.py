@@ -20,6 +20,7 @@ from app.core.theater.infrastructure.api import (
     theather_seat_controllers,
 )
 from app.config.postgres_config import verify_db_connection, engine
+from app.config.jwt_auth_middleware import jwt_auth_middleware
 
 logging.setup_logging()
 logger = py_logging.getLogger("app")
@@ -48,6 +49,7 @@ fast_api_app = FastAPI(
 # Add the limiter to the FastAPI app state and include the SlowAPIMiddleware
 fast_api_app.state.limiter = limiter
 fast_api_app.add_middleware(SlowAPIMiddleware)
+fast_api_app.middleware("http")(jwt_auth_middleware)
 
 
 @fast_api_app.get("/")

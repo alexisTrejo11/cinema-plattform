@@ -15,6 +15,7 @@ from .dependencies import (
     update_movie_use_case,
     delete_movie_use_case,
 )
+from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
 import logging
 
 logger = logging.getLogger("app")
@@ -62,10 +63,13 @@ async def get_movies_in_exhibition(
 async def create_movies(
     movie: Movie,
     use_case: Annotated[CreateMovieUseCase, Depends(create_movie_use_case)],
+    current_user: Annotated[
+        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+    ],
     request: Request,
 ):
     logger.info(
-        f"POST movie started | client:{request.client.host if request.client else None} | title:{movie.title}"
+        f"POST movie started | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None} | title:{movie.title}"
     )
     try:
         created_movie = await use_case.execute(movie)
@@ -83,10 +87,13 @@ async def update_movie(
     movie_id: int,
     movie: Movie,
     use_case: Annotated[UpdateMovieUseCase, Depends(update_movie_use_case)],
+    current_user: Annotated[
+        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+    ],
     request: Request,
 ):
     logger.info(
-        f"PUT movie started | movie_id:{movie_id} | client:{request.client.host if request.client else None}"
+        f"PUT movie started | movie_id:{movie_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         updated_movie = await use_case.execute(movie_id, movie)
@@ -103,10 +110,13 @@ async def update_movie(
 async def delete_movie(
     movie_id: int,
     use_case: Annotated[DeleteMovieUseCase, Depends(delete_movie_use_case)],
+    current_user: Annotated[
+        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+    ],
     request: Request,
 ):
     logger.info(
-        f"DELETE movie started | movie_id:{movie_id} | client:{request.client.host if request.client else None}"
+        f"DELETE movie started | movie_id:{movie_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         await use_case.execute(movie_id)

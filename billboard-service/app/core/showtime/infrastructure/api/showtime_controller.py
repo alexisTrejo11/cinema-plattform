@@ -18,6 +18,7 @@ from .dependencies import (
     UpdateShowtimeUseCase,
     DeleteShowtimeUseCase,
 )
+from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
 import logging
 
 logger = logging.getLogger("app")
@@ -94,9 +95,10 @@ async def create_showtime(
     request: Request,
     showtime_data: ShowtimeCreate,
     use_case: ScheduleShowtimeUseCase = Depends(schedule_showtime_use_case),
+    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
-        f"POST showtime started | movie_id:{showtime_data.movie_id} | theater_id:{showtime_data.theater_id} | client:{request.client.host if request.client else None}"
+        f"POST showtime started | movie_id:{showtime_data.movie_id} | theater_id:{showtime_data.theater_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         showtime = await use_case.execute(showtime_data)
@@ -117,9 +119,10 @@ async def update_showtime(
     request: Request,
     update_data: ShowtimeUpdate,
     use_case: UpdateShowtimeUseCase = Depends(update_showtime_use_case),
+    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
-        f"PUT showtime started | showtime_id:{showtime_id} | client:{request.client.host if request.client else None}"
+        f"PUT showtime started | showtime_id:{showtime_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         showtime = await use_case.execute(showtime_id, update_data)
@@ -137,9 +140,10 @@ async def delete_showtime(
     request: Request,
     showtime_id: int,
     use_case: DeleteShowtimeUseCase = Depends(delete_showtime_use_case),
+    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
-        f"DELETE showtime started | showtime_id:{showtime_id} | client:{request.client.host if request.client else None}"
+        f"DELETE showtime started | showtime_id:{showtime_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         await use_case.execute(showtime_id)

@@ -1,5 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, status, Request
+from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
 from .depdencies import (
     get_seats_by_theater_use_case,
     get_theater_seat_by_id_use_case,
@@ -78,10 +79,11 @@ async def create_theater_seat(
     request: Request,
     seat_data: TheaterSeatCreate,
     use_case: CreateTheaterSeatUseCase = Depends(create_theater_seat_use_case),
+    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
 ) -> TheaterSeat:
 
     logger.info(
-        f"POST seat started | theater_id:{seat_data.theater_id} | client:{request.client.host if request.client else None}"
+        f"POST seat started | theater_id:{seat_data.theater_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         created_seat = await use_case.execute(seat_data)
@@ -104,9 +106,10 @@ async def update_theater_seat(
     request: Request,
     seat_data: TheaterSeatUpdate,
     use_case: UpdateTheaterSeatUseCase = Depends(update_theater_seat_use_case),
+    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
 ) -> TheaterSeat:
     logger.info(
-        f"PUT seat started | seat_id:{seat_id} | client:{request.client.host if request.client else None}"
+        f"PUT seat started | seat_id:{seat_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         updated_seat = await use_case.execute(seat_id, seat_data)
@@ -126,9 +129,10 @@ async def delete_theater_seat(
     request: Request,
     seat_id: int,
     use_case: DeleteTheaterSeatUseCase = Depends(delete_theater_seat_use_case),
+    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
 ) -> None:
     logger.info(
-        f"DELETE seat started | seat_id:{seat_id} | client:{request.client.host if request.client else None}"
+        f"DELETE seat started | seat_id:{seat_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         await use_case.execute(seat_id)

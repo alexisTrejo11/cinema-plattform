@@ -50,3 +50,7 @@
 {"timestamp": "2026-03-12T11:31:03.064299", "level": "INFO", "logger": "app", "message": "Database connection check passed.", "module": "main", "function": "lifespan", "line": 34}
 {"timestamp": "2026-03-12T11:31:24.836902", "level": "INFO", "logger": "app", "message": "Database connection check passed.", "module": "main", "function": "lifespan", "line": 34}
 {"timestamp": "2026-03-12T11:31:26.929926", "level": "INFO", "logger": "app", "message": "Database connection check passed.", "module": "main", "function": "lifespan", "line": 34}
+{"timestamp": "2026-03-12T11:33:59.960292", "level": "INFO", "logger": "app", "message": "Database connection check passed.", "module": "main", "function": "lifespan", "line": 34}
+{"timestamp": "2026-03-12T12:00:19.660625", "level": "INFO", "logger": "app", "message": "Database connection check passed.", "module": "main", "function": "lifespan", "line": 35}
+{"timestamp": "2026-03-12T12:00:25.158433", "level": "INFO", "logger": "app", "message": "GET movie started | movie_id:1 | client:127.0.0.1", "module": "movie_controllers", "function": "get_movie_by_id", "line": 31}
+{"timestamp": "2026-03-12T12:00:25.220796", "level": "INFO", "logger": "app", "message": "GET movie success | movie_id:1", "module": "movie_controllers", "function": "get_movie_by_id", "line": 36}

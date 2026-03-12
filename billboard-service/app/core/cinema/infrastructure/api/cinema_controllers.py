@@ -23,6 +23,7 @@ from .depedencies import (
     delete_cinema_use_case,
     get_filters,
 )
+from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
 import logging
 
 logger = logging.getLogger("app")
@@ -87,10 +88,13 @@ async def search_cinemas(
 async def create_cinema(
     cinema: CreateCinemaRequest,
     use_case: Annotated[CreateCinemaUseCase, Depends(create_cinema_use_case)],
+    current_user: Annotated[
+        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+    ],
     request: Request,
 ):
     logger.info(
-        f"POST cinema started | name:{cinema.name} | client:{request.client.host if request.client else None}"
+        f"POST cinema started | name:{cinema.name} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         created_cinema = await use_case.execute(cinema)
@@ -108,10 +112,13 @@ async def update_cinemas(
     cinema_id: int,
     cinema: UpdateCinemaRequest,
     use_case: Annotated[UpdateCinemaUseCase, Depends(update_cinema_use_case)],
+    current_user: Annotated[
+        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+    ],
     request: Request,
 ):
     logger.info(
-        f"PUT cinema started | cinema_id:{cinema_id} | client:{request.client.host if request.client else None}"
+        f"PUT cinema started | cinema_id:{cinema_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         updated_cinema = await use_case.execute(cinema_id, cinema)
@@ -128,10 +135,13 @@ async def update_cinemas(
 async def delete_cinema(
     cinema_id: int,
     use_case: Annotated[DeleteCinemaUseCase, Depends(delete_cinema_use_case)],
+    current_user: Annotated[
+        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+    ],
     request: Request,
 ):
     logger.info(
-        f"DELETE cinema started | cinema_id:{cinema_id} | client:{request.client.host if request.client else None}"
+        f"DELETE cinema started | cinema_id:{cinema_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
     )
     try:
         await use_case.execute(cinema_id)
