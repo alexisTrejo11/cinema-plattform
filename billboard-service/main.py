@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+import logging as py_logging
+
 from fastapi import FastAPI, Request
 
 from slowapi import Limiter
@@ -5,39 +8,60 @@ from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 
 from model_initialization import *
-from config import exception_handlers
-from app.shared import logging
+from app.config import exception_handlers
+from app.core.shared import logging
 
-from app.movies.infrastructure.api import movie_controllers
-from app.movies.infrastructure.api import movie_showtime_controller
-from app.cinema.infrastructure.api import cinema_controllers
-from app.theater.infrastructure.api import theater_controllers, theather_seat_controllers
-from app.showtime.infrastructure.api import showtime_controller
+from app.core.movies.infrastructure.api import movie_controllers
+from app.core.movies.infrastructure.api import movie_showtime_controller
+from app.core.cinema.infrastructure.api import cinema_controllers
+from app.core.showtime.infrastructure.api import showtime_controller
+from app.core.theater.infrastructure.api import (
+    theater_controllers,
+    theather_seat_controllers,
+)
+from app.config.postgres_config import verify_db_connection, engine
 
 logging.setup_logging()
+logger = py_logging.getLogger("app")
 
 limiter = Limiter(key_func=get_remote_address)
 
-app = FastAPI(
-        title="Cinema Backend: Billboard Service API",
-        version="1.0.0",
-        exception_handlers=exception_handlers
-    )
 
-app.state.limiter = limiter
-app.add_middleware(SlowAPIMiddleware)
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    # Stop the server startup if PostgreSQL is unreachable.
+    await verify_db_connection()
+    logger.info("Database connection check passed.")
+    try:
+        yield
+    finally:
+        await engine.dispose()
 
-@app.get("/")
-@limiter.limit("5/minute")  # type: ignore
+
+fast_api_app = FastAPI(
+    title="Cinema Backend: Billboard Service API",
+    version="1.0.0",
+    exception_handlers=exception_handlers,
+    lifespan=lifespan,
+)
+
+# Add the limiter to the FastAPI app state and include the SlowAPIMiddleware
+fast_api_app.state.limiter = limiter
+fast_api_app.add_middleware(SlowAPIMiddleware)
+
+
+@fast_api_app.get("/")
+@limiter.limit("5/minute")
 def read_home(request: Request):
-    return { "home": "Welcome To Billboard Service" } 
+    return {"home": "Welcome To Billboard Service"}
 
-app.include_router(movie_controllers.router)
-app.include_router(movie_showtime_controller.router)
 
-app.include_router(cinema_controllers.router)
+fast_api_app.include_router(movie_controllers.router)
+fast_api_app.include_router(movie_showtime_controller.router)
 
-app.include_router(theater_controllers.router)
-app.include_router(theather_seat_controllers.router)
+fast_api_app.include_router(cinema_controllers.router)
 
-app.include_router(showtime_controller.router)
+fast_api_app.include_router(theater_controllers.router)
+fast_api_app.include_router(theather_seat_controllers.router)
+
+fast_api_app.include_router(showtime_controller.router)

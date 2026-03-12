@@ -1,9 +1,14 @@
 from tests.conftest import *
 from typing import Dict, Any
-from app.theater.domain.theater import Theater, TheaterType
-from app.theater.domain.seat import TheaterSeat, SeatType
-from app.theater.infrastructure.persistence.sqlalch_theater_repository import SQLAlchemyTheaterRepository as TheaterRepository
-from app.theater.infrastructure.persistence.sqlalch_seats_repository import SqlAlchemistTheaterSeatRepository as TheaterSeatRepository
+from app.core.theater.domain.theater import Theater, TheaterType
+from app.core.theater.domain.seat import TheaterSeat, SeatType
+from app.core.theater.infrastructure.persistence.sqlalch_theater_repository import (
+    SQLAlchemyTheaterRepository as TheaterRepository,
+)
+from app.core.theater.infrastructure.persistence.sqlalch_seats_repository import (
+    SqlAlchemistTheaterSeatRepository as TheaterSeatRepository,
+)
+
 
 @pytest.fixture
 def sample_theater() -> Theater:
@@ -16,6 +21,7 @@ def sample_theater() -> Theater:
         cinema_id=1,
     )
 
+
 @pytest.fixture
 def updated_theater_data() -> Dict[str, Any]:
     return {
@@ -25,6 +31,7 @@ def updated_theater_data() -> Dict[str, Any]:
         "is_active": False,
         "maintenance_mode": True,
     }
+
 
 @pytest_asyncio.fixture(scope="function")
 async def theater_repo(session: AsyncSession) -> TheaterRepository:
