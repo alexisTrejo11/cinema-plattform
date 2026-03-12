@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Any
 from typing import cast
 from collections.abc import Awaitable, Callable
@@ -10,6 +9,8 @@ from fastapi.responses import JSONResponse, Response
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from jwt.types import Options
 from pydantic import BaseModel, Field
+
+from app.config.app_config import settings
 
 logger = logging.getLogger("app")
 
@@ -54,21 +55,6 @@ def _first_text_claim(claims: dict[str, Any], *keys: str) -> str | None:
     return None
 
 
-class JWTSettings:
-    def __init__(self) -> None:
-        self.secret_key = os.getenv("JWT_SECRET_KEY", "")
-        algorithms_value = os.getenv("JWT_ALGORITHMS", "HS256")
-        self.algorithms = [
-            alg.strip() for alg in algorithms_value.split(",") if alg.strip()
-        ]
-        self.audience = os.getenv("JWT_AUDIENCE")
-        self.issuer = os.getenv("JWT_ISSUER")
-        self.leeway = int(os.getenv("JWT_LEEWAY_SECONDS", "0"))
-
-
-SETTINGS = JWTSettings()
-
-
 def _unauthorized(message: str) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -105,7 +91,7 @@ async def jwt_auth_middleware(
         )
         return _unauthorized("Bearer token is empty.")
 
-    if not SETTINGS.secret_key:
+    if not settings.jwt_secret_key:
         logger.error(
             "JWT_SECRET_KEY is not configured; token validation cannot be performed."
         )
@@ -114,20 +100,20 @@ async def jwt_auth_middleware(
     options = cast(
         Options,
         {
-            "verify_aud": SETTINGS.audience is not None,
-            "verify_iss": SETTINGS.issuer is not None,
+            "verify_aud": settings.jwt_audience is not None,
+            "verify_iss": settings.jwt_issuer is not None,
         },
     )
 
     try:
         claims = jwt.decode(
             token,
-            SETTINGS.secret_key,
-            algorithms=SETTINGS.algorithms,
-            audience=SETTINGS.audience,
-            issuer=SETTINGS.issuer,
+            settings.jwt_secret_key,
+            algorithms=settings.jwt_algorithms_list,
+            audience=settings.jwt_audience,
+            issuer=settings.jwt_issuer,
             options=options,
-            leeway=SETTINGS.leeway,
+            leeway=settings.jwt_leeway_seconds,
         )
         current_user = AuthenticatedUserDTO.from_claims(claims)
         request.state.jwt_claims = claims

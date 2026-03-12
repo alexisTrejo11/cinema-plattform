@@ -54,3 +54,4 @@
 {"timestamp": "2026-03-12T12:00:19.660625", "level": "INFO", "logger": "app", "message": "Database connection check passed.", "module": "main", "function": "lifespan", "line": 35}
 {"timestamp": "2026-03-12T12:00:25.158433", "level": "INFO", "logger": "app", "message": "GET movie started | movie_id:1 | client:127.0.0.1", "module": "movie_controllers", "function": "get_movie_by_id", "line": 31}
 {"timestamp": "2026-03-12T12:00:25.220796", "level": "INFO", "logger": "app", "message": "GET movie success | movie_id:1", "module": "movie_controllers", "function": "get_movie_by_id", "line": 36}
+{"timestamp": "2026-03-12T12:21:27.638538", "level": "INFO", "logger": "app", "message": "Database connection check passed.", "module": "main", "function": "lifespan", "line": 36}

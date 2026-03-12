@@ -21,6 +21,7 @@ from app.core.theater.infrastructure.api import (
 )
 from app.config.postgres_config import verify_db_connection, engine
 from app.config.jwt_auth_middleware import jwt_auth_middleware
+from app.config.app_config import settings
 
 logging.setup_logging()
 logger = py_logging.getLogger("app")
@@ -40,8 +41,8 @@ async def lifespan(_: FastAPI):
 
 
 fast_api_app = FastAPI(
-    title="Cinema Backend: Billboard Service API",
-    version="1.0.0",
+    title=settings.app_name,
+    version=settings.app_version,
     exception_handlers=exception_handlers,
     lifespan=lifespan,
 )

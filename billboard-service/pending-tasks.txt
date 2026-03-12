@@ -1,8 +1,6 @@
 1.- Dockerize using nginx
-2.- Implement JWT validation
 3.- Add unit tests for authentication
 4.- Paginate lists queries
 5.- Check variable naming
-6.- Remove try catch to delegate to global error handler
 7.- Implement rate limiting
 8.- Add auditing logging and remove logger in controllers

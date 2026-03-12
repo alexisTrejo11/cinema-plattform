@@ -2,11 +2,11 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-DATABASE_URL = (
-    "postgresql+asyncpg://alexistrejo:postgresadmin@localhost:5432/cinema_billboard"
-)
+from app.config.app_config import settings
 
-engine = create_async_engine(DATABASE_URL, echo=True, pool_pre_ping=True)
+DATABASE_URL = settings.resolved_database_url
+
+engine = create_async_engine(DATABASE_URL, echo=settings.db_echo, pool_pre_ping=True)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine, class_=AsyncSession, expire_on_commit=False
