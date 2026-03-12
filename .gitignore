@@ -1,21 +1,31 @@
-billboard-service/env/
-billboard-service/.env
+# Python virtual environments
+**/env/
+**/venv/
+**/.venv/
 
-ticket-service/.env
-ticket-service/env/
+# Environment variables
+**/.env
+**/.env.local
+**/.env.*.local
 
-user-service/.env
-user-service/env/
+# Python cache
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
 
-food-service/.env
-food-service/env/
+# Testing
+**/.pytest_cache/
+**/.coverage
+**/htmlcov/
 
-payment-service/.env
-payment-service/env/
+# IDE
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*.swo
+*~
 
-notification-service/.env
-notification-service/env/
-
-
-__pycache__
-.pyest_cache
+# OS
+.DS_Store
+Thumbs.db
