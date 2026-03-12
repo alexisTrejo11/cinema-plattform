@@ -1,4 +1,4 @@
-CREATE TABLE showtime_seats(
+CREATE TABLE IF NOT EXISTS showtime_seats(
     id SERIAL PRIMARY KEY,
     showtime_id INT NOT NULL,
     theater_seat_id INT NOT NULL,
@@ -24,8 +24,8 @@ CREATE TABLE showtime_seats(
         UNIQUE (showtime_id, theater_seat_id)    
 );
 
-CREATE INDEX idx_showtime_seats_showtime_id ON showtime_seats (showtime_id);
-CREATE INDEX idx_showtime_seats_user_id ON showtime_seats (taken_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_showtime_seats_showtime_id ON showtime_seats (showtime_id);
+CREATE INDEX IF NOT EXISTS idx_showtime_seats_user_id ON showtime_seats (taken_by_user_id);
 
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -36,6 +36,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+
+DROP TRIGGER IF EXISTS update_showtime_seats_updated_at ON showtime_seats;
 
 CREATE TRIGGER update_showtime_seats_updated_at
 BEFORE UPDATE ON showtime_seats

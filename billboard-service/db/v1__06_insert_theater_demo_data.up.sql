@@ -67,8 +67,8 @@ INSERT INTO theater_seats (theater_id, seat_row, seat_number, seat_type, is_acti
 INSERT INTO theater_seats (theater_id, seat_row, seat_number, seat_type, is_active) VALUES 
 (1, 'E', 1, 'STANDARD', TRUE), (1, 'E', 2, 'STANDARD', TRUE), (1, 'E', 3, 'STANDARD', TRUE), 
 (1, 'E', 4, 'STANDARD', TRUE), (1, 'E', 5, 'STANDARD', TRUE), (1, 'E', 6, 'STANDARD', TRUE), 
-(1, 'E', 7, 'STANDARD', TRUE), (1, 'E', 8, 'STANDARD', TRUE), (1, 'E', 9, 'ACCESSIBLE', TRUE), -- Accessible seating 
-(1, 'E', 10, 'ACCESSIBLE', TRUE), (1, 'E', 11, 'ACCESSIBLE', TRUE), -- Accessible seating (1, 'E', 12, 'ACCESSIBLE', TRUE), -- Accessible 
+(1, 'E', 7, 'STANDARD', TRUE), (1, 'E', 8, 'STANDARD', TRUE), (1, 'E', 9, 'ACCESSIBLE', TRUE), 
+(1, 'E', 10, 'ACCESSIBLE', TRUE), (1, 'E', 11, 'ACCESSIBLE', TRUE), (1, 'E', 12, 'ACCESSIBLE', TRUE), 
 (1, 'E', 13, 'STANDARD', TRUE), (1, 'E', 14, 'STANDARD', TRUE), (1, 'E', 15, 'STANDARD', TRUE), 
 (1, 'E', 16, 'STANDARD', TRUE), (1, 'E', 17, 'STANDARD', TRUE), (1, 'E', 18, 'STANDARD', TRUE), 
 (1, 'E', 19, 'STANDARD', TRUE), (1, 'E', 20, 'STANDARD', TRUE);

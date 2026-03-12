@@ -5,7 +5,7 @@ Revises: 0001_create_cinema_schema
 Create Date: 2026-03-12 00:01:00
 """
 
-from migration_sql import run_migration_sql
+from migration_sql import run_migration_sql, run_migration_sql_if_table_empty
 
 
 revision = "0002_seed_cinemas"
@@ -15,7 +15,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    run_migration_sql("v1__02_insert_demo_data", "up")
+    run_migration_sql_if_table_empty("v1__02_insert_demo_data", "up", "cinemas")
 
 
 def downgrade() -> None:

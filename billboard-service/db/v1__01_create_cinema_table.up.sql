@@ -1,8 +1,22 @@
-CREATE TYPE cinema_status_enum AS ENUM ('OPEN', 'CLOSED', 'MAINTENANCE');
-CREATE TYPE cinema_type_enum AS ENUM ('VIP', 'TRADITIONAL');
-CREATE TYPE location_region_enum AS ENUM ('CDMX_SOUTH', 'CDMX_NORTH', 'CDMX_CENTER', 'CDMX_EAST', 'CDMX_WEST');
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'cinema_status_enum') THEN
+        CREATE TYPE cinema_status_enum AS ENUM ('OPEN', 'CLOSED', 'MAINTENANCE');
+    END IF;
+END $$;
 
-CREATE TABLE cinemas (
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'cinema_type_enum') THEN
+        CREATE TYPE cinema_type_enum AS ENUM ('VIP', 'TRADITIONAL');
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'location_region_enum') THEN
+        CREATE TYPE location_region_enum AS ENUM ('CDMX_SOUTH', 'CDMX_NORTH', 'CDMX_CENTER', 'CDMX_EAST', 'CDMX_WEST');
+    END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS cinemas (
     id SERIAL PRIMARY KEY,
     image TEXT NOT NULL DEFAULT '',
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -43,11 +57,11 @@ CREATE TABLE cinemas (
 );
 
 
-CREATE INDEX idx_cinemas_name ON cinemas(name);
-CREATE INDEX idx_cinemas_tax_number ON cinemas(tax_number);
-CREATE INDEX idx_cinemas_email_contact ON cinemas(email_contact);
-CREATE INDEX idx_cinemas_status ON cinemas(status);
-CREATE INDEX idx_cinemas_type ON cinemas(type);
+CREATE INDEX IF NOT EXISTS idx_cinemas_name ON cinemas(name);
+CREATE INDEX IF NOT EXISTS idx_cinemas_tax_number ON cinemas(tax_number);
+CREATE INDEX IF NOT EXISTS idx_cinemas_email_contact ON cinemas(email_contact);
+CREATE INDEX IF NOT EXISTS idx_cinemas_status ON cinemas(status);
+CREATE INDEX IF NOT EXISTS idx_cinemas_type ON cinemas(type);
 -- Consider adding a GIST index for geographic queries if you plan to use them extensively
 -- CREATE EXTENSION IF NOT EXISTS postgis; -- If using PostGIS for spatial queries
 -- CREATE INDEX idx_cinemas_location ON cinemas USING GIST (ST_MakePoint(longitude, latitude));
@@ -59,6 +73,8 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_cinemas_updated_at ON cinemas;
 
 CREATE TRIGGER update_cinemas_updated_at
 BEFORE UPDATE ON cinemas

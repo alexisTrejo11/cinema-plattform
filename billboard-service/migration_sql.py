@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from typing import Iterable
 
 from alembic import op
@@ -127,10 +128,33 @@ def execute_sql(sql_text: str) -> None:
         bind.exec_driver_sql(statement)
 
 
+def _validate_identifier(identifier: str) -> str:
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", identifier):
+        raise ValueError(f"Invalid SQL identifier: {identifier}")
+    return identifier
+
+
 def run_sql_file(file_name: str) -> None:
     sql_path = Path(__file__).resolve().parent / "db" / file_name
     execute_sql(sql_path.read_text(encoding="utf-8"))
 
 
+def table_has_rows(table_name: str) -> bool:
+    bind = op.get_bind()
+    safe_table_name = _validate_identifier(table_name)
+    result = bind.exec_driver_sql(
+        f"SELECT EXISTS (SELECT 1 FROM {safe_table_name} LIMIT 1)"
+    )
+    return bool(result.scalar())
+
+
 def run_migration_sql(base_name: str, direction: str) -> None:
     run_sql_file(f"{base_name}.{direction}.sql")
+
+
+def run_migration_sql_if_table_empty(
+    base_name: str, direction: str, table_name: str
+) -> None:
+    if direction == "up" and table_has_rows(table_name):
+        return
+    run_migration_sql(base_name, direction)

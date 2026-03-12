@@ -4,7 +4,7 @@ DO $$ BEGIN
     END IF;
 END $$;
 
-CREATE TABLE theaters (
+CREATE TABLE IF NOT EXISTS theaters (
     id SERIAL PRIMARY KEY,
     cinema_id INT NOT NULL,
     name VARCHAR(50) NOT NULL,
@@ -22,9 +22,9 @@ CREATE TABLE theaters (
 );
 
 
-CREATE INDEX idx_theaters_cinema_id ON theaters (cinema_id);
-CREATE INDEX idx_theaters_type ON theaters (theater_type);
-CREATE INDEX idx_theaters_active_cinema_type ON theaters (cinema_id, theater_type, is_active);
+CREATE INDEX IF NOT EXISTS idx_theaters_cinema_id ON theaters (cinema_id);
+CREATE INDEX IF NOT EXISTS idx_theaters_type ON theaters (theater_type);
+CREATE INDEX IF NOT EXISTS idx_theaters_active_cinema_type ON theaters (cinema_id, theater_type, is_active);
 
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
@@ -34,6 +34,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_theaters_updated_at ON theaters;
+
 CREATE TRIGGER trg_theaters_updated_at
 BEFORE UPDATE ON theaters
 FOR EACH ROW
@@ -41,7 +43,9 @@ EXECUTE FUNCTION update_timestamp();
 
 
 
-CREATE TYPE seat_type_enum AS ENUM (
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'seat_type_enum') THEN
+        CREATE TYPE seat_type_enum AS ENUM (
     'STANDARD',
     'VIP',
     'ACCESSIBLE', -- For disabled access
@@ -49,8 +53,10 @@ CREATE TYPE seat_type_enum AS ENUM (
     'FOUR_DX',
     'LOVESEAT'
 );
+    END IF;
+END $$;
 
-CREATE TABLE theater_seats(
+CREATE TABLE IF NOT EXISTS theater_seats(
     id SERIAL PRIMARY KEY,
     theater_id int NOT NULL,
     seat_row VARCHAR(5) NOT NULL,
@@ -70,8 +76,8 @@ CREATE TABLE theater_seats(
         UNIQUE (theater_id, seat_row, seat_number)
 );
 
-CREATE INDEX idx_theater_seats_theater_id ON theater_seats (theater_id);
-CREATE INDEX idx_theater_seats_row_number ON theater_seats (theater_id, seat_row, seat_number);
+CREATE INDEX IF NOT EXISTS idx_theater_seats_theater_id ON theater_seats (theater_id);
+CREATE INDEX IF NOT EXISTS idx_theater_seats_row_number ON theater_seats (theater_id, seat_row, seat_number);
 
 
 

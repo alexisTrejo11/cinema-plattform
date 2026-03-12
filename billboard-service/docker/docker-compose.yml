@@ -1,0 +1,63 @@
+name: billboard-service
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-cinema_billboard}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-cinema_billboard}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/dockerfile
+    image: billboard-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: ""
+      DB_HOST: db
+      DB_PORT: 5432
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: docker/dockerfile
+    image: billboard-service:local
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: ""
+      DB_HOST: db
+      DB_PORT: 5432
+    command: ["/app/docker/docker-entrypoint.sh", "migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
