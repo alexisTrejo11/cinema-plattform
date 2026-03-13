@@ -9,7 +9,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from model_initialization import *
 from app.config import exception_handlers
-from app.core.shared import logging
+from app.config.logging_config import setup_logging
 
 from app.core.movies.infrastructure.api import movie_controllers
 from app.core.movies.infrastructure.api import movie_showtime_controller
@@ -22,10 +22,10 @@ from app.core.theater.infrastructure.api import (
 from app.config.postgres_config import verify_db_connection, engine
 from app.config.jwt_auth_middleware import jwt_auth_middleware
 from app.config.app_config import settings
+from app.config.cache_config import init_cache, close_cache
 
-logging.setup_logging()
+setup_logging()
 logger = py_logging.getLogger("app")
-
 limiter = Limiter(key_func=get_remote_address)
 
 
@@ -33,11 +33,14 @@ limiter = Limiter(key_func=get_remote_address)
 async def lifespan(_: FastAPI):
     # Stop the server startup if PostgreSQL is unreachable.
     await verify_db_connection()
-    logger.info("Database connection check passed.")
+    await init_cache()
     try:
+
         yield
     finally:
         await engine.dispose()
+        await close_cache()
+        logger.info("Application shutdown complete")
 
 
 fast_api_app = FastAPI(

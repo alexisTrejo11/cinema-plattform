@@ -1,10 +1,10 @@
 from app.core.shared.exceptions import NotFoundException
-from app.core.showtime.domain.entities.showtime import Showtime
-from ..service.showtime_validator_service import (
+from app.core.showtime.domain.entities import Showtime
+from app.core.showtime.domain.repositories import ShowTimeRepository
+from app.core.showtime.domain.services import (
     ShowtimeValidationService as ValidationService,
+    ShowTimeSeatService,
 )
-from ..service.showtime_seat_service import ShowTimeSeatService
-from ..repositories import ShowTimeRepository
 from ..mappers import ShowtimeMappers
 from ..dtos import ShowtimeCreate, ShowtimeUpdate
 

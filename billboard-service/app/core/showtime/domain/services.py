@@ -1,7 +1,14 @@
+from datetime import timezone, datetime
+from typing import List
+
 from app.core.shared.exceptions import ValidationException
-from app.core.theater.application.repositories import TheaterSeatRepository
-from app.core.showtime.domain.entities.showtime import Showtime
-from ..repositories import ShowTimeRepository
+from app.core.theater.domain.repositories import TheaterSeatRepository
+from app.core.theater.domain.seat import TheaterSeat
+from app.core.showtime.domain.entities import Showtime, ShowtimeSeat
+from app.core.showtime.domain.repositories import (
+    ShowTimeRepository,
+    ShowtimeSeatRepository,
+)
 
 
 class ShowtimeValidationService:
@@ -76,3 +83,42 @@ class ShowtimeValidationService:
                 + f"Proposed buffered range: {buffered_start_time.strftime('%H:%M')} - {buffered_end_time.strftime('%H:%M')}. "
                 + f"Found {len(overlapping_showtimes)} overlapping showtime(s).",
             )
+
+
+class ShowTimeSeatService:
+    def __init__(
+        self,
+        theater_seat_repo: TheaterSeatRepository,
+        showtime_seat_repo: ShowtimeSeatRepository,
+    ):
+        self.theater_seat_repo = theater_seat_repo
+        self.showtime_seat_repo = showtime_seat_repo
+
+    async def create_showtimes_seats(self, showtime: Showtime):
+        theater_seats = await self.theater_seat_repo.get_by_theater(showtime.theater_id)
+        showtimes_seats = self._generate_showtimes_seats(theater_seats, showtime)
+        await self.showtime_seat_repo.bulk_create(showtimes_seats)
+
+    def _generate_showtimes_seats(
+        self, theater_seats: List[TheaterSeat], showtime: Showtime
+    ) -> List[ShowtimeSeat]:
+        showtimes_seats: List[ShowtimeSeat] = []
+
+        for theater_seat in theater_seats:
+            if showtime.id is None or theater_seat.id is None:
+                raise ValueError(
+                    "Showtime id and theater_seat cannot be None when creating showtime seats."
+                )
+
+            showtime_seat = ShowtimeSeat(
+                showtime_id=showtime.id,
+                theater_seat_id=theater_seat.id,
+                id=None,
+                taken_at=None,
+                user_id=None,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
+            )
+            showtimes_seats.append(showtime_seat)
+
+        return showtimes_seats

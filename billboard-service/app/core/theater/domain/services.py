@@ -1,6 +1,9 @@
 from app.core.shared.exceptions import NotFoundException, ValidationException
-from .dtos import TheaterSeatCreate, TheaterSeatUpdate
-from .repositories import TheaterSeatRepository, TheaterRepository
+from app.core.theater.application.dtos import TheaterSeatCreate, TheaterSeatUpdate
+from app.core.theater.domain.repositories import (
+    TheaterSeatRepository,
+    TheaterRepository,
+)
 
 
 class SeatValidationService:

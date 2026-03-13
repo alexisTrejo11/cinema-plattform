@@ -1,6 +1,5 @@
 import logging
-from typing import Any
-from typing import cast
+from typing import Any, Optional, cast
 from collections.abc import Awaitable, Callable
 
 import jwt
@@ -15,16 +14,16 @@ from app.config.app_config import settings
 logger = logging.getLogger("app")
 
 
-class AuthenticatedUserDTO(BaseModel):
-    user_id: str | None = None
-    subject: str | None = None
-    email: str | None = None
-    username: str | None = None
+class AuthUserContext(BaseModel):
+    user_id: Optional[str] = None
+    subject: Optional[str] = None
+    email: Optional[str] = None
+    username: Optional[str] = None
     roles: list[str] = Field(default_factory=list)
     claims: dict[str, Any] = Field(default_factory=dict)
 
     @classmethod
-    def from_claims(cls, claims: dict[str, Any]) -> "AuthenticatedUserDTO":
+    def from_claims(cls, claims: dict[str, Any]) -> "AuthUserContext":
         roles_raw = claims.get("roles") or claims.get("role") or []
 
         if isinstance(roles_raw, str):
@@ -46,7 +45,7 @@ class AuthenticatedUserDTO(BaseModel):
         )
 
 
-def _first_text_claim(claims: dict[str, Any], *keys: str) -> str | None:
+def _first_text_claim(claims: dict[str, Any], *keys: str) -> Optional[str]:
     for key in keys:
         value = claims.get(key)
         if value is None:
@@ -115,7 +114,7 @@ async def jwt_auth_middleware(
             options=options,
             leeway=settings.jwt_leeway_seconds,
         )
-        current_user = AuthenticatedUserDTO.from_claims(claims)
+        current_user = AuthUserContext.from_claims(claims)
         request.state.jwt_claims = claims
         request.state.current_user = current_user
     except ExpiredSignatureError:
@@ -134,11 +133,11 @@ async def jwt_auth_middleware(
     return await call_next(request)
 
 
-def get_current_user(request: Request) -> AuthenticatedUserDTO | None:
+def get_current_user(request: Request) -> Optional[AuthUserContext]:
     return getattr(request.state, "current_user", None)
 
 
-def require_authenticated_user(request: Request) -> AuthenticatedUserDTO:
+def require_authenticated_user(request: Request) -> AuthUserContext:
     user = get_current_user(request)
     if user is None:
         raise HTTPException(
@@ -154,7 +153,7 @@ def require_roles(*allowed_roles: str):
         role.strip().lower() for role in allowed_roles if role.strip()
     }
 
-    def dependency(request: Request) -> AuthenticatedUserDTO:
+    def dependency(request: Request) -> AuthUserContext:
         user = require_authenticated_user(request)
 
         user_roles = {role.strip().lower() for role in user.roles if role.strip()}
@@ -180,5 +179,5 @@ def require_roles(*allowed_roles: str):
     return dependency
 
 
-def get_jwt_claims(request: Request) -> dict[str, Any] | None:
+def get_jwt_claims(request: Request) -> Optional[dict[str, Any]]:
     return getattr(request.state, "jwt_claims", None)

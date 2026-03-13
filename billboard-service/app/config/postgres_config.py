@@ -3,6 +3,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config.app_config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 DATABASE_URL = settings.resolved_database_url
 
@@ -23,5 +26,6 @@ async def verify_db_connection() -> None:
     try:
         async with engine.connect() as connection:
             await connection.execute(text("SELECT 1"))
+            logger.info("Database connection check passed.")
     except SQLAlchemyError as exc:
         raise RuntimeError("Database is unavailable") from exc

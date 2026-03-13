@@ -1,10 +1,12 @@
 from typing import Any, Optional, Dict, List
+
 from sqlalchemy import and_, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.cinema.domain.entities import Cinema
-from app.core.cinema.application.repository import CinemaRepository
-from .cinema_model import CinemaModel
-from .cinema_mappers import CinemaModelMapper as CinemaMapper
+from app.core.cinema.domain.repositories import CinemaRepository
+from .models import CinemaModel
+from .mappers import CinemaModelMapper as CinemaMapper
 
 
 class SQLAlchemyCinemaRepository(CinemaRepository):

@@ -1,7 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, Request
-from app.core.showtime.domain.entities.showtime_seat import ShowtimeSeat
-from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
+from app.core.showtime.domain.entities import ShowtimeSeat
+from app.config.jwt_auth_middleware import AuthUserContext, require_roles
 from .dependencies import (
     CancelSeatUseCase,
     TakeSeatUseCase,
@@ -67,7 +67,7 @@ async def take_seat(
     request: Request,
     showtime_id: int,
     usecase: TakeSeatUseCase = Depends(take_showtime_seat_use_case),
-    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
+    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
         f"TAKE seat started | showtime_id:{showtime_id} | seat_id:{seat_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
@@ -91,7 +91,7 @@ async def cancel_seat(
     seat_id: int,
     showtime_id: int,
     usecase: CancelSeatUseCase = Depends(cancel_showtime_seat_use_case),
-    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
+    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
         f"CANCEL seat started | showtime_id:{showtime_id} | seat_id:{seat_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"

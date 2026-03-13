@@ -1,8 +1,9 @@
 from typing import Optional, List, Dict, Any
+
 from app.core.shared.exceptions import NotFoundException
 from app.core.shared.pagination import PaginationParams
-from app.core.showtime.domain.entities.showtime import Showtime
-from ..repositories import ShowTimeRepository
+from app.core.showtime.domain.entities import Showtime
+from app.core.showtime.domain.repositories import ShowTimeRepository
 
 
 class GetShowtimeByIdUseCase:

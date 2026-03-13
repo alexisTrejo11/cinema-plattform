@@ -1,7 +1,7 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.postgres_config import get_db
-from app.core.cinema.infrastructure.persistence.sql_alch_repository import (
+from app.core.cinema.infrastructure.persistence.sqlalchemy import (
     SQLAlchemyCinemaRepository,
 )
 from app.core.theater.application.theather_use_cases import (
@@ -19,9 +19,11 @@ from app.core.theater.application.seats_use_cases import (
     UpdateTheaterSeatUseCase,
     DeleteTheaterSeatUseCase,
 )
-from app.core.theater.application.seat_validation_service import SeatValidationService
-from ..persistence.sqlalch_seats_repository import SqlAlchemistTheaterSeatRepository
-from ..persistence.sqlalch_theater_repository import SQLAlchemyTheaterRepository
+from app.core.theater.domain.services import SeatValidationService
+from ..persistence.sqlalchemy import (
+    SQLAlchemyTheaterRepository,
+    SQLAlchemyTheaterSeatRepository,
+)
 
 
 async def get_theater_by_id_use_case(
@@ -75,7 +77,7 @@ async def get_theater_seat_by_id_use_case(
     Dependency for GetTheaterSeatByIdUseCase.
     Provides an instance of the use case with an injected repository.
     """
-    repository = SqlAlchemistTheaterSeatRepository(db)
+    repository = SQLAlchemyTheaterSeatRepository(db)
 
     return GetTheaterSeatByIdUseCase(repository)
 
@@ -87,7 +89,7 @@ async def get_seats_by_theater_use_case(
     Dependency for GetSeatsByTheaterUseCase.
     Provides an instance of the use case with an injected repository.
     """
-    seat_repository = SqlAlchemistTheaterSeatRepository(db)
+    seat_repository = SQLAlchemyTheaterSeatRepository(db)
     theather_repository = SQLAlchemyTheaterRepository(db)
 
     return GetSeatsByTheaterUseCase(
@@ -102,7 +104,7 @@ async def create_theater_seat_use_case(
     Dependency for SaveTheaterSeatUseCase.
     Provides an instance of the use case with an injected repository.
     """
-    seat_repository = SqlAlchemistTheaterSeatRepository(db)
+    seat_repository = SQLAlchemyTheaterSeatRepository(db)
     theather_repository = SQLAlchemyTheaterRepository(db)
     validationService = SeatValidationService(
         seat_repository=seat_repository, theater_repository=theather_repository
@@ -120,7 +122,7 @@ async def update_theater_seat_use_case(
     Dependency for SaveTheaterSeatUseCase.
     Provides an instance of the use case with an injected repository.
     """
-    seat_repository = SqlAlchemistTheaterSeatRepository(db)
+    seat_repository = SQLAlchemyTheaterSeatRepository(db)
     theather_repository = SQLAlchemyTheaterRepository(db)
     validationService = SeatValidationService(
         seat_repository=seat_repository, theater_repository=theather_repository
@@ -138,6 +140,6 @@ async def delete_theater_seat_use_case(
     Dependency for DeleteTheaterSeatUseCase.
     Provides an instance of the use case with an injected repository.
     """
-    repository = SqlAlchemistTheaterSeatRepository(db)
+    repository = SQLAlchemyTheaterSeatRepository(db)
 
     return DeleteTheaterSeatUseCase(repository)

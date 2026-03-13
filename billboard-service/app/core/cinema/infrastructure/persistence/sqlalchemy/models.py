@@ -17,8 +17,8 @@ from app.config.base_model import Base
 from app.core.cinema.domain.enums import LocationRegion, CinemaType, CinemaStatus
 
 if TYPE_CHECKING:
-    from app.core.theater.infrastructure.persistence.models import TheaterModel
-    from app.core.showtime.infrastructure.persistence.models import ShowtimeModel
+    from app.core.theater.infrastructure.persistence.sqlalchemy import TheaterModel
+    from app.core.showtime.infrastructure.persistence.sqlalchemy import ShowtimeModel
 
 
 class CinemaModel(Base):

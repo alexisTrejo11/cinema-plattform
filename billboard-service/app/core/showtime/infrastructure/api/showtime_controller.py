@@ -1,25 +1,29 @@
+import logging
 from typing import Annotated, Any, Dict, List, Optional
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query, status, Request
+
 from app.core.shared.pagination import PaginationParams
-from app.core.showtime.domain.entities.showtime import Showtime
+from app.core.showtime.domain.entities import Showtime
 from app.core.showtime.application.dtos import ShowtimeCreate, ShowtimeUpdate
+from app.config.jwt_auth_middleware import AuthUserContext, require_roles
 from .dependencies import (
+    # DEPENDENCIES
     schedule_showtime_use_case,
     update_showtime_use_case,
     delete_showtime_use_case,
     get_showtime_by_id_use_case,
     get_showtimes_use_case,
-)
-from .dependencies import (
+
+    # USECASES
     GetShowtimeByIdUseCase,
     GetShowtimesUseCase,
     ScheduleShowtimeUseCase,
     UpdateShowtimeUseCase,
     DeleteShowtimeUseCase,
 )
-from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
-import logging
+
 
 logger = logging.getLogger("app")
 router = APIRouter(prefix="/api/v1/showtimes", tags=["showtimes"])
@@ -95,7 +99,7 @@ async def create_showtime(
     request: Request,
     showtime_data: ShowtimeCreate,
     use_case: ScheduleShowtimeUseCase = Depends(schedule_showtime_use_case),
-    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
+    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
         f"POST showtime started | movie_id:{showtime_data.movie_id} | theater_id:{showtime_data.theater_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
@@ -119,7 +123,7 @@ async def update_showtime(
     request: Request,
     update_data: ShowtimeUpdate,
     use_case: UpdateShowtimeUseCase = Depends(update_showtime_use_case),
-    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
+    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
         f"PUT showtime started | showtime_id:{showtime_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
@@ -140,7 +144,7 @@ async def delete_showtime(
     request: Request,
     showtime_id: int,
     use_case: DeleteShowtimeUseCase = Depends(delete_showtime_use_case),
-    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
+    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     logger.info(
         f"DELETE showtime started | showtime_id:{showtime_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"

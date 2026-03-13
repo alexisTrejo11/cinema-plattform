@@ -6,7 +6,7 @@ from app.core.theater.infrastructure.persistence.sqlalch_theater_repository impo
     SQLAlchemyTheaterRepository as TheaterRepository,
 )
 from app.core.theater.infrastructure.persistence.sqlalch_seats_repository import (
-    SqlAlchemistTheaterSeatRepository as TheaterSeatRepository,
+    SqlAlchemyTheaterSeatRepository as TheaterSeatRepository,
 )
 
 

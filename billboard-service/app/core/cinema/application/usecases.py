@@ -1,18 +1,27 @@
 from typing import List, Dict, Any
+
 from app.core.cinema.domain.entities import Cinema
+from app.core.cinema.domain.repositories import CinemaRepository
 from app.core.cinema.domain.exceptions import CinemaNotFound
 from app.core.cinema.application.dtos import (
     CreateCinemaRequest,
     UpdateCinemaRequest,
 )
-from .repository import CinemaRepository
+
 from .mappers import CinemaMapper
+from .cache import (
+    cache_active_cinemas,
+    cache_cinema_by_id,
+    cache_search_cinemas,
+    invalidate_cinema_cache,
+)
 
 
 class GetCinemaByIdUseCase:
     def __init__(self, repository: CinemaRepository):
         self.repository = repository
 
+    @cache_cinema_by_id()
     async def execute(self, cinema_id: int) -> Cinema:
         cinema = await self.repository.find_by_id(cinema_id)
         if not cinema:
@@ -25,6 +34,7 @@ class SearchCinemasUseCase:
     def __init__(self, repository: CinemaRepository):
         self.repository = repository
 
+    @cache_search_cinemas()
     async def execute(
         self, page_params: Dict[str, int], filter_params: Dict[str, Any]
     ) -> List[Cinema]:
@@ -35,6 +45,7 @@ class ListActiveCinemasUseCase:
     def __init__(self, repository: CinemaRepository):
         self.repository = repository
 
+    @cache_active_cinemas()
     async def execute(self) -> List[Cinema]:
         return await self.repository.list_active()
 
@@ -43,6 +54,7 @@ class CreateCinemaUseCase:
     def __init__(self, repository: CinemaRepository):
         self.repository = repository
 
+    @invalidate_cinema_cache()
     async def execute(self, create_data: CreateCinemaRequest) -> Cinema:
         new_cinema = CinemaMapper.from_create_request(create_data)
 
@@ -53,6 +65,7 @@ class UpdateCinemaUseCase:
     def __init__(self, repository: CinemaRepository):
         self.repository = repository
 
+    @invalidate_cinema_cache()
     async def execute(self, cinema_id: int, update_data: UpdateCinemaRequest) -> Cinema:
         existing_cinema = await self.repository.find_by_id(cinema_id)
         if not existing_cinema:
@@ -69,6 +82,7 @@ class DeleteCinemaUseCase:
     def __init__(self, repository: CinemaRepository):
         self.repository = repository
 
+    @invalidate_cinema_cache()
     async def execute(self, cinema_id: int) -> None:
         cinema_exists = await self.repository.exists_by_id(cinema_id)
         if not cinema_exists:

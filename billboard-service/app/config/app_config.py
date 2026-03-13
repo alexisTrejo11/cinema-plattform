@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -6,8 +7,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Cinema Backend: Billboard Service API"
     app_version: str = "1.0.0"
+    redis_url: str
 
-    database_url: str | None = None
+    database_url: Optional[str] = None
     db_user: str = "postgres"
     db_password: str = "postgres"
     db_host: str = "localhost"
@@ -17,8 +19,8 @@ class Settings(BaseSettings):
 
     jwt_secret_key: str = ""
     jwt_algorithms: str = "HS256"
-    jwt_audience: str | None = None
-    jwt_issuer: str | None = None
+    jwt_audience: Optional[str] = None
+    jwt_issuer: Optional[str] = None
     jwt_leeway_seconds: int = 0
 
     model_config = SettingsConfigDict(

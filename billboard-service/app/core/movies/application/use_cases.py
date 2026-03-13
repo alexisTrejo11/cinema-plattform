@@ -1,19 +1,25 @@
 from typing import List
+
 from app.core.shared.exceptions import NotFoundException
 from app.core.shared.pagination import PaginationParams
 from app.core.movies.domain.entities import Movie
-from app.core.movies.application.repositories import MovieRepository
-from app.core.movies.domain.entities import Movie
-from app.core.showtime.application.repositories import ShowTimeRepository
+from app.core.showtime.domain.repositories import ShowTimeRepository
 from .dtos import MovieShowtime, MovieShowtimesFilters
 from .repositories import MovieRepository
 from .services import MovieShowtimeService
+from .cache import (
+    cache_movie_by_id,
+    cache_movies_in_exhibition,
+    cache_movie_showtimes,
+    invalidate_movies_cache,
+)
 
 
 class GetMovieByIdUseCase:
     def __init__(self, movie_repository: MovieRepository):
         self.movie_repository = movie_repository
 
+    @cache_movie_by_id()
     async def execute(self, id: int) -> Movie:
         movie = await self.movie_repository.find_by_id(id)
         if not movie:
@@ -26,44 +32,10 @@ class GetMoviesInExhitionUseCase:
     def __init__(self, movie_repository: MovieRepository):
         self.movie_repository = movie_repository
 
+    @cache_movies_in_exhibition()
     async def execute(self) -> List[Movie]:
         movies = await self.movie_repository.find_active()
         return movies
-
-
-class CreateMovieUseCase:
-    def __init__(self, movie_repository: MovieRepository):
-        self.movie_repository = movie_repository
-
-    async def execute(self, new_movie: Movie) -> Movie:
-        movies = await self.movie_repository.save(new_movie)
-        return movies
-
-
-class UpdateMovieUseCase:
-    def __init__(self, movie_repository: MovieRepository):
-        self.movie_repository = movie_repository
-
-    async def execute(self, movie_id: int, movie_updated: Movie) -> Movie:
-        movie = await self.movie_repository.find_by_id(movie_id)
-        if not movie:
-            raise NotFoundException("Movie", movie_id)
-
-        movie_updated.id = movie_id
-        movies = await self.movie_repository.save(movie_updated)
-        return movies
-
-
-class DeleteMovieUseCase:
-    def __init__(self, movie_repository: MovieRepository):
-        self.movie_repository = movie_repository
-
-    async def execute(self, id: int) -> None:
-        movie = await self.movie_repository.find_by_id(id)
-        if not movie:
-            raise NotFoundException("Movie", id)
-
-        await self.movie_repository.delete(id)
 
 
 class GetMovieShowtimesUseCase:
@@ -71,6 +43,7 @@ class GetMovieShowtimesUseCase:
         self.showtime_repo = showtime_repo
         self.movie_repo = movie_repo
 
+    @cache_movie_showtimes()
     async def execute(
         self, filters: MovieShowtimesFilters, page_data: PaginationParams
     ) -> List[MovieShowtime]:
@@ -86,3 +59,41 @@ class GetMovieShowtimesUseCase:
             movies, incoming_show_times
         )
         return movie_showtimes
+
+
+class CreateMovieUseCase:
+    def __init__(self, movie_repository: MovieRepository):
+        self.movie_repository = movie_repository
+
+    @invalidate_movies_cache()
+    async def execute(self, new_movie: Movie) -> Movie:
+        movies = await self.movie_repository.save(new_movie)
+        return movies
+
+
+class UpdateMovieUseCase:
+    def __init__(self, movie_repository: MovieRepository):
+        self.movie_repository = movie_repository
+
+    @invalidate_movies_cache()
+    async def execute(self, movie_id: int, movie_updated: Movie) -> Movie:
+        movie = await self.movie_repository.find_by_id(movie_id)
+        if not movie:
+            raise NotFoundException("Movie", movie_id)
+
+        movie_updated.id = movie_id
+        movies = await self.movie_repository.save(movie_updated)
+        return movies
+
+
+class DeleteMovieUseCase:
+    def __init__(self, movie_repository: MovieRepository):
+        self.movie_repository = movie_repository
+
+    @invalidate_movies_cache()
+    async def execute(self, id: int) -> None:
+        movie = await self.movie_repository.find_by_id(id)
+        if not movie:
+            raise NotFoundException("Movie", id)
+
+        await self.movie_repository.delete(id)

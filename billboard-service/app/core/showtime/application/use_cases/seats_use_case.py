@@ -1,7 +1,11 @@
 from typing import List
+
 from app.core.shared.exceptions import NotFoundException, ValidationException
 from app.core.showtime.domain.entities.showtime_seat import ShowtimeSeat
-from ..repositories import ShowtimeSeatRepository, ShowTimeRepository
+from app.core.showtime.domain.repositories import (
+    ShowtimeSeatRepository,
+    ShowTimeRepository,
+)
 
 
 class ListShowtimeSeatsUseCase:

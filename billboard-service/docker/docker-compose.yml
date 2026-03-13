@@ -1,6 +1,18 @@
 name: billboard-service
 
 services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   db:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -34,9 +46,12 @@ services:
       DATABASE_URL: ""
       DB_HOST: db
       DB_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
     command: ["/app/docker/docker-entrypoint.sh", "serve"]
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "8000:8000"
@@ -52,9 +67,12 @@ services:
       DATABASE_URL: ""
       DB_HOST: db
       DB_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
     command: ["/app/docker/docker-entrypoint.sh", "migrate"]
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     profiles:
       - tools

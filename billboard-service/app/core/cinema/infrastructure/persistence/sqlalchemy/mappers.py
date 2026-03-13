@@ -7,7 +7,7 @@ from app.core.cinema.domain.value_objects import (
     SocialMedia,
     Location,
 )
-from app.core.cinema.infrastructure.persistence.cinema_model import CinemaModel
+from .models import CinemaModel
 
 
 class CinemaModelMapper:

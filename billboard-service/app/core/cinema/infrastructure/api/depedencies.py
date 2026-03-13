@@ -13,7 +13,17 @@ from app.core.cinema.application.usecases import (
     UpdateCinemaUseCase,
     DeleteCinemaUseCase,
 )
-from ..persistence.sql_alch_repository import SQLAlchemyCinemaRepository
+from app.core.cinema.infrastructure.persistence.sqlalchemy import (
+    SQLAlchemyCinemaRepository,
+)
+from app.core.cinema.application.usecases import (
+    GetCinemaByIdUseCase,
+    ListActiveCinemasUseCase,
+    SearchCinemasUseCase,
+    CreateCinemaUseCase,
+    UpdateCinemaUseCase,
+    DeleteCinemaUseCase,
+)
 import logging
 
 

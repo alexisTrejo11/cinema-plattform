@@ -15,7 +15,7 @@ from .dependencies import (
     update_movie_use_case,
     delete_movie_use_case,
 )
-from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
+from app.config.jwt_auth_middleware import AuthUserContext, require_roles
 import logging
 
 logger = logging.getLogger("app")
@@ -64,7 +64,7 @@ async def create_movies(
     movie: Movie,
     use_case: Annotated[CreateMovieUseCase, Depends(create_movie_use_case)],
     current_user: Annotated[
-        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+        AuthUserContext, Depends(require_roles("admin", "manager"))
     ],
     request: Request,
 ):
@@ -88,7 +88,7 @@ async def update_movie(
     movie: Movie,
     use_case: Annotated[UpdateMovieUseCase, Depends(update_movie_use_case)],
     current_user: Annotated[
-        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+        AuthUserContext, Depends(require_roles("admin", "manager"))
     ],
     request: Request,
 ):
@@ -111,7 +111,7 @@ async def delete_movie(
     movie_id: int,
     use_case: Annotated[DeleteMovieUseCase, Depends(delete_movie_use_case)],
     current_user: Annotated[
-        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+        AuthUserContext, Depends(require_roles("admin", "manager"))
     ],
     request: Request,
 ):

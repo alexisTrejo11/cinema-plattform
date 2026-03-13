@@ -1,11 +1,13 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.postgres_config import get_db
-from app.core.showtime.infrastructure.persistence.sqlalch_show_repository import (
+from app.core.showtime.infrastructure.persistence.sqlalchemy import (
     SQLAlchemyShowtimeRepository,
 )
-from ..persistence.sql_alchemist_repository import SQLAlchemyMovieRepository
-from ...application.use_cases import (
+from app.core.movies.infrastructure.persistence.sqlalchemy import (
+    SQLAlchemyMovieRepository,
+)
+from app.core.movies.application.use_cases import (
     GetMovieByIdUseCase,
     GetMoviesInExhitionUseCase,
     CreateMovieUseCase,

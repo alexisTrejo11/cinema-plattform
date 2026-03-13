@@ -1,6 +1,6 @@
 from app.core.theater.domain.theater import Theater
 from app.core.theater.domain.seat import TheaterSeat
-from ..persistence.models import TheaterModel, TheaterSeatModel
+from .models import TheaterModel, TheaterSeatModel
 
 
 class TheaterModelMapper:

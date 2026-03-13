@@ -21,3 +21,7 @@ colorlog
 slowapi
 # JWT handling library for authentication
 pyjwt
+
+# Redis caching
+fastapi-cache[redis]
+redis>=5.0.0

@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, status, Request
-from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
+from app.config.jwt_auth_middleware import AuthUserContext, require_roles
 from .depdencies import (
     get_seats_by_theater_use_case,
     get_theater_seat_by_id_use_case,
@@ -79,7 +79,7 @@ async def create_theater_seat(
     request: Request,
     seat_data: TheaterSeatCreate,
     use_case: CreateTheaterSeatUseCase = Depends(create_theater_seat_use_case),
-    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
+    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ) -> TheaterSeat:
 
     logger.info(
@@ -106,7 +106,7 @@ async def update_theater_seat(
     request: Request,
     seat_data: TheaterSeatUpdate,
     use_case: UpdateTheaterSeatUseCase = Depends(update_theater_seat_use_case),
-    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
+    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ) -> TheaterSeat:
     logger.info(
         f"PUT seat started | seat_id:{seat_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"
@@ -129,7 +129,7 @@ async def delete_theater_seat(
     request: Request,
     seat_id: int,
     use_case: DeleteTheaterSeatUseCase = Depends(delete_theater_seat_use_case),
-    current_user: AuthenticatedUserDTO = Depends(require_roles("admin", "manager")),
+    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ) -> None:
     logger.info(
         f"DELETE seat started | seat_id:{seat_id} | actor:{current_user.user_id} | roles:{current_user.roles} | client:{request.client.host if request.client else None}"

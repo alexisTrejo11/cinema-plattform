@@ -23,7 +23,7 @@ from .depedencies import (
     delete_cinema_use_case,
     get_filters,
 )
-from app.config.jwt_auth_middleware import AuthenticatedUserDTO, require_roles
+from app.config.jwt_auth_middleware import AuthUserContext, require_roles
 import logging
 
 logger = logging.getLogger("app")
@@ -89,7 +89,7 @@ async def create_cinema(
     cinema: CreateCinemaRequest,
     use_case: Annotated[CreateCinemaUseCase, Depends(create_cinema_use_case)],
     current_user: Annotated[
-        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+        AuthUserContext, Depends(require_roles("admin", "manager"))
     ],
     request: Request,
 ):
@@ -113,7 +113,7 @@ async def update_cinemas(
     cinema: UpdateCinemaRequest,
     use_case: Annotated[UpdateCinemaUseCase, Depends(update_cinema_use_case)],
     current_user: Annotated[
-        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+        AuthUserContext, Depends(require_roles("admin", "manager"))
     ],
     request: Request,
 ):
@@ -136,7 +136,7 @@ async def delete_cinema(
     cinema_id: int,
     use_case: Annotated[DeleteCinemaUseCase, Depends(delete_cinema_use_case)],
     current_user: Annotated[
-        AuthenticatedUserDTO, Depends(require_roles("admin", "manager"))
+        AuthUserContext, Depends(require_roles("admin", "manager"))
     ],
     request: Request,
 ):
