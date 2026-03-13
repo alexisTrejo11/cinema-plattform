@@ -22,7 +22,7 @@ async def logging_middleware(request: Request, call_next: Callable[[Request], Aw
             "user_agent": request.headers.get("user-agent"),
         }
     })
-    
+
     try:
         response = await call_next(request)
     except Exception as e:
@@ -45,7 +45,7 @@ async def logging_middleware(request: Request, call_next: Callable[[Request], Aw
             "process_time": process_time,
         }
     })
-    
+
     response.headers["X-Request-ID"] = request_id
     
     return response

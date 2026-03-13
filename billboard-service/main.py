@@ -21,6 +21,7 @@ from app.core.theater.infrastructure.api import (
 )
 from app.config.postgres_config import verify_db_connection, engine
 from app.config.jwt_auth_middleware import jwt_auth_middleware
+from app.config.logging_middleware import logging_middleware
 from app.config.app_config import settings
 from app.config.cache_config import init_cache, close_cache
 
@@ -53,6 +54,7 @@ fast_api_app = FastAPI(
 # Add the limiter to the FastAPI app state and include the SlowAPIMiddleware
 fast_api_app.state.limiter = limiter
 fast_api_app.add_middleware(SlowAPIMiddleware)
+fast_api_app.middleware("http")(logging_middleware)
 fast_api_app.middleware("http")(jwt_auth_middleware)
 
 

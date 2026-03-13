@@ -5,6 +5,8 @@ from datetime import datetime
 from typing import Any, Dict
 import os
 
+from app.config.app_config import settings
+
 class JsonFormatter(logging.Formatter):
     def format(self, record: Any):
         log_record: Dict[str, Any] = {
@@ -25,7 +27,44 @@ class JsonFormatter(logging.Formatter):
             
         return json.dumps(log_record)
 
+
+class AuditSummaryHandler(logging.Handler):
+    """Forwards a one-line summary of each audit log record to the app logger (console + file)."""
+
+    def __init__(self, app_logger_name: str = "app", level: int = logging.INFO):
+        super().__init__(level=level)
+        self._app_logger_name = app_logger_name
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            app_logger = logging.getLogger(self._app_logger_name)
+            if not app_logger.isEnabledFor(record.levelno):
+                return
+            props = getattr(record, "props", None) or {}
+            msg = record.getMessage()
+            # Build a minimal one-line summary
+            parts = [msg]
+            if "method" in props and "path" in props:
+                parts.append(f"{props['method']} {props['path']}")
+            if "status_code" in props:
+                parts.append(str(props["status_code"]))
+            if "process_time" in props:
+                t = props["process_time"]
+                parts.append(f"{t:.4f}s" if isinstance(t, (int, float)) else str(t))
+            if "request_id" in props:
+                parts.append(f"id={str(props['request_id'])[:8]}")
+            summary = " | ".join(parts)
+            app_logger.log(record.levelno, "[audit] %s", summary)
+        except Exception:
+            self.handleError(record)
+
+
 def setup_logging():
+    debug = getattr(settings, "debug", False)
+
+    console_level = "DEBUG" if debug else "INFO"
+    app_level = "DEBUG" if debug else "INFO"
+
     logging_config: Dict[str, Any] = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -59,7 +98,7 @@ def setup_logging():
         },
         "handlers": {
             "console": {
-                "level": "INFO",
+                "level": console_level,
                 "formatter": "colored",
                 "class": "logging.StreamHandler",
                 "stream": "ext://sys.stdout",
@@ -71,17 +110,32 @@ def setup_logging():
                 "filename": "logs/app.log",
                 "maxBytes": 10485760,  # 10MB
                 "backupCount": 5,
+            },
+            "audit_file": {
+                "level": "INFO",
+                "formatter": "json",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": "logs/audit_logger.log",
+                "maxBytes": 10485760,  # 10MB
+                "backupCount": 5,
             }
         },
         "loggers": {
             "app": {
                 "handlers": ["console", "file"],
-                "level": "INFO",
+                "level": app_level,
                 "propagate": False
             },
             "audit": {
-                "handlers": ["console", "file"],
+                # Audit logger writes only to file; no console output
+                "handlers": ["audit_file"],
                 "level": "INFO",
+                "propagate": False
+            },
+            # Uvicorn access log silenced (we handle our own request logs)
+            "uvicorn.access": {
+                "handlers": [],
+                "level": "CRITICAL",
                 "propagate": False
             },
             # SQLAlchemy silenced
@@ -110,7 +164,12 @@ def setup_logging():
     
     os.makedirs("logs", exist_ok=True)
     dictConfig(logging_config)
-    
+
+    # Audit: file-only full log always; console summary only in debug mode
+    if debug:
+        audit_logger = logging.getLogger("audit")
+        audit_logger.addHandler(AuditSummaryHandler(app_logger_name="app", level=logging.INFO))
+
     sqlalchemy_loggers = ['sqlalchemy.engine','sqlalchemy.dialects', 'sqlalchemy.pool','sqlalchemy.orm']
     
     for logger_name in sqlalchemy_loggers:

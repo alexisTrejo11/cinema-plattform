@@ -36,14 +36,23 @@ async def get_cinema_by_id(
     use_case: Annotated[GetCinemaByIdUseCase, Depends(get_cinema_by_id_use_case)],
     request: Request,
 ):
-    logger.info(
-        f"GET cinema started | cinema_id:{cinema_id} | client:{request.client.host if request.client else None}"
-    )
+    """
+    Get a cinema by its ID.
 
-    cinema = await use_case.execute(cinema_id)
+    Args:
+        cinema_id: The ID of the cinema to get.
+        use_case: The use case to get the cinema.
+        request: The request object.
 
-    logger.info(f"GET cinema success | cinema_id:{cinema_id}")
-    return cinema
+    Returns:
+        The cinema response JSON.
+    Raises:
+        ValidationError: If the cinema request is invalid.
+        TooManyRequests: If the request is throttled.
+        CinemaNotFound: If the cinema is not found.
+        InternalServerError: If an internal server error occurs.
+    """
+    return await use_case.execute(cinema_id)
 
 
 @router.get("/active/", response_model=list[Cinema])
