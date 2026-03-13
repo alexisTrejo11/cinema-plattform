@@ -24,6 +24,7 @@ from .depedencies import (
     get_filters,
 )
 from app.config.jwt_auth_middleware import AuthUserContext, require_roles
+from app.config.rate_limit import limiter
 import logging
 
 logger = logging.getLogger("app")
@@ -31,6 +32,7 @@ router = APIRouter(prefix="/api/v1/cinemas")
 
 
 @router.get("/{cinema_id}", response_model=Cinema)
+@limiter.limit("60/minute")
 async def get_cinema_by_id(
     cinema_id: int,
     use_case: Annotated[GetCinemaByIdUseCase, Depends(get_cinema_by_id_use_case)],
@@ -56,6 +58,7 @@ async def get_cinema_by_id(
 
 
 @router.get("/active/", response_model=list[Cinema])
+@limiter.limit("60/minute")
 async def get_active_cinemas(
     use_case: Annotated[ListActiveCinemasUseCase, Depends(get_active_cinemas_use_case)],
     request: Request,
@@ -69,6 +72,7 @@ async def get_active_cinemas(
 
 
 @router.get("/", response_model=List[Cinema])
+@limiter.limit("60/minute")
 async def search_cinemas(
     use_case: Annotated[SearchCinemasUseCase, Depends(search_cinemas_use_case)],
     filters: Annotated[SearchCinemaFilters, Depends(get_filters)],
@@ -94,6 +98,7 @@ async def search_cinemas(
 
 
 @router.post("/", response_model=Cinema, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_cinema(
     cinema: CreateCinemaRequest,
     use_case: Annotated[CreateCinemaUseCase, Depends(create_cinema_use_case)],
@@ -117,6 +122,7 @@ async def create_cinema(
 
 
 @router.put("/{cinema_id}", response_model=Cinema)
+@limiter.limit("10/minute")
 async def update_cinemas(
     cinema_id: int,
     cinema: UpdateCinemaRequest,
@@ -141,6 +147,7 @@ async def update_cinemas(
 
 
 @router.delete("/{cinema_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_cinema(
     cinema_id: int,
     use_case: Annotated[DeleteCinemaUseCase, Depends(delete_cinema_use_case)],

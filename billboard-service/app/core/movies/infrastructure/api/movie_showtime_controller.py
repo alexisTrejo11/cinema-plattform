@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Request
 from typing import Annotated, List, Optional
 from app.core.shared.pagination import PaginationParams
 from app.core.movies.application.dtos import MovieShowtimesFilters, MovieShowtime
+from app.config.rate_limit import limiter
 from .dependencies import GetMovieShowtimesUseCase, get_movie_showtimes
 
 router = APIRouter(prefix="/api/v1/movies/showtimes", tags=["showtimes"])
@@ -19,7 +20,9 @@ router = APIRouter(prefix="/api/v1/movies/showtimes", tags=["showtimes"])
         500: {"description": "Internal server error"},
     },
 )
+@limiter.limit("60/minute")
 async def get_movie_showtime(
+    request: Request,
     use_case: Annotated[GetMovieShowtimesUseCase, Depends(get_movie_showtimes)],
     cinema_id_list: Annotated[Optional[List[int]], Query()] = None,
     movie_id: Annotated[Optional[int], Query(ge=1)] = None,

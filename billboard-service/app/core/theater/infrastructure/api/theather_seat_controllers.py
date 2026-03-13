@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, Depends, status, Request
 from app.config.jwt_auth_middleware import AuthUserContext, require_roles
+from app.config.rate_limit import limiter
 from .depdencies import (
     get_seats_by_theater_use_case,
     get_theater_seat_by_id_use_case,
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/api/v1/theaters/seats", tags=["Theater Seats"])
 @router.get(
     "/{seat_id}", response_model=TheaterSeat, summary="Get a theater seat by ID"
 )
+@limiter.limit("60/minute")
 async def get_theater_seat_by_id(
     request: Request,
     seat_id: int,
@@ -48,6 +50,7 @@ async def get_theater_seat_by_id(
     response_model=List[TheaterSeat],
     summary="Get all seats for a specific theater",
 )
+@limiter.limit("60/minute")
 async def get_seats_by_theater(
     request: Request,
     theater_id: int,
@@ -75,6 +78,7 @@ async def get_seats_by_theater(
     status_code=status.HTTP_201_CREATED,
     summary="Create a new theater seat",
 )
+@limiter.limit("10/minute")
 async def create_theater_seat(
     request: Request,
     seat_data: TheaterSeatCreate,
@@ -101,6 +105,7 @@ async def create_theater_seat(
 @router.put(
     "/{seat_id}", response_model=TheaterSeat, summary="Update an existing theater seat"
 )
+@limiter.limit("10/minute")
 async def update_theater_seat(
     seat_id: int,
     request: Request,
@@ -125,6 +130,7 @@ async def update_theater_seat(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a theater seat by ID",
 )
+@limiter.limit("10/minute")
 async def delete_theater_seat(
     request: Request,
     seat_id: int,

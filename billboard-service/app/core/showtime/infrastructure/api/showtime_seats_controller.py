@@ -2,6 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, Request
 from app.core.showtime.domain.entities import ShowtimeSeat
 from app.config.jwt_auth_middleware import AuthUserContext, require_roles
+from app.config.rate_limit import limiter
 from .dependencies import (
     CancelSeatUseCase,
     TakeSeatUseCase,
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/api/v1/showtimes", tags=["Showtime Seats"])
 
 
 @router.get("/{showtime_id}/seats", response_model=List[ShowtimeSeat])
+@limiter.limit("60/minute")
 async def list_showtime_seat_disponibility(
     request: Request,
     showtime_id: int,
@@ -41,6 +43,7 @@ async def list_showtime_seat_disponibility(
 
 
 @router.get("/{showtime_id}/seats/{seat_id}", response_model=ShowtimeSeat)
+@limiter.limit("60/minute")
 async def get_showtime_seat(
     seat_id: int,
     request: Request,
@@ -62,6 +65,7 @@ async def get_showtime_seat(
 
 
 @router.patch("/seats/{seat_id}/take", response_model=ShowtimeSeat)
+@limiter.limit("10/minute")
 async def take_seat(
     seat_id: int,
     request: Request,
@@ -86,6 +90,7 @@ async def take_seat(
 
 
 @router.patch("/seats/{seat_id}/cancel", response_model=ShowtimeSeat)
+@limiter.limit("10/minute")
 async def cancel_seat(
     request: Request,
     seat_id: int,

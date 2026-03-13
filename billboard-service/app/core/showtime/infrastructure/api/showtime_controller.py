@@ -8,6 +8,7 @@ from app.core.shared.pagination import PaginationParams
 from app.core.showtime.domain.entities import Showtime
 from app.core.showtime.application.dtos import ShowtimeCreate, ShowtimeUpdate
 from app.config.jwt_auth_middleware import AuthUserContext, require_roles
+from app.config.rate_limit import limiter
 from .dependencies import (
     # DEPENDENCIES
     schedule_showtime_use_case,
@@ -30,6 +31,7 @@ router = APIRouter(prefix="/api/v1/showtimes", tags=["showtimes"])
 
 
 @router.get("/{showtime_id}", response_model=Showtime)
+@limiter.limit("60/minute")
 async def get_showtime(
     request: Request,
     showtime_id: int,
@@ -50,6 +52,7 @@ async def get_showtime(
 
 
 @router.get("/", response_model=List[Showtime])
+@limiter.limit("60/minute")
 async def list_showtimes(
     request: Request,
     movie_id: Annotated[Optional[int], Query(description="Filter by movie ID")] = None,
@@ -95,6 +98,7 @@ async def list_showtimes(
 
 
 @router.post("/", response_model=Showtime, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_showtime(
     request: Request,
     showtime_data: ShowtimeCreate,
@@ -118,6 +122,7 @@ async def create_showtime(
 
 
 @router.put("/{showtime_id}", response_model=Showtime)
+@limiter.limit("10/minute")
 async def update_showtime(
     showtime_id: int,
     request: Request,
@@ -140,6 +145,7 @@ async def update_showtime(
 
 
 @router.delete("/{showtime_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_showtime(
     request: Request,
     showtime_id: int,

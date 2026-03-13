@@ -3,12 +3,11 @@ import logging as py_logging
 
 from fastapi import FastAPI, Request
 
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 
 from model_initialization import *
 from app.config import exception_handlers
+from app.config.rate_limit import limiter
 from app.config.logging_config import setup_logging
 
 from app.core.movies.infrastructure.api import movie_controllers
@@ -27,7 +26,6 @@ from app.config.cache_config import init_cache, close_cache
 
 setup_logging()
 logger = py_logging.getLogger("app")
-limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager

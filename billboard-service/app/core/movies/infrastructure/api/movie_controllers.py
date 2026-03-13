@@ -16,6 +16,7 @@ from .dependencies import (
     delete_movie_use_case,
 )
 from app.config.jwt_auth_middleware import AuthUserContext, require_roles
+from app.config.rate_limit import limiter
 import logging
 
 logger = logging.getLogger("app")
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/api/v1/movies")
 
 
 @router.get("/{movie_id}", response_model=Movie)
+@limiter.limit("60/minute")
 async def get_movie_by_id(
     movie_id: int,
     use_case: Annotated[GetMovieByIdUseCase, Depends(get_movie_by_id_use_case)],
@@ -41,6 +43,7 @@ async def get_movie_by_id(
 
 
 @router.get("/active/", response_model=list[Movie])
+@limiter.limit("60/minute")
 async def get_movies_in_exhibition(
     use_case: Annotated[
         GetMoviesInExhitionUseCase, Depends(get_active_movies_use_case)
@@ -60,6 +63,7 @@ async def get_movies_in_exhibition(
 
 
 @router.post("/", response_model=Movie, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_movies(
     movie: Movie,
     use_case: Annotated[CreateMovieUseCase, Depends(create_movie_use_case)],
@@ -83,6 +87,7 @@ async def create_movies(
 
 
 @router.put("/{movie_id}", response_model=Movie, status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute")
 async def update_movie(
     movie_id: int,
     movie: Movie,
@@ -107,6 +112,7 @@ async def update_movie(
 
 
 @router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_movie(
     movie_id: int,
     use_case: Annotated[DeleteMovieUseCase, Depends(delete_movie_use_case)],
