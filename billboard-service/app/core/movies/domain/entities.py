@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field, PositiveInt, HttpUrl
 from .enums import MovieGenre, MovieRating
 from typing import Optional
 from datetime import datetime, date
+from pydantic import ConfigDict
+
 
 class Movie(BaseModel):
     id: Optional[int] = None
@@ -14,8 +16,13 @@ class Movie(BaseModel):
     description: str
     genre: MovieGenre
     rating: MovieRating
-    poster_url: Optional[HttpUrl] = None 
+    poster_url: Optional[HttpUrl] = None
     trailer_url: Optional[HttpUrl] = None
     is_active: bool = True
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        arbitrary_types_allowed=True,
+    )

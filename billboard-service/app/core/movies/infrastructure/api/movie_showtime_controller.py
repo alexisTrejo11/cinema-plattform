@@ -1,9 +1,14 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, Request
+from fastapi import APIRouter, Depends, Query, Request
 from typing import Annotated, List, Optional
 from app.core.shared.pagination import PaginationParams
-from app.core.movies.application.dtos import MovieShowtimesFilters, MovieShowtime
+from app.core.movies.application.dtos import (
+    MovieShowtimesFilters,
+    MovieShowtime,
+    MovieShowtimeResponse,
+)
 from app.config.rate_limit import limiter
-from .dependencies import GetMovieShowtimesUseCase, get_movie_showtimes
+from app.core.movies.infrastructure.api.movie_use_case_container import movie_use_cases
+from app.core.movies.application.use_cases import GetMovieShowtimesUseCase
 
 router = APIRouter(prefix="/api/v1/movies/showtimes", tags=["showtimes"])
 
@@ -23,7 +28,9 @@ router = APIRouter(prefix="/api/v1/movies/showtimes", tags=["showtimes"])
 @limiter.limit("60/minute")
 async def get_movie_showtime(
     request: Request,
-    use_case: Annotated[GetMovieShowtimesUseCase, Depends(get_movie_showtimes)],
+    use_case: Annotated[
+        GetMovieShowtimesUseCase, Depends(movie_use_cases.get_movie_showtimes)
+    ],
     cinema_id_list: Annotated[Optional[List[int]], Query()] = None,
     movie_id: Annotated[Optional[int], Query(ge=1)] = None,
     offset: Annotated[int, Query(ge=0)] = 0,
@@ -38,15 +45,15 @@ async def get_movie_showtime(
     - offset: Number of results to skip (for pagination)
     - limit: Maximum number of results per page (1-100)
     """
-    try:
-        page_params = PaginationParams(offset=offset, limit=limit)
-        filters = MovieShowtimesFilters(
-            cinema_id_list=cinema_id_list,
-            movie_id=movie_id,
-            incoming=False,  # Incoming False to use demo data
-        )
+    page_params = PaginationParams(offset=offset, limit=limit)
+    filters = MovieShowtimesFilters(
+        cinema_id_list=cinema_id_list,
+        movie_id=movie_id,
+        incoming=False,  # Incoming False to use demo data
+    )
 
-        movie_showtimes = await use_case.execute(filters, page_params)
-        return movie_showtimes
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    movie_showtimes = await use_case.execute(filters, page_params)
+    return [
+        MovieShowtimeResponse.model_validate(movie_showtime.model_dump(mode="json"))
+        for movie_showtime in movie_showtimes
+    ]

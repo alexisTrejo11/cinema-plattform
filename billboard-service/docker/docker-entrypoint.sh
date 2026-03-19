@@ -30,7 +30,10 @@ case "$mode" in
     ;;
   serve)
     run_migrations
-    exec uvicorn main:fast_api_app --host 0.0.0.0 --port 8000 --workers 1
+    exec gunicorn main:fast_api_app \
+      --worker-class uvicorn.workers.UvicornWorker \
+      --bind 0.0.0.0:8000 \
+      --workers "${GUNICORN_WORKERS:-4}"
     ;;
   *)
     exec "$@"

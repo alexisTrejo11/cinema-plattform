@@ -10,21 +10,21 @@ from app.core.movies.application.dtos import MovieShowtimesFilters
 
 class ShowTimeRepository(CommonRepository[Showtime]):
     @abstractmethod
-    async def list_incoming_by_cinema(self, cinema_id: int) -> List[Showtime]:
+    async def find_incoming_by_cinema(self, cinema_id: int) -> List[Showtime]:
         pass
 
     @abstractmethod
-    async def list_incoming_by_movie(self, movie_id: int) -> List[Showtime]:
+    async def find_incoming_by_movie(self, movie_id: int) -> List[Showtime]:
         pass
 
     @abstractmethod
-    async def list_by_filters_group_by_movie(
+    async def find_by_filters_group_by_movie(
         self, showtime_filters: MovieShowtimesFilters, page_data: PaginationParams
     ) -> Dict[int, List[Showtime]]:
         pass
 
     @abstractmethod
-    async def list_by_theater_and_date_range(
+    async def find_by_theater_and_date_range(
         self,
         theater_id: int,
         start_time_to_check: datetime,
@@ -46,7 +46,7 @@ class ShowtimeSeatRepository:
         pass
 
     @abstractmethod
-    async def list_by_showtime(self, showtime_id: int) -> List[ShowtimeSeat]:
+    async def find_by_showtime(self, showtime_id: int) -> List[ShowtimeSeat]:
         pass
 
     @abstractmethod

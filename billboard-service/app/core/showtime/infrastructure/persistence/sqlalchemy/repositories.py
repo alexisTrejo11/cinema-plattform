@@ -45,7 +45,7 @@ class SQLAlchemyShowtimeSeatRepository(ShowtimeSeatRepository):
 
         return ShowtimeSeatModelMapper.to_domain(model) if model else None
 
-    async def list_by_showtime(self, showtime_id: int) -> List[ShowtimeSeat]:
+    async def find_by_showtime(self, showtime_id: int) -> List[ShowtimeSeat]:
         result = await self.session.execute(
             select(ShowtimeSeatModel).where(
                 ShowtimeSeatModel.showtime_id == showtime_id
@@ -97,14 +97,14 @@ class SQLAlchemyShowtimeRepository(ShowTimeRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(self, entity_id: int) -> Optional[Showtime]:
+    async def find_by_id(self, entity_id: int) -> Optional[Showtime]:
         result = await self.session.execute(
             select(ShowtimeModel).where(ShowtimeModel.id == entity_id)
         )
         model = result.scalars().first()
         return ShowtimeModelMapper.to_domain(model) if model else None
 
-    async def list_all(self, page_params: Dict[str, int]) -> List[Showtime]:
+    async def find_all(self, page_params: Dict[str, int]) -> List[Showtime]:
         offset = page_params.get("offset", 0)
         limit = page_params.get("limit", 100)
 
@@ -116,7 +116,7 @@ class SQLAlchemyShowtimeRepository(ShowTimeRepository):
         )
         return [ShowtimeModelMapper.to_domain(model) for model in result.scalars()]
 
-    async def list_incoming_by_cinema(self, cinema_id: int) -> List[Showtime]:
+    async def find_incoming_by_cinema(self, cinema_id: int) -> List[Showtime]:
         now_utc = datetime.now(timezone.utc)
         end_of_current_day_boundary_utc = datetime.now(timezone.utc).replace(
             hour=0, minute=0, second=0, microsecond=0
@@ -132,7 +132,7 @@ class SQLAlchemyShowtimeRepository(ShowTimeRepository):
         models = result.scalars().all()
         return [ShowtimeModelMapper.to_domain(model) for model in models]
 
-    async def list_incoming_by_movie(self, movie_id: int) -> List[Showtime]:
+    async def find_incoming_by_movie(self, movie_id: int) -> List[Showtime]:
         now_utc = datetime.now(timezone.utc)
         end_of_current_day_boundary_utc = datetime.now(timezone.utc).replace(
             hour=0, minute=0, second=0, microsecond=0
@@ -149,7 +149,7 @@ class SQLAlchemyShowtimeRepository(ShowTimeRepository):
 
         return [ShowtimeModelMapper.to_domain(model) for model in models]
 
-    async def list_by_theater_and_date_range(
+    async def find_by_theater_and_date_range(
         self,
         theater_id: int,
         start_time_to_check: datetime,
@@ -207,8 +207,14 @@ class SQLAlchemyShowtimeRepository(ShowTimeRepository):
         )
         await self.session.commit()
 
+    async def exists_by_id(self, entity_id: int) -> bool:
+        result = await self.session.execute(
+            select(ShowtimeModel).where(ShowtimeModel.id == entity_id)
+        )
+        return result.scalars().first() is not None
+
     # MOVE?
-    async def list_by_filters_group_by_movie(
+    async def find_by_filters_group_by_movie(
         self, showtime_filters: MovieShowtimesFilters, page_data: PaginationParams
     ) -> Dict[int, List[Showtime]]:
         stmt = select(ShowtimeModel)

@@ -25,3 +25,6 @@ pyjwt
 # Redis caching
 fastapi-cache[redis]
 redis>=5.0.0
+
+# Production ASGI server
+gunicorn>=20.1.0

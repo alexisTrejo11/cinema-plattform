@@ -1,16 +1,17 @@
 from typing import List
 
 from app.core.shared.exceptions import NotFoundException
-from app.core.shared.pagination import PaginationParams
+from app.core.shared.pagination import PaginationParams, Page
 from app.core.movies.domain.entities import Movie
 from app.core.showtime.domain.repositories import ShowTimeRepository
-from .dtos import MovieShowtime, MovieShowtimesFilters
+from .dtos import MovieShowtime, MovieShowtimesFilters, SearchMovieFilters
 from .repositories import MovieRepository
 from .services import MovieShowtimeService
 from .cache import (
     cache_movie_by_id,
     cache_movies_in_exhibition,
     cache_movie_showtimes,
+    cache_search_movies,
     invalidate_movies_cache,
 )
 
@@ -33,9 +34,19 @@ class GetMoviesInExhitionUseCase:
         self.movie_repository = movie_repository
 
     @cache_movies_in_exhibition()
-    async def execute(self) -> List[Movie]:
-        movies = await self.movie_repository.find_active()
-        return movies
+    async def execute(self, params: PaginationParams) -> Page[Movie]:
+        return await self.movie_repository.find_active(params)
+
+
+class SearchMoviesUseCase:
+    def __init__(self, movie_repository: MovieRepository):
+        self.movie_repository = movie_repository
+
+    @cache_search_movies()
+    async def execute(
+        self, params: PaginationParams, filters: SearchMovieFilters
+    ) -> Page[Movie]:
+        return await self.movie_repository.search(params, filters)
 
 
 class GetMovieShowtimesUseCase:
@@ -47,16 +58,16 @@ class GetMovieShowtimesUseCase:
     async def execute(
         self, filters: MovieShowtimesFilters, page_data: PaginationParams
     ) -> List[MovieShowtime]:
-        movies = await self.movie_repo.find_active()
+        movies = await self.movie_repo.find_active(page_data)
         if not movies:
             return []
 
-        incoming_show_times = await self.showtime_repo.list_by_filters_group_by_movie(
+        incoming_show_times = await self.showtime_repo.find_by_filters_group_by_movie(
             filters, page_data
         )
 
         movie_showtimes = MovieShowtimeService.generate_movie_showtimes(
-            movies, incoming_show_times
+            movies.items, incoming_show_times
         )
         return movie_showtimes
 

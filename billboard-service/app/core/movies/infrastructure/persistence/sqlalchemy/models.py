@@ -9,7 +9,7 @@ from typing import List, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from app.core.showtime.infrastructure.persistence.models import ShowtimeModel
+    from app.core.showtime.infrastructure.persistence.sqlalchemy import ShowtimeModel
 
 
 class MovieModel(Base):
@@ -36,3 +36,22 @@ class MovieModel(Base):
         lazy="select",
         cascade="all, delete-orphan",
     )
+
+    @staticmethod
+    def from_domain(entity) -> MovieModel:
+        return MovieModel(
+            id=entity.id,
+            title=entity.title,
+            original_title=entity.original_title,
+            minute_duration=entity.minute_duration,
+            release_date=entity.release_date,
+            end_date=entity.end_date,
+            description=entity.description,
+            genre=entity.genre,
+            rating=entity.rating,
+            poster_url=str(entity.poster_url) if entity.poster_url else None,
+            trailer_url=str(entity.trailer_url) if entity.trailer_url else None,
+            is_active=entity.is_active,
+            created_at=entity.created_at,
+            updated_at=entity.updated_at,
+        )

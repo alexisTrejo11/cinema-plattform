@@ -34,7 +34,7 @@ services:
       timeout: 3s
       retries: 20
 
-  app:
+  app-1:
     build:
       context: ..
       dockerfile: docker/dockerfile
@@ -53,8 +53,52 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "8000:8000"
+    networks:
+      - billboard_network
+
+  app-2:
+    build:
+      context: ..
+      dockerfile: docker/dockerfile
+    image: billboard-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: ""
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - billboard_network
+
+  app-3:
+    build:
+      context: ..
+      dockerfile: docker/dockerfile
+    image: billboard-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: ""
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - billboard_network
 
   migrate:
     build:
@@ -76,6 +120,26 @@ services:
         condition: service_healthy
     profiles:
       - tools
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    depends_on:
+      - app-1
+      - app-2
+      - app-3
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - billboard_network
+    volumes:
+      - ./nginx/logs:/var/log/nginx
+
+networks:
+  billboard_network:
+    driver: bridge
 
 volumes:
   postgres_data:

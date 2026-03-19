@@ -10,6 +10,7 @@ from app.core.movies.infrastructure.persistence.sqlalchemy import (
 from app.core.movies.application.use_cases import (
     GetMovieByIdUseCase,
     GetMoviesInExhitionUseCase,
+    SearchMoviesUseCase,
     CreateMovieUseCase,
     UpdateMovieUseCase,
     DeleteMovieUseCase,
@@ -29,6 +30,13 @@ async def get_active_movies_use_case(
 ) -> GetMoviesInExhitionUseCase:
     repo = SQLAlchemyMovieRepository(db)
     return GetMoviesInExhitionUseCase(repo)
+
+
+async def search_movies_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> SearchMoviesUseCase:
+    repo = SQLAlchemyMovieRepository(db)
+    return SearchMoviesUseCase(repo)
 
 
 async def create_movie_use_case(

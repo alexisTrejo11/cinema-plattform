@@ -14,6 +14,7 @@ CREATE TABLE cinemas (
     last_renovation DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
 
     region location_region_enum NOT NULL,
     type cinema_type_enum NOT NULL, 

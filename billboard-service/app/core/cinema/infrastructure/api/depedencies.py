@@ -12,17 +12,10 @@ from app.core.cinema.application.usecases import (
     CreateCinemaUseCase,
     UpdateCinemaUseCase,
     DeleteCinemaUseCase,
+    RestoreCinemaUseCase,
 )
 from app.core.cinema.infrastructure.persistence.sqlalchemy import (
     SQLAlchemyCinemaRepository,
-)
-from app.core.cinema.application.usecases import (
-    GetCinemaByIdUseCase,
-    ListActiveCinemasUseCase,
-    SearchCinemasUseCase,
-    CreateCinemaUseCase,
-    UpdateCinemaUseCase,
-    DeleteCinemaUseCase,
 )
 import logging
 
@@ -69,6 +62,13 @@ async def delete_cinema_use_case(
 ) -> DeleteCinemaUseCase:
     repo = SQLAlchemyCinemaRepository(db)
     return DeleteCinemaUseCase(repo)
+
+
+async def restore_cinema_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> RestoreCinemaUseCase:
+    repo = SQLAlchemyCinemaRepository(db)
+    return RestoreCinemaUseCase(repo)
 
 
 # Filter

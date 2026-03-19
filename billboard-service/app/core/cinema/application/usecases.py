@@ -1,14 +1,13 @@
 from typing import List, Dict, Any
-
 from app.core.cinema.domain.entities import Cinema
 from app.core.cinema.domain.repositories import CinemaRepository
 from app.core.cinema.domain.exceptions import CinemaNotFound
-from app.core.cinema.application.dtos import (
+from app.core.shared.pagination import Page, PaginationParams
+from .dtos import (
     CreateCinemaRequest,
     UpdateCinemaRequest,
+    SearchCinemaFilters,
 )
-
-from .mappers import CinemaMapper
 from .cache import (
     cache_active_cinemas,
     cache_cinema_by_id,
@@ -36,9 +35,9 @@ class SearchCinemasUseCase:
 
     @cache_search_cinemas()
     async def execute(
-        self, page_params: Dict[str, int], filter_params: Dict[str, Any]
-    ) -> List[Cinema]:
-        return await self.repository.search(page_params, filter_params)
+        self, params: PaginationParams, filters: SearchCinemaFilters
+    ) -> Page[Cinema]:
+        return await self.repository.search(params, filters)
 
 
 class ListActiveCinemasUseCase:
@@ -46,8 +45,8 @@ class ListActiveCinemasUseCase:
         self.repository = repository
 
     @cache_active_cinemas()
-    async def execute(self) -> List[Cinema]:
-        return await self.repository.list_active()
+    async def execute(self, params: PaginationParams) -> Page[Cinema]:
+        return await self.repository.find_active(params)
 
 
 class CreateCinemaUseCase:
@@ -55,10 +54,12 @@ class CreateCinemaUseCase:
         self.repository = repository
 
     @invalidate_cinema_cache()
-    async def execute(self, create_data: CreateCinemaRequest) -> Cinema:
-        new_cinema = CinemaMapper.from_create_request(create_data)
+    async def execute(self, request_data: CreateCinemaRequest) -> Cinema:
+        cinema = Cinema.model_validate(request_data)
 
-        return await self.repository.save(new_cinema)
+        created_cinema = await self.repository.save(cinema)
+
+        return created_cinema
 
 
 class UpdateCinemaUseCase:
@@ -66,16 +67,18 @@ class UpdateCinemaUseCase:
         self.repository = repository
 
     @invalidate_cinema_cache()
-    async def execute(self, cinema_id: int, update_data: UpdateCinemaRequest) -> Cinema:
-        existing_cinema = await self.repository.find_by_id(cinema_id)
-        if not existing_cinema:
+    async def execute(
+        self, cinema_id: int, update_request: UpdateCinemaRequest
+    ) -> Cinema:
+        cinema = await self.repository.find_by_id(cinema_id)
+        if not cinema:
             raise CinemaNotFound("Cinema", cinema_id)
 
-        updated_cinema = CinemaMapper.update_cinema_from_request(
-            existing_cinema, update_data
-        )
+        update_data = update_request.model_dump(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(cinema, key, value)
 
-        return await self.repository.save(updated_cinema)
+        return await self.repository.save(cinema)
 
 
 class DeleteCinemaUseCase:
@@ -89,3 +92,16 @@ class DeleteCinemaUseCase:
             raise CinemaNotFound("Cinema", cinema_id)
 
         await self.repository.delete(cinema_id)
+
+
+class RestoreCinemaUseCase:
+    def __init__(self, repository: CinemaRepository):
+        self.repository = repository
+
+    @invalidate_cinema_cache()
+    async def execute(self, cinema_id: int) -> None:
+        is_deleted = await self.repository.is_deleted(cinema_id)
+        if not is_deleted:
+            raise CinemaNotFound("Cinema", cinema_id)
+
+        await self.repository.restore(cinema_id)

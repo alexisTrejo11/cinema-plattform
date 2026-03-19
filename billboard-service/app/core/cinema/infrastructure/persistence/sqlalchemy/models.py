@@ -29,17 +29,13 @@ class CinemaModel(Base):
     # Cinema Info
     image: Mapped[str] = mapped_column(Text, nullable=False, default="")
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    tax_number: Mapped[str] = mapped_column(
-        String(255), nullable=False, unique=True
-    )  # Updated length
+    tax_number: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     screens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     # Dates/Timestamps
-    last_renovation: Mapped[Optional[date]] = mapped_column(
-        Date, nullable=True
-    )  # Using Date for just date
+    last_renovation: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -47,6 +43,9 @@ class CinemaModel(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True, default=None
     )
 
     # Enums

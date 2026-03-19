@@ -14,21 +14,6 @@ class CinemaModelMapper:
 
     @staticmethod
     def from_domain(entity: Cinema) -> CinemaModel:
-        """
-        Converts a Cinema domain entity to a CinemaModel ORM model.
-
-        Args:
-            entity: Cinema domain entity
-
-        Returns:
-            CinemaModel: ORM model instance
-
-        Raises:
-            ValueError: If entity is not a Cinema instance
-        """
-        if not isinstance(entity, Cinema):
-            raise ValueError("Entity must be a Cinema instance")
-
         amenities_data = entity.amenities.model_dump() if entity.amenities else {}
         contact_info_data = (
             entity.contact_info.model_dump() if entity.contact_info else {}
@@ -84,21 +69,6 @@ class CinemaModelMapper:
 
     @staticmethod
     def to_domain(model: CinemaModel) -> Cinema:
-        """
-        Converts a CinemaModel ORM model to a Cinema domain entity.
-
-        Args:
-            model: CinemaModel ORM instance
-
-        Returns:
-            Cinema: Domain entity instance
-
-        Raises:
-            ValueError: If model is not a CinemaModel instance
-        """
-        if not isinstance(model, CinemaModel):
-            raise ValueError("Model must be a CinemaModel instance")
-
         features_list = [
             CinemaFeatures(feature_str) for feature_str in (model.features or [])
         ]
@@ -123,6 +93,7 @@ class CinemaModelMapper:
             x=model.x_url,
             tik_tok=model.tik_tok_url,
         )
+        location = Location(lat=model.latitude, lng=model.longitude)
 
         return Cinema(
             id=model.id,
@@ -141,6 +112,10 @@ class CinemaModelMapper:
             amenities=amenities,
             contact_info=contact_info,
             social_media=social_media,
+            location=location,
             # Features
             features=features_list,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            deleted_at=model.deleted_at,
         )
