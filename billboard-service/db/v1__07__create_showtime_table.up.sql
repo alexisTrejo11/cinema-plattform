@@ -27,6 +27,18 @@ DO $$ BEGIN
     END IF;
 END $$;
 
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'showtime_status_enum') THEN
+        CREATE TYPE showtime_status_enum AS ENUM (
+    'DRAFT',
+    'UPCOMING',
+    'IN_PROGRESS',
+    'COMPLETED',
+    'CANCELLED'
+);
+    END IF;
+END $$;
+
 -- TABLE: Showtimes
 CREATE TABLE IF NOT EXISTS showtimes (
     id SERIAL PRIMARY KEY,
@@ -38,8 +50,10 @@ CREATE TABLE IF NOT EXISTS showtimes (
     price NUMERIC(6, 2) NOT NULL,
     language showtime_language_enum NOT NULL, 
     type showtime_type_enum NOT NULL,
+    status showtime_status_enum NOT NULL DEFAULT 'DRAFT',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
     
     CONSTRAINT fk_cinema FOREIGN KEY (cinema_id) REFERENCES cinemas (id) ON DELETE CASCADE,
     CONSTRAINT fk_movie FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE,
@@ -54,42 +68,42 @@ CREATE INDEX IF NOT EXISTS idx_showtimes_start_time ON showtimes (start_time);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_showtimes_schedule ON showtimes (cinema_id, movie_id, theater_id, start_time);
 
 -- EXAMPLE SHOWTIMES : Only Added for Cinema 1
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 1, 1, '2025-08-03 10:00:00-06', '2025-08-03 12:00:00-06', 10.50, 'TRADITIONAL_2D', 'ORIGINAL_ENGLISH')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 1, 1, '2025-08-03 10:00:00-06', '2025-08-03 12:00:00-06', 10.50, 'TRADITIONAL_2D', 'ORIGINAL_ENGLISH', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;
 
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 2, 2, '2025-08-03 14:30:00-06', '2025-08-03 16:45:00-06', 12.00, 'IMAX_3D', 'DUBBED_SPANISH')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 2, 2, '2025-08-03 14:30:00-06', '2025-08-03 16:45:00-06', 12.00, 'IMAX_3D', 'DUBBED_SPANISH', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;
 
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 3, 3, '2025-08-04 18:00:00-06', '2025-08-04 20:30:00-06', 9.75, 'TRADITIONAL_3D', 'ORIGINAL_SPANISH')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 3, 3, '2025-08-04 18:00:00-06', '2025-08-04 20:30:00-06', 9.75, 'TRADITIONAL_3D', 'ORIGINAL_SPANISH', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;
 
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 4, 4, '2025-08-04 21:00:00-06', '2025-08-04 23:15:00-06', 11.25, '4DX', 'ORIGINAL_ENGLISH')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 4, 4, '2025-08-04 21:00:00-06', '2025-08-04 23:15:00-06', 11.25, '4DX', 'ORIGINAL_ENGLISH', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;
 
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 5, 5, '2025-08-05 11:00:00-06', '2025-08-05 13:45:00-06', 13.00, 'VIP_2D', 'ORIGINAL_KOREAN')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 5, 5, '2025-08-05 11:00:00-06', '2025-08-05 13:45:00-06', 13.00, 'VIP_2D', 'ORIGINAL_KOREAN', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;
 
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 6, 6, '2025-08-05 16:00:00-06', '2025-08-05 18:30:00-06', 8.50, 'TRADITIONAL_2D', 'DUBBED_ENGLISH')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 6, 6, '2025-08-05 16:00:00-06', '2025-08-05 18:30:00-06', 8.50, 'TRADITIONAL_2D', 'DUBBED_ENGLISH', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;
 
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 7, 7, '2025-08-06 19:30:00-06', '2025-08-06 22:00:00-06', 10.00, 'IMAX_2D', 'ORIGINAL_ENGLISH')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 7, 7, '2025-08-06 19:30:00-06', '2025-08-06 22:00:00-06', 10.00, 'IMAX_2D', 'ORIGINAL_ENGLISH', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;
 
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 8, 8, '2025-08-06 20:00:00-06', '2025-08-06 22:15:00-06', 9.00, 'TRADITIONAL_3D', 'ORIGINAL_JAPANESE')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 8, 8, '2025-08-06 20:00:00-06', '2025-08-06 22:15:00-06', 9.00, 'TRADITIONAL_3D', 'ORIGINAL_JAPANESE', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;
 
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 9, 9, '2025-08-07 10:30:00-06', '2025-08-07 12:45:00-06', 11.50, 'VIP_3D', 'DUBBED_SPANISH')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 9, 9, '2025-08-07 10:30:00-06', '2025-08-07 12:45:00-06', 11.50, 'VIP_3D', 'DUBBED_SPANISH', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;
 
-INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language)
-VALUES (1, 10, 10, '2025-08-07 15:00:00-06', '2025-08-07 17:00:00-06', 10.75, '4D', 'ORIGINAL_ENGLISH')
+INSERT INTO showtimes (cinema_id, movie_id, theater_id, start_time, end_time, price, type, language, status)
+VALUES (1, 10, 10, '2025-08-07 15:00:00-06', '2025-08-07 17:00:00-06', 10.75, '4D', 'ORIGINAL_ENGLISH', 'DRAFT')
 ON CONFLICT (cinema_id, movie_id, theater_id, start_time) DO NOTHING;

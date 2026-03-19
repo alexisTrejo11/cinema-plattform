@@ -15,7 +15,7 @@ from app.core.movies.application.use_cases import (
     CreateMovieUseCase,
     DeleteMovieUseCase,
 )
-from .movie_use_case_container import movie_use_cases
+from .container import movie_use_cases
 from app.config.jwt_auth_middleware import AuthUserContext, require_roles
 from app.config.rate_limit import limiter
 import logging
@@ -72,7 +72,9 @@ async def search_movies(
     return PaginatedMovieResponse.from_page(page)
 
 
-@router.post("/", response_model=Movie, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=MovieDetailResponse, status_code=status.HTTP_201_CREATED
+)
 @limiter.limit("10/minute")
 async def create_movies(
     movie: Movie,
@@ -88,7 +90,9 @@ async def create_movies(
     return created_movie
 
 
-@router.put("/{movie_id}", response_model=Movie, status_code=status.HTTP_200_OK)
+@router.put(
+    "/{movie_id}", response_model=MovieDetailResponse, status_code=status.HTTP_200_OK
+)
 @limiter.limit("10/minute")
 async def update_movie(
     movie_id: int,

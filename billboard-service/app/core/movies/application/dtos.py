@@ -80,11 +80,6 @@ class MovieSummaryResponse(BaseModel):
         description="Poster URL.",
         examples=["https://cdn.example.com/posters/1.jpg"],
     )
-    is_active: bool = Field(
-        ...,
-        description="Whether the movie is currently active.",
-        examples=[True],
-    )
 
 
 class MovieDetailResponse(BaseModel):
@@ -114,11 +109,17 @@ class MovieDetailResponse(BaseModel):
     release_date: date = Field(
         ..., description="Release date.", examples=["2010-07-16"]
     )
-    end_date: date = Field(
-        ..., description="End date for current programming.", examples=["2010-12-31"]
+    projection_start_date: date = Field(
+        ..., description="Projection start date.", examples=["2010-07-16"]
     )
-    description: str = Field(
-        ..., description="Movie synopsis/description.", examples=["A thief who steals..."]
+    projection_end_date: date = Field(
+        ..., description="Projection end date.", examples=["2010-12-31"]
+    )
+
+    synopsis: str = Field(
+        ...,
+        description="Movie synopsis/description.",
+        examples=["A thief who steals..."],
     )
     genre: MovieGenre = Field(
         ..., description="Movie genre.", examples=[MovieGenre.SCI_FI]
@@ -136,7 +137,14 @@ class MovieDetailResponse(BaseModel):
         description="Trailer URL.",
         examples=["https://youtube.com/watch?v=example"],
     )
-    is_active: bool = Field(..., description="Whether the movie is active.", examples=[True])
+
+    """
+    In domain entity is_active is calculated based on projection_start_date and projection_end_date
+    but in response we need to return the actual active status of the movie
+    is_active: bool = Field(
+        ..., description="Whether the movie is active.", examples=[True]
+    )
+    """
 
 
 class PaginatedMovieResponse(PaginationResponse):
@@ -238,15 +246,15 @@ class MovieShowtime(BaseModel):
         },
     )
 
-    movie_id: Optional[int] = Field(
-        None, description="Movie identifier.", examples=[1]
-    )
+    movie_id: Optional[int] = Field(None, description="Movie identifier.", examples=[1])
     title: str = Field(..., description="Movie title.", examples=["Inception"])
     sinopsis: str = Field(
         ..., description="Movie synopsis.", examples=["A thief who steals..."]
     )
     poster_url: str = Field(
-        ..., description="Poster URL.", examples=["https://cdn.example.com/posters/1.jpg"]
+        ...,
+        description="Poster URL.",
+        examples=["https://cdn.example.com/posters/1.jpg"],
     )
     rating: str = Field(
         ..., description="Rating label (e.g. G/PG/PG_13).", examples=["PG_13"]
@@ -263,15 +271,19 @@ class ShowtimeDetail(BaseModel):
     showtime_id: Optional[int] = Field(
         None, description="Showtime identifier.", examples=[10]
     )
-    type: str = Field(..., description="Screening type (e.g. IMAX, 3D).", examples=["IMAX"])
+    type: str = Field(
+        ..., description="Screening type (e.g. IMAX, 3D).", examples=["IMAX"]
+    )
     start_time: str = Field(
-        ..., description="Show start time (ISO-8601).", examples=["2026-03-19T20:30:00Z"]
+        ...,
+        description="Show start time (ISO-8601).",
+        examples=["2026-03-19T20:30:00Z"],
     )
     language: str = Field(..., description="Language code/name.", examples=["EN"])
-    screen: str = Field(
-        ..., description="Screen/room label.", examples=["Room - 3"]
+    screen: str = Field(..., description="Screen/room label.", examples=["Room - 3"])
+    total_seats: int = Field(
+        ..., ge=0, description="Total seats for the show.", examples=[200]
     )
-    total_seats: int = Field(..., ge=0, description="Total seats for the show.", examples=[200])
     available_seats: int = Field(
         ..., ge=0, description="Available seats for the show.", examples=[48]
     )

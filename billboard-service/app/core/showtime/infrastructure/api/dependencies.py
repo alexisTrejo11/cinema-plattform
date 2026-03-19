@@ -10,12 +10,13 @@ from app.core.showtime.infrastructure.persistence.sqlalchemy import (
 
 # USECASE
 from app.core.showtime.application.use_cases import (
-    ScheduleShowtimeUseCase,
+    LaunchShowtimeUseCase,
+    DraftShowtimeUseCase,
+    CancelShowtimeUseCase,
+    RestoreShowtimeUseCase,
     UpdateShowtimeUseCase,
     DeleteShowtimeUseCase,
-)
-from app.core.showtime.application.use_cases import (
-    GetShowtimesUseCase,
+    SearchShowtimesUseCase,
     GetShowtimeByIdUseCase,
     ListShowtimeSeatsUseCase,
     GetShowtimeSeatByIdUseCase,
@@ -37,23 +38,11 @@ from app.core.showtime.domain.services import (
 
 
 # COMMAND SHOWTIME
-async def schedule_showtime_use_case(
+async def launch_showtime_use_case(
     db: AsyncSession = Depends(get_db),
-) -> ScheduleShowtimeUseCase:
+) -> LaunchShowtimeUseCase:
     showtime_repo = SQLAlchemyShowtimeRepository(db)
-    showtime_seat_repo = SQLAlchemyShowtimeSeatRepository(db)
-    theater_seat_repository = SQLAlchemyTheaterSeatRepository(db)
-
-    validation_service = ShowtimeValidationService(
-        showtime_repo, theater_seat_repository
-    )
-    showtime_seat_service = ShowTimeSeatService(
-        theater_seat_repository, showtime_seat_repo
-    )
-
-    return ScheduleShowtimeUseCase(
-        showtime_repo, validation_service, showtime_seat_service
-    )
+    return LaunchShowtimeUseCase(showtime_repo)
 
 
 async def update_showtime_use_case(
@@ -68,6 +57,35 @@ async def update_showtime_use_case(
     return UpdateShowtimeUseCase(showtime_repo, validation_service)
 
 
+async def draft_showtime_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> DraftShowtimeUseCase:
+    showtime_repo = SQLAlchemyShowtimeRepository(db)
+    showtime_seat_repo = SQLAlchemyShowtimeSeatRepository(db)
+    theater_seat_repository = SQLAlchemyTheaterSeatRepository(db)
+    validation_service = ShowtimeValidationService(
+        showtime_repo, theater_seat_repository
+    )
+    showtime_seat_service = ShowTimeSeatService(
+        theater_seat_repository, showtime_seat_repo
+    )
+    return DraftShowtimeUseCase(showtime_repo, validation_service, showtime_seat_service)
+
+
+async def cancel_showtime_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> CancelShowtimeUseCase:
+    showtime_repo = SQLAlchemyShowtimeRepository(db)
+    return CancelShowtimeUseCase(showtime_repo)
+
+
+async def restore_showtime_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> RestoreShowtimeUseCase:
+    showtime_repo = SQLAlchemyShowtimeRepository(db)
+    return RestoreShowtimeUseCase(showtime_repo)
+
+
 async def delete_showtime_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> DeleteShowtimeUseCase:
@@ -76,11 +94,11 @@ async def delete_showtime_use_case(
 
 
 # QUERIES SHOWTIME
-async def get_showtimes_use_case(
+async def search_showtimes_use_case(
     db: AsyncSession = Depends(get_db),
-) -> GetShowtimesUseCase:
+) -> SearchShowtimesUseCase:
     showtime_repo = SQLAlchemyShowtimeRepository(db)
-    return GetShowtimesUseCase(showtime_repo)
+    return SearchShowtimesUseCase(showtime_repo)
 
 
 async def get_showtime_by_id_use_case(

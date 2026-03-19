@@ -1,11 +1,14 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
 from datetime import datetime
 from abc import abstractmethod
 from app.core.shared.repository.common_repository import CommonRepository
-from app.core.shared.pagination import PaginationParams
+from app.core.shared.pagination import PaginationParams, Page
 from app.core.showtime.domain.entities.showtime import Showtime
 from app.core.showtime.domain.entities.showtime_seat import ShowtimeSeat
 from app.core.movies.application.dtos import MovieShowtimesFilters
+
+if TYPE_CHECKING:
+    from app.core.showtime.application.dtos import SearchShowtimeFilters
 
 
 class ShowTimeRepository(CommonRepository[Showtime]):
@@ -31,6 +34,33 @@ class ShowTimeRepository(CommonRepository[Showtime]):
         end_time_to_check: datetime,
         exclude_showtime_id: Optional[int] = None,
     ) -> List[Showtime]:
+        pass
+
+    @abstractmethod
+    async def search(
+        self, params: PaginationParams, filters: "SearchShowtimeFilters"
+    ) -> Page[Showtime]:
+        """
+        Search showtimes with filters and pagination.
+
+        Args:
+            params: Pagination parameters (offset, limit, sort_by, sort_order)
+            filters: Filter criteria for showtimes
+
+        Returns:
+            Page[Showtime] with filtered showtimes and pagination metadata
+        """
+        pass
+
+    @abstractmethod
+    async def find_deleted_by_id(self, showtime_id: int) -> Optional[Showtime]:
+        """
+        Finds a deleted showtime by its ID.
+        Args:
+            showtime_id: The ID of the showtime to find.
+        Returns:
+            The deleted showtime if found, otherwise None.
+        """
         pass
 
 

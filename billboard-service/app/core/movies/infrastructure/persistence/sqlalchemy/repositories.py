@@ -1,7 +1,7 @@
 from typing import Optional, Dict, List, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, and_, func
-from app.core.movies.application.repositories import MovieRepository
+from app.core.movies.domain.repositories import MovieRepository
 from app.core.movies.application.dtos import SearchMovieFilters
 from app.core.movies.domain.entities import Movie
 from app.core.shared.pagination import PaginationParams, Page

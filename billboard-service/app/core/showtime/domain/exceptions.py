@@ -2,6 +2,32 @@ from decimal import Decimal
 from app.core.shared.exceptions import DomainException
 
 
+class ShowtimeRestorationError(DomainException):
+    """Exception raised when a showtime is not restorable."""
+
+    def __init__(self, showtime_id: int):
+        message = (
+            f"Showtime with ID {showtime_id} is not marked as deleted can't be restored"
+        )
+        super().__init__(message)
+
+
+class ShowtimeCancellationError(DomainException):
+    """Exception raised when a showtime is not cancellable."""
+
+    def __init__(self, showtime_id: int):
+        message = f"Showtime with ID {showtime_id} is not cancellable"
+        super().__init__(message)
+
+
+class ShowtimeDeletionError(DomainException):
+    """Exception raised when a showtime is not deletable."""
+
+    def __init__(self, showtime_id: int):
+        message = f"Showtime with ID {showtime_id} is not deletable"
+        super().__init__(message)
+
+
 class InvalidShowtimePriceError(DomainException):
     """Exception raised when a showtime's price is outside the allowed range."""
 

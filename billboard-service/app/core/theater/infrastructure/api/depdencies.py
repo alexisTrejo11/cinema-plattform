@@ -4,15 +4,15 @@ from app.config.postgres_config import get_db
 from app.core.cinema.infrastructure.persistence.sqlalchemy import (
     SQLAlchemyCinemaRepository,
 )
-from app.core.theater.application.theather_use_cases import (
+from app.core.theater.application.use_cases import (
     GetTheaterByIdUseCase,
     GetTheatersByCinemaUseCase,
+    SearchTheatersUseCase,
     ListTheatersUseCase,
     CreateTheaterUseCase,
     UpdateTheaterUseCase,
     DeleteTheaterUseCase,
-)
-from app.core.theater.application.seats_use_cases import (
+    RestoreTheaterUseCase,
     GetTheaterSeatByIdUseCase,
     GetSeatsByTheaterUseCase,
     CreateTheaterSeatUseCase,
@@ -47,6 +47,13 @@ async def list_theaters_use_case(
     return ListTheatersUseCase(repo)
 
 
+async def search_theaters_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> SearchTheatersUseCase:
+    repo = SQLAlchemyTheaterRepository(db)
+    return SearchTheatersUseCase(repo)
+
+
 async def create_theater_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> CreateTheaterUseCase:
@@ -68,6 +75,13 @@ async def delete_theater_use_case(
 ) -> DeleteTheaterUseCase:
     repo = SQLAlchemyTheaterRepository(db)
     return DeleteTheaterUseCase(repo)
+
+
+async def restore_theater_use_case(
+    db: AsyncSession = Depends(get_db),
+) -> RestoreTheaterUseCase:
+    repo = SQLAlchemyTheaterRepository(db)
+    return RestoreTheaterUseCase(repo)
 
 
 async def get_theater_seat_by_id_use_case(

@@ -14,24 +14,24 @@ CREATE TABLE IF NOT EXISTS movies (
     id SERIAL PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     original_title VARCHAR(200),
-    minute_duration INTEGER NOT NULL,
-    release_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    description TEXT NOT NULL,
+    minute_duration INTEGER,
+    release_date DATE,
+    projection_start_date DATE,
+    projection_end_date DATE,
+    synopsis TEXT NOT NULL DEFAULT '',
     genre movie_genre NOT NULL,
     rating movie_rating NOT NULL,
     poster_url TEXT,
     trailer_url TEXT,
-    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP DEFAULT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_movies_title ON movies(title);
-CREATE INDEX IF NOT EXISTS idx_movies_dates ON movies(release_date, end_date);
-CREATE INDEX IF NOT EXISTS idx_movies_active ON movies(is_active) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_movies_dates ON movies(release_date);
+CREATE INDEX IF NOT EXISTS idx_movies_projection_dates ON movies(projection_start_date, projection_end_date);
 CREATE INDEX IF NOT EXISTS idx_movies_genre ON movies(genre);
-CREATE INDEX IF NOT EXISTS idx_movies_genre_active_dates ON movies(genre, is_active, release_date);
 
 CREATE OR REPLACE FUNCTION update_updated_at_column() 
 RETURNS TRIGGER AS $$

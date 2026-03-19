@@ -2,10 +2,10 @@ from typing import List, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from app.core.shared.repository.common_repository import CommonRepository
 from app.core.shared.pagination import PaginationParams, Page
-from ..domain.entities import Movie
+from .entities import Movie
 
 if TYPE_CHECKING:
-    from .dtos import SearchMovieFilters
+    from ..application.dtos import SearchMovieFilters
 
 
 class MovieRepository(CommonRepository[Movie], ABC):

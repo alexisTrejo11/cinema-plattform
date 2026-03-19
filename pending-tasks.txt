@@ -1,0 +1,6 @@
+3.- Add unit tests for authentication
+4.- Paginate lists queries
+
+
+- IMPLEMENT CALCULATION OF TOTAL SEATS AND AVAILABLES
+- CHECK ARRAY IN CINEMA AMENITIES CONFLICT IN TEST

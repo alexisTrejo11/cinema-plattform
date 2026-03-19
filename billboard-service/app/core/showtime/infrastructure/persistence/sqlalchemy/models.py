@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from datetime import datetime
 from decimal import Decimal
 from sqlalchemy import (
@@ -14,12 +14,16 @@ from sqlalchemy import (
 from sqlalchemy.orm import mapped_column, relationship, Mapped
 from sqlalchemy.sql import func
 from app.config.base_model import Base
-from app.core.showtime.domain.enums import ShowtimeLanguage, ShowtimeType
+from app.core.showtime.domain.enums import (
+    ShowtimeLanguage,
+    ShowtimeType,
+    ShowtimeStatus,
+)
 
 if TYPE_CHECKING:
-    from app.core.movies.infrastructure.persistence.models import MovieModel
-    from app.core.theater.infrastructure.persistence.models import TheaterModel
-    from app.core.cinema.infrastructure.persistence.cinema_model import CinemaModel
+    from app.core.movies.infrastructure.persistence.sqlalchemy import MovieModel
+    from app.core.theater.infrastructure.persistence.sqlalchemy import TheaterModel
+    from app.core.cinema.infrastructure.persistence.sqlalchemy import CinemaModel
 
 
 class ShowtimeSeatModel(Base):
@@ -39,7 +43,6 @@ class ShowtimeSeatModel(Base):
     taken_at = Column(DateTime(timezone=True), nullable=True)
     transaction_id = Column(Integer, nullable=True)
     user_id = Column(Integer, nullable=True)
-
     created_at = Column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -49,6 +52,7 @@ class ShowtimeSeatModel(Base):
         onupdate=func.now(),
         nullable=False,
     )
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     showtimes = relationship("ShowtimeModel", back_populates="showtime_seats")
     theater_seat = relationship("TheaterSeatModel", back_populates="showtime_bookings")
@@ -95,11 +99,27 @@ class ShowtimeModel(Base):
         ),
         nullable=False,
     )  # Can't Check Enums Values Cause Naming
+    status: Mapped[ShowtimeStatus] = mapped_column(
+        Enum(
+            "DRAFT",
+            "UPCOMING",
+            "IN_PROGRESS",
+            "COMPLETED",
+            "CANCELLED",
+            name="showtime_status_enum",
+            create_type=False,
+        ),
+        nullable=False,
+        default="DRAFT",
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )
 
     movie: Mapped["MovieModel"] = relationship("MovieModel", back_populates="showtimes")

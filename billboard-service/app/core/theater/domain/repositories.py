@@ -1,13 +1,27 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
 from app.core.shared.repository.common_repository import CommonRepository
+from app.core.shared.pagination import PaginationParams, Page
 from app.core.theater.domain.seat import TheaterSeat
 from app.core.theater.domain.theater import Theater
+from app.core.theater.application.dtos import SearchTheaterFilters
 
 
 class TheaterRepository(CommonRepository[Theater]):
     @abstractmethod
+    async def get_by_id(self, entity_id: int) -> Optional[Theater]:
+        pass
+
+    @abstractmethod
+    async def list_all(self, page_params: dict) -> List[Theater]:
+        pass
+
+    @abstractmethod
     async def list_by_cinema(self, cinema_id: int) -> List[Theater]:
+        pass
+
+    @abstractmethod
+    async def search(self, params: PaginationParams, filters: SearchTheaterFilters) -> Page[Theater]:
         pass
 
 

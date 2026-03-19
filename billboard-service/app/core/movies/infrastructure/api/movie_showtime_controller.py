@@ -7,7 +7,7 @@ from app.core.movies.application.dtos import (
     MovieShowtimeResponse,
 )
 from app.config.rate_limit import limiter
-from app.core.movies.infrastructure.api.movie_use_case_container import movie_use_cases
+from app.core.movies.infrastructure.api.container import movie_use_cases
 from app.core.movies.application.use_cases import GetMovieShowtimesUseCase
 
 router = APIRouter(prefix="/api/v1/movies/showtimes", tags=["showtimes"])

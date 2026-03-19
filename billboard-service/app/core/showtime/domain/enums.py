@@ -1,14 +1,15 @@
 from enum import Enum
 
+
 class ShowtimeType(str, Enum):
-    TRADITIONAL_2D = 'TRADITIONAL_2D'
-    TRADITIONAL_3D = 'TRADITIONAL_3D'
-    IMAX_2D = 'IMAX_2D'
-    IMAX_3D = 'IMAX_3D'
-    _4D = '4D'
-    _4DX = '4DX'
-    VIP_2D = 'VIP_2D'
-    VIP_3D = 'VIP_3D'
+    TRADITIONAL_2D = "TRADITIONAL_2D"
+    TRADITIONAL_3D = "TRADITIONAL_3D"
+    IMAX_2D = "IMAX_2D"
+    IMAX_3D = "IMAX_3D"
+    _4D = "4D"
+    _4DX = "4DX"
+    VIP_2D = "VIP_2D"
+    VIP_3D = "VIP_3D"
 
 
 class ShowtimeLanguage(str, Enum):
@@ -19,3 +20,11 @@ class ShowtimeLanguage(str, Enum):
 
     DUBBED_ENGLISH = "DUBBED_ENGLISH"
     DUBBED_SPANISH = "DUBBED_SPANISH"
+
+
+class ShowtimeStatus(Enum):
+    DRAFT = "DRAFT"  # When the showtime is created but not available for booking
+    UPCOMING = "UPCOMING"  # When the showtime is available for booking
+    IN_PROGRESS = "IN_PROGRESS"  # When the showtime is in progress
+    COMPLETED = "COMPLETED"  # When the showtime is completed
+    CANCELLED = "CANCELLED"  # When the showtime is cancelled

@@ -12,17 +12,28 @@ class Movie(BaseModel):
     original_title: Optional[str] = None
     minute_duration: PositiveInt = Field(..., description="Duration in minutes")
     release_date: date
-    end_date: date
-    description: str
+    projection_start_date: date
+    projection_end_date: date
+    synopsis: str
     genre: MovieGenre
     rating: MovieRating
     poster_url: Optional[HttpUrl] = None
     trailer_url: Optional[HttpUrl] = None
-    is_active: bool = True
+
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None
 
     model_config = ConfigDict(
         from_attributes=True,
         arbitrary_types_allowed=True,
     )
+
+    @property
+    def is_active(self) -> bool:
+        return self.deleted_at is None
+
+    def is_showing(self, on_date: Optional[date] = None) -> bool:
+        if on_date is None:
+            on_date = date.today()
+        return self.projection_start_date <= on_date <= self.projection_end_date

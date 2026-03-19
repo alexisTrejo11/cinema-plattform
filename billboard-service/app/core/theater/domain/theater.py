@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, ClassVar
 from pydantic import PositiveInt
 from .exceptions import InvalidCapacityError, TheaterMaintenanceError
@@ -16,9 +16,7 @@ class Theater(BaseModel):
     is_active: bool = True
     maintenance_mode: bool = False
 
-    class Config:
-        orm_mode = True
-        use_enum_values = True
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
 
     CAPACITY_RULES: ClassVar = {
         TheaterType.IMAX: {"min": 150, "max": 300},

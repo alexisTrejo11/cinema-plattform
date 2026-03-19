@@ -1,7 +1,88 @@
-from pydantic import Field, BaseModel
-from typing import Optional
+from pydantic import Field, BaseModel, ConfigDict
+from typing import Optional, List, TYPE_CHECKING
 from app.core.theater.domain.enums import SeatType
 from app.core.theater.domain.seat import TheaterSeatBase
+from app.core.theater.domain.enums import TheaterType
+from app.core.shared.pagination import PaginationResponse
+
+if TYPE_CHECKING:
+    from app.core.shared.pagination import Page
+    from app.core.theater.domain.theater import Theater
+
+
+class SearchTheaterFilters(BaseModel):
+    """Filter parameters for theater search/list endpoints."""
+
+    cinema_id: Optional[int] = Field(None, description="Filter by cinema ID.", examples=[1])
+    name: Optional[str] = Field(
+        None, description="Filter by theater name (partial match).", examples=["IMAX"]
+    )
+    theater_type: Optional[TheaterType] = Field(
+        None, description="Filter by theater type.", examples=[TheaterType.IMAX]
+    )
+    is_active: Optional[bool] = Field(
+        None, description="Filter by active status.", examples=[True]
+    )
+    maintenance_mode: Optional[bool] = Field(
+        None, description="Filter by maintenance status.", examples=[False]
+    )
+
+
+class TheaterSummaryResponse(BaseModel):
+    """Lightweight theater response for list/search endpoints."""
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        use_enum_values=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": 11,
+                    "cinema_id": 1,
+                    "name": "IMAX Room 1",
+                    "capacity": 180,
+                    "theater_type": "IMAX",
+                    "is_active": True,
+                    "maintenance_mode": False,
+                }
+            ]
+        },
+    )
+
+    id: int = Field(..., description="Theater ID.", examples=[11])
+    cinema_id: int = Field(..., description="Parent cinema ID.", examples=[1])
+    name: str = Field(..., description="Theater display name.", examples=["IMAX Room 1"])
+    capacity: int = Field(..., ge=1, description="Seat capacity.", examples=[180])
+    theater_type: TheaterType = Field(..., description="Theater type.", examples=[TheaterType.IMAX])
+    is_active: bool = Field(..., description="Whether theater is active.", examples=[True])
+    maintenance_mode: bool = Field(
+        ..., description="Whether theater is under maintenance.", examples=[False]
+    )
+
+
+class TheaterDetailResponse(TheaterSummaryResponse):
+    """Detailed theater response."""
+
+
+class PaginatedTheaterResponse(PaginationResponse):
+    """Paginated response for theater list/search endpoints."""
+
+    data: List[TheaterSummaryResponse]
+
+    @classmethod
+    def from_page(cls, page: "Page[Theater]") -> "PaginatedTheaterResponse":
+        rows = [TheaterSummaryResponse.model_validate(item) for item in page.items]
+        return cls(
+            data=rows,
+            page_size=page.page_size,
+            total_items=page.total,
+            total_pages=page.total_pages,
+            current_page=page.page,
+            next_page=min(page.page + 1, page.total_pages) if page.has_next else page.page,
+            previous_page=max(page.page - 1, 1) if page.has_previous else page.page,
+            has_next=page.has_next,
+            has_previous=page.has_previous,
+        )
 
 
 class TheaterSeatCreate(TheaterSeatBase):

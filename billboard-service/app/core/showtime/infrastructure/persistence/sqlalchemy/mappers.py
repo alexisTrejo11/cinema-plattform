@@ -53,6 +53,10 @@ class ShowtimeModelMapper:
         if updated_at_utc and updated_at_utc.tzinfo is None:
             updated_at_utc = updated_at_utc.replace(tzinfo=timezone.utc)
 
+        deleted_at_utc = model.deleted_at
+        if deleted_at_utc and deleted_at_utc.tzinfo is None:
+            deleted_at_utc = deleted_at_utc.replace(tzinfo=timezone.utc)
+
         return Showtime(
             id=model.id,
             movie_id=model.movie_id,
@@ -62,12 +66,14 @@ class ShowtimeModelMapper:
             start_time=start_time_utc,
             end_time=end_time_utc,
             type=ShowtimeType(model.type),
+            status=ShowtimeStatus(model.status),
             language=ShowtimeLanguage(model.language),
             total_seats=0,
             available_seats=0,
             seats=[],
             created_at=created_at_utc,
             updated_at=updated_at_utc,
+            deleted_at=deleted_at_utc,
         )
 
     @staticmethod

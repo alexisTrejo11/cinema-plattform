@@ -2,12 +2,13 @@ from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone, timedelta
 from collections import defaultdict
 
-from sqlalchemy import and_, select, delete
+from sqlalchemy import and_, select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.showtime.domain.entities import Showtime, ShowtimeSeat
-from app.core.shared.pagination import PaginationParams
+from app.core.shared.pagination import PaginationParams, Page
 from app.core.movies.application.dtos import MovieShowtimesFilters
+from app.core.showtime.application.dtos import SearchShowtimeFilters
 from app.core.showtime.domain.repositories import (
     ShowtimeSeatRepository,
     ShowTimeRepository,
@@ -115,6 +116,15 @@ class SQLAlchemyShowtimeRepository(ShowTimeRepository):
             .order_by(ShowtimeModel.start_time)
         )
         return [ShowtimeModelMapper.to_domain(model) for model in result.scalars()]
+
+    async def find_deleted_by_id(self, showtime_id: int) -> Optional[Showtime]:
+        result = await self.session.execute(
+            select(ShowtimeModel).where(
+                ShowtimeModel.id == showtime_id, ShowtimeModel.deleted_at.isnot(None)
+            )
+        )
+        model = result.scalars().first()
+        return ShowtimeModelMapper.to_domain(model) if model else None
 
     async def find_incoming_by_cinema(self, cinema_id: int) -> List[Showtime]:
         now_utc = datetime.now(timezone.utc)
@@ -247,3 +257,58 @@ class SQLAlchemyShowtimeRepository(ShowTimeRepository):
             )
 
         return dict(showtimes_by_movie)
+
+    async def search(
+        self, params: PaginationParams, filters: SearchShowtimeFilters
+    ) -> Page[Showtime]:
+        # Build base query
+        stmt = select(ShowtimeModel)
+        count_stmt = select(func.count()).select_from(ShowtimeModel)
+
+        # Apply filters
+        filter_conditions = self._build_search_filters(filters)
+        if filter_conditions:
+            stmt = stmt.where(and_(*filter_conditions))
+            count_stmt = count_stmt.where(and_(*filter_conditions))
+
+        # Get total count
+        count_result = await self.session.execute(count_stmt)
+        total = count_result.scalar() or 0
+
+        # Apply pagination and ordering
+        stmt = stmt.order_by(ShowtimeModel.start_time)
+        stmt = stmt.offset(params.offset).limit(params.limit)
+
+        # Execute query
+        result = await self.session.execute(stmt)
+        models = result.scalars().all()
+
+        showtimes = [ShowtimeModelMapper.to_domain(model) for model in models]
+        return Page.create(items=showtimes, total=total, params=params)
+
+    def _build_search_filters(self, filters: SearchShowtimeFilters) -> List[Any]:
+        """Build filter conditions from SearchShowtimeFilters."""
+        conditions: List[Any] = []
+
+        if filters.movie_id is not None:
+            conditions.append(ShowtimeModel.movie_id == filters.movie_id)
+        if filters.theater_id is not None:
+            conditions.append(ShowtimeModel.theater_id == filters.theater_id)
+        if filters.cinema_id is not None:
+            conditions.append(ShowtimeModel.cinema_id == filters.cinema_id)
+        if filters.type is not None:
+            conditions.append(ShowtimeModel.type == filters.type)
+        if filters.language is not None:
+            conditions.append(ShowtimeModel.language == filters.language)
+        if filters.start_time_after is not None:
+            conditions.append(ShowtimeModel.start_time >= filters.start_time_after)
+        if filters.start_time_before is not None:
+            conditions.append(ShowtimeModel.start_time <= filters.start_time_before)
+        if filters.is_upcoming is not None:
+            now_utc = datetime.now(timezone.utc)
+            if filters.is_upcoming:
+                conditions.append(ShowtimeModel.start_time > now_utc)
+            else:
+                conditions.append(ShowtimeModel.start_time <= now_utc)
+
+        return conditions

@@ -9,25 +9,39 @@ from app.core.showtime.domain.repositories import (
     ShowTimeRepository,
     ShowtimeSeatRepository,
 )
+from app.core.movies.domain.repositories import MovieRepository
+from app.core.cinema.domain.repositories import CinemaRepository
 
 
 class ShowtimeValidationService:
     def __init__(
         self,
-        showtime_repo: ShowTimeRepository,
-        theater_seat_repo: TheaterSeatRepository,
+        showtime_repository: ShowTimeRepository,
+        theater_seat_repository: TheaterSeatRepository,
+        cinema_repository: CinemaRepository,
+        movie_repository: MovieRepository,
     ):
-        self.showtime_repo = showtime_repo
-        self.theater_seat_repo = theater_seat_repo
+        self.showtime_repository = showtime_repository
+        self.theater_seat_repository = theater_seat_repository
+        self.cinema_repository = cinema_repository
+        self.movie_repository = movie_repository
 
-    async def validate_insert(
+    async def validate_business_logic(
         self, proposed_showtime: Showtime, has_post_credits: bool
     ):
+
+        # Inner validation of the showtime entity (e.g., start_time < end_time, etc.)
+        proposed_showtime.validate_business_logic()
+
+        # Validations including database checks
+        await self.validate_movie_cinema_active(
+            proposed_showtime.movie_id, proposed_showtime.cinema_id
+        )
         await self.validate_no_overlap(proposed_showtime, has_post_credits)
         await self.validate_theater_seats(proposed_showtime.theater_id)
 
     async def validate_theater_seats(self, theater_id: int):
-        theater_count = await self.theater_seat_repo.exists_by_theater(theater_id)
+        theater_count = await self.theater_seat_repository.exists_by_theater(theater_id)
         if theater_count == 0:
             raise ValidationException(
                 field="Theater", reason="Don't have seats to create showtime"
@@ -57,7 +71,7 @@ class ShowtimeValidationService:
 
         if not proposed_showtime.id:
             overlapping_showtimes = (
-                await self.showtime_repo.list_by_theater_and_date_range(
+                await self.showtime_repository.find_by_theater_and_date_range(
                     theater_id=proposed_showtime.theater_id,
                     start_time_to_check=buffered_start_time,
                     end_time_to_check=buffered_end_time,
@@ -65,7 +79,7 @@ class ShowtimeValidationService:
             )
         else:
             overlapping_showtimes = (
-                await self.showtime_repo.list_by_theater_and_date_range(
+                await self.showtime_repository.find_by_theater_and_date_range(
                     theater_id=proposed_showtime.theater_id,
                     start_time_to_check=buffered_start_time,
                     end_time_to_check=buffered_end_time,
@@ -84,18 +98,35 @@ class ShowtimeValidationService:
                 + f"Found {len(overlapping_showtimes)} overlapping showtime(s).",
             )
 
+    async def validate_movie_cinema_active(self, movie_id: int, cinema_id: int):
+        cinema = await self.cinema_repository.find_by_id(cinema_id)
+        if not cinema or not cinema.is_active:
+            raise ValidationException(
+                field="Cinema",
+                reason=f"Cinema with ID {cinema_id} is not active or does not exist.",
+            )
+
+        movie = await self.movie_repository.find_by_id(movie_id)
+        if not movie or not movie.is_active:
+            raise ValidationException(
+                field="Movie",
+                reason=f"Movie with ID {movie_id} is not active or does not exist.",
+            )
+
 
 class ShowTimeSeatService:
     def __init__(
         self,
-        theater_seat_repo: TheaterSeatRepository,
+        theater_seat_repository: TheaterSeatRepository,
         showtime_seat_repo: ShowtimeSeatRepository,
     ):
-        self.theater_seat_repo = theater_seat_repo
+        self.theater_seat_repository = theater_seat_repository
         self.showtime_seat_repo = showtime_seat_repo
 
     async def create_showtimes_seats(self, showtime: Showtime):
-        theater_seats = await self.theater_seat_repo.get_by_theater(showtime.theater_id)
+        theater_seats = await self.theater_seat_repository.get_by_theater(
+            showtime.theater_id
+        )
         showtimes_seats = self._generate_showtimes_seats(theater_seats, showtime)
         await self.showtime_seat_repo.bulk_create(showtimes_seats)
 

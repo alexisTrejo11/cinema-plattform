@@ -5,7 +5,7 @@ from app.core.shared.pagination import PaginationParams, Page
 from app.core.movies.domain.entities import Movie
 from app.core.showtime.domain.repositories import ShowTimeRepository
 from .dtos import MovieShowtime, MovieShowtimesFilters, SearchMovieFilters
-from .repositories import MovieRepository
+from ..domain.repositories import MovieRepository
 from .services import MovieShowtimeService
 from .cache import (
     cache_movie_by_id,
