@@ -8,11 +8,9 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 
-from config import exception_handlers, init_rabbitmq, close_rabbitmq
-from config.db.redis import RedisManager, get_redis
-from config.db.model_init import *
-from config.app.logging import setup_logging
-from config.app.registry_service import RegistryMicroservice
+from app.config import exception_handlers
+from app.config import setup_logging
+from app.config import RegistryMicroservice
 
 from app.combos.infrastructure.api import combo_controllers
 from app.products.infrastructure.api.controllers import (
@@ -24,8 +22,7 @@ from app.promotions.infrastructure.api.controllers import (
     promotion_query_controllers,
     promotion_items_controller,
 )
-from app.shared.redis.redis_service import RedisService
-
+from app.config.cache_config import init_cache, close_cache
 
 setup_logging()
 logger = logging.getLogger("app")
@@ -38,11 +35,8 @@ async def lifespan(app: FastAPI):
     logger.info("Starting service...")
 
     # Move Task
-    await init_redis()
+    await init_cache()
     logger.info("Redis initialized.")
-
-    rabbit_task = await init_rabbitmq()
-    logger.info("RabbitMQ initialized.")
 
     await registry_microservice()
     yield
@@ -53,8 +47,7 @@ async def lifespan(app: FastAPI):
         registry_client.stop_heartbeat_loop()
         logger.info("Heartbeat loop stopped.")
 
-    await RedisManager.close()
-    await close_rabbitmq(rabbit_task)
+    await close_cache()
 
 
 app = FastAPI(
@@ -111,12 +104,6 @@ async def registry_microservice():
 
 def stop_heartbeat_loop(registry_client: RegistryMicroservice):
     registry_client.stop_heartbeat_loop()
-
-
-async def init_redis():
-    await RedisManager.initialize()
-    client = await get_redis()
-    await RedisService.initialize(client)
 
 
 app.include_router(category_controller.router)

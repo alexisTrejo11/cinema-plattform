@@ -25,11 +25,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
 
     # Redis Configuration
-    REDIS_URL: str = "redis://localhost:6379"
-
-    RABBITMQ_URL: str
-    USER_EVENTS_EXCHANGE: str
-    CONSUMER_QUEUE_NAME: str
+    REDIS_URL: str
 
     model_config = SettingsConfigDict(
         env_file="./.env", env_file_encoding="utf-8", extra="ignore"

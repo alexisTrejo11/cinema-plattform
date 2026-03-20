@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 from pydantic import BaseModel
-from config.app.app_config import settings
+from app.config import settings
 import aiohttp
 import asyncio
 

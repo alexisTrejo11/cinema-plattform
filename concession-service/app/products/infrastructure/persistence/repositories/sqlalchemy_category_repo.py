@@ -1,7 +1,6 @@
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.shared.cache import cache, invalidate_cache
 from app.products.domain.repositories import ProductCategoryRepository
 from app.products.domain.entities.product_category import ProductCategory
 from ..models.product_models import ProductCategoryModel
@@ -12,7 +11,6 @@ class SQLAlchemyCategoryRepository(ProductCategoryRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    @cache(key_template="product_category:{category_id}", ttl=60)
     async def get_by_id(self, category_id: int) -> Optional[ProductCategory]:
         stmt = select(ProductCategoryModel).where(
             ProductCategoryModel.id == category_id,
@@ -32,14 +30,12 @@ class SQLAlchemyCategoryRepository(ProductCategoryRepository):
 
         return [category.to_domain() for category in categories]
 
-    @invalidate_cache(key_template="product_category:{category.id}")
     async def save(self, category: ProductCategory) -> ProductCategory:
         if not category.id:
             return await self._create(category)
         else:
             return await self._update(category)
 
-    @invalidate_cache(key_template="product_category:{category_id}")
     async def delete(self, category_id: int) -> bool:
         stmt = select(ProductCategoryModel).where(
             ProductCategoryModel.id == category_id

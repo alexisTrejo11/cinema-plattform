@@ -1,0 +1,2 @@
+-- Add new exception handler to billboard
+-- Add regiustration from billboard to admin service

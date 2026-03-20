@@ -1,9 +1,7 @@
 from typing import List, Optional
-from pydantic import Field
+from pydantic import BaseModel, Field
 from app.combos.domain.entities.value_objects import ComboId
-from app.shared.response import ErrorResponse
 from app.shared.schema import ComboBase, ComboItemBase
-from pydantic import BaseModel
 
 
 class ComboItemCreateCommand(ComboItemBase):
@@ -55,18 +53,6 @@ class ComboCommandResult(BaseModel):
         This is a class method to create a success result.
         """
         return cls(combo_id=str(combo_id), is_success=True, message=message)
-
-    def to_error_response(self) -> ErrorResponse:
-        """
-        Converts the command result to an ErrorResponse.
-        This is useful for API responses.
-        """
-        return ErrorResponse(
-            code="Combo_command_error",
-            type="ApplicationError",
-            message=self.message,
-            details={"combo_id": self.combo_id},
-        )
 
 
 ComboCreateCommand.model_rebuild()

@@ -3,7 +3,6 @@ from typing import Dict, Optional, List, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select, delete, and_
 
-from app.shared.cache import cache, invalidate_cache
 from app.shared.pagination import PaginationMetadata, PaginationQuery
 from app.products.domain.repositories import ProductRepository
 from app.products.domain.entities.product import Product, ProductId
@@ -17,7 +16,6 @@ class SQLAlchemyProductRepository(ProductRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    @cache(key_template="product:{product_id.value}", ttl=600)
     async def get_by_id(self, product_id: ProductId) -> Optional[Product]:
         stmt = select(ProductModel).where(
             and_(
@@ -85,7 +83,6 @@ class SQLAlchemyProductRepository(ProductRepository):
 
         return [ModelMapper.to_domain(model) for model in models], pagination_metadata
 
-    @invalidate_cache(key_template="product:{product.id.value}")
     async def save(self, product: Product) -> Product:
         model = ModelMapper.from_domain(product)
         stmt = select(ProductModel).where(ProductModel.id == product.id.value)
@@ -100,7 +97,6 @@ class SQLAlchemyProductRepository(ProductRepository):
         await self.session.commit()
         return ModelMapper.to_domain(model)
 
-    @invalidate_cache(key_template="product:{product.id.value}")
     async def delete(self, product_id: ProductId) -> None:
         stmt = delete(ProductModel).where(ProductModel.id == str(product_id.value))
         await self.session.execute(stmt)

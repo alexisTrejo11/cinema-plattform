@@ -1,10 +1,8 @@
-from app.shared.response import ApiResponse
 from fastapi import status
 
 common_error_responses = {
     status.HTTP_401_UNAUTHORIZED: {
         "description": "Unauthorized: Authentication required or invalid token.",
-        "model": ApiResponse[None],
         "content": {
             "application/json": {
                 "example": {
@@ -23,7 +21,6 @@ common_error_responses = {
     },
     status.HTTP_403_FORBIDDEN: {
         "description": "Forbidden: User does not have the necessary permissions (e.g., not an admin).",
-        "model": ApiResponse[None],
         "content": {
             "application/json": {
                 "example": {
@@ -42,7 +39,6 @@ common_error_responses = {
     },
     status.HTTP_500_INTERNAL_SERVER_ERROR: {
         "description": "Internal Server Error: An unexpected error occurred on the server.",
-        "model": ApiResponse[None],
         "content": {
             "application/json": {
                 "example": {
@@ -65,7 +61,6 @@ common_error_responses = {
 common_public_error_responses = {
     status.HTTP_400_BAD_REQUEST: {
         "description": "Bad Request: The request was invalid or cannot be served.",
-        "model": ApiResponse[None],
         "content": {
             "application/json": {
                 "example": {
@@ -84,7 +79,6 @@ common_public_error_responses = {
     },
     status.HTTP_500_INTERNAL_SERVER_ERROR: {
         "description": "Internal Server Error: An unexpected error occurred on the server.",
-        "model": ApiResponse[None],
         "content": {
             "application/json": {
                 "example": {

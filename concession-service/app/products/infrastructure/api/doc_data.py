@@ -3,7 +3,6 @@ from app.shared.docs.common_responses import (
     common_public_error_responses,
 )
 from fastapi import status
-from app.shared.response import ApiResponse
 
 
 create_product_examples = {
@@ -100,7 +99,6 @@ get_product_examples = {
     },
     status.HTTP_404_NOT_FOUND: {
         "description": "Not Found: The requested resource was not found.",
-        "model": ApiResponse[None],
         "content": {
             "application/json": {
                 "examples": {
@@ -187,7 +185,6 @@ get_category_examples = {
     },
     status.HTTP_404_NOT_FOUND: {
         "description": "Not Found: The requested product category was not found.",
-        "model": ApiResponse[None],
         "content": {
             "application/json": {
                 "examples": {

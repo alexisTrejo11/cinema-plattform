@@ -1,6 +1,6 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from config.db.postgres_config import get_db
+from app.config.db.postgres_config import get_db
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
 from app.promotions.infrastructure.persistence.repository.sql_alchemy_promotion_repository import (
     SQLAlchemyPromotionRepository,

@@ -1,9 +1,17 @@
 from typing import List, Optional
 from datetime import datetime
-from pydantic import Field
+from pydantic import BaseModel, Field
 from app.combos.domain.entities.combo import Combo
 from app.shared.schema import ComboBase, ComboItemBase
+from app.shared.pagination import PaginationMetadata
 from uuid import UUID
+
+
+class ComboListResponse(BaseModel):
+    """Paginated list of combos."""
+
+    items: List["ComboResponse"] = Field(..., description="List of combos")
+    metadata: PaginationMetadata = Field(..., description="Pagination metadata")
 
 
 class ComboResponse(ComboBase):
@@ -103,3 +111,6 @@ class ComboItemResponse(ComboItemBase):
                 }
             ],
         }
+
+
+ComboListResponse.model_rebuild()

@@ -53,7 +53,7 @@ def setup_logging():
                 "style": "%",
             },
             "json": {
-                "()": __name__ + ".JsonFormatter",
+                "()": JsonFormatter,
             },
         },
         "handlers": {

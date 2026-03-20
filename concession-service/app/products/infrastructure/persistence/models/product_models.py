@@ -13,7 +13,7 @@ from sqlalchemy import (
     ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
-from config.db.postgres_config import Base
+from app.config.db.postgres_config import Base
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from app.products.domain.entities.product_category import ProductCategory
 

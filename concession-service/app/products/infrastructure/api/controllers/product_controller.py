@@ -1,14 +1,13 @@
-from fastapi import APIRouter, Depends, Path, status
+from fastapi import APIRouter, Depends, Path, Request, status
 from uuid import UUID
 from typing import List
-import logging
 
-from app.shared.response import ApiResponse
-from app.user.auth.auth_dependencies import get_logged_admin_user
+from app.config.rate_limit import limiter
+from app.config.security import require_roles, AuthUserContext
 from app.products.domain.entities.value_objects import ProductId
 from app.products.application.commands import ProductUpdateCommand, ProductCreateCommand
 from app.products.application.queries import GetProductByIdQuery, SearchProductsQuery
-from app.products.application.responses import ProductDetails
+from app.products.application.responses import ProductDetails, ProductSearchResponse
 from app.products.application.use_cases.container import ProductUseCases
 
 from ..dependencies import get_product_use_cases
@@ -25,177 +24,103 @@ from ..doc_data import (
     search_products_examples,
 )
 
-
-logger = logging.getLogger("app")
-
 router = APIRouter(prefix="/api/v2/products", tags=["Food Products"])
 
 
 @router.get(
     "/{product_id}",
-    response_model=ApiResponse[ProductDetails],
+    response_model=ProductDetails,
     summary="Get product by ID",
     description="Retrieve detailed information about a specific food product",
     responses={**get_product_examples},
 )
+@limiter.limit("60/minute")
 async def get_product_by_id(
+    request: Request,
     product_id: UUID = Path(
         ...,
         description="ID of the product to retrieve",
-        example="75bb2bef-953f-47b2-8e48-6f3101515ebe",
+        examples=["75bb2bef-953f-47b2-8e48-6f3101515ebe"],
     ),
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
-    """
-    Retrieve a food product by its unique identifier.
-
-    - **product_id**: The ID of the product to retrieve
-    """
-    try:
-        query = GetProductByIdQuery(product_id=ProductId(product_id))
-        product = await usecase.get_product_by_id(query)
-        return ApiResponse.success(product, "Food product successfully retrieved")
-    except Exception as e:
-        logger.error(f"Error retrieving product {product_id}: {e}")
-        raise
+    query = GetProductByIdQuery(product_id=ProductId(product_id))
+    return await usecase.get_product_by_id(query)
 
 
 @router.get(
     "/",
-    response_model=ApiResponse[List[ProductDetails]],
+    response_model=ProductSearchResponse,
     summary="Search food products",
     description="Search and filter food products with pagination",
     responses={**search_products_examples},
 )
+@limiter.limit("60/minute")
 async def search_products(
+    request: Request,
     search_params: ProductSearchQuery = Depends(),
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
-    """
-    Search food products with various filters:
-
-    - **offset**: Pagination starting point
-    - **limit**: Number of items per page (1-100)
-    - **category_id**: Filter by category
-    - **min_price/max_price**: Price range filter
-    - **name_like**: Name search (partial match)
-    - **available_only**: Show only available products
-    """
-    try:
-        logger.info(f"Searching products with params: {search_params.model_dump()}")
-
-        params = SearchProductsQuery(**search_params.model_dump())
-        products_response = await usecase.search_products(params)
-
-        logger.info(f"Found {len(products_response.product_page)} products")
-        return ApiResponse.success(
-            data=products_response.product_page,
-            message="Food products successfully retrieved",
-            metadata={"page": products_response.metadata.model_dump()},
-        )
-    except Exception as e:
-        logger.error(f"Error searching products: {e}")
-        raise
+    params = SearchProductsQuery(**search_params.model_dump())
+    response = await usecase.search_products(params)
+    return ProductSearchResponse(
+        product_page=response.product_page,
+        metadata=response.metadata,
+    )
 
 
 @router.post(
     "/",
-    response_model=ApiResponse[ProductDetails],
+    response_model=ProductDetails,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new food product",
     description="Creates a new food product with the provided details",
     responses={**create_product_examples},
 )
+@limiter.limit("10/minute")
 async def create_product(
+    request: Request,
     product_data: CreateProductRequest,
-    admin_user=Depends(get_logged_admin_user),
+    admin_user: AuthUserContext = Depends(require_roles("admin", "manager")),
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
-    """
-    Create a new food product with the following details:
-    - **name**: Product name (1-200 characters)
-    - **price**: Product price (must be positive)
-    - **category_id**: ID of the product category
-    - **description**: Optional description
-    - **image_url**: Optional product image URL
-    - **preparation_time**: Optional prep time in minutes
-    - **calories**: Optional calorie count
-    """
-    try:
-        logger.info(
-            f"Admin {admin_user.get_id()} is attempting to create product: {product_data.model_dump()}"
-        )
-
-        command = ProductCreateCommand(**product_data.model_dump())
-        product = await usecase.create_product(command)
-
-        logger.info(f"Product created successfully: {product.id}")
-        return ApiResponse.success(product)
-    except Exception as e:
-        logger.error(f"Error creating product: {e}")
-        raise
+    command = ProductCreateCommand(**product_data.model_dump())
+    return await usecase.create_product(command)
 
 
 @router.patch(
     "/{product_id}",
-    response_model=ApiResponse[ProductDetails],
+    response_model=ProductDetails,
     summary="Update a food product",
     description="Update details of an existing food product",
     responses={**create_update_examples},
 )
+@limiter.limit("10/minute")
 async def update_product(
+    request: Request,
     update_data: UpdateProductRequest,
-    product_id: UUID = Path(..., description="ID of the product to update", example=1),
+    product_id: UUID = Path(..., description="ID of the product to update", examples=[1]),
     usecase: ProductUseCases = Depends(get_product_use_cases),
-    admin_user=Depends(get_logged_admin_user),
+    admin_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
-    """
-    Update an existing food product with new details.
-
-    - **product_id**: The ID of the product to update
-    - **update_data**: New values for the product (all fields optional)
-    """
-    try:
-        logger.info(
-            f"Admin {admin_user.get_id()} is attempting to update product {product_id} with data: {update_data.model_dump()}"
-        )
-
-        command = ProductUpdateCommand(
-            product_id=ProductId(product_id), **update_data.model_dump()
-        )
-
-        product = await usecase.update_product(command)
-
-        logger.info(f"Product {product_id} updated successfully")
-        return ApiResponse.success(product)
-    except Exception as e:
-        logger.error(f"Error updating product {product_id}: {e}")
-        raise
+    command = ProductUpdateCommand(
+        product_id=ProductId(product_id), **update_data.model_dump()
+    )
+    return await usecase.update_product(command)
 
 
 @router.delete(
     "/{product_id}",
-    response_model=ApiResponse[None],
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a food product",
     description="Permanently remove a food product from the system",
     responses={**delete_product_examples},
 )
+@limiter.limit("10/minute")
 async def delete_product(
-    product_id: UUID = Path(..., description="ID of the product to delete", example=1),
+    request: Request,
+    product_id: UUID = Path(..., description="ID of the product to delete", examples=[1]),
     usecase: ProductUseCases = Depends(get_product_use_cases),
-    admin_user=Depends(get_logged_admin_user),
+    admin_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
-    """
-    Delete a food product by its ID.
-
-    - **product_id**: The ID of the product to delete
-    """
-    try:
-        logger.info(
-            f"Admin {admin_user.get_id()} is attempting to delete product {product_id}"
-        )
-        await usecase.soft_delete_product(ProductId(product_id))
-        return ApiResponse.success(None, "Product successfully deleted")
-    except Exception as e:
-        raise
+    await usecase.soft_delete_product(ProductId(product_id))

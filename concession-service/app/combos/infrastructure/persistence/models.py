@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import ForeignKey, Numeric, String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from config.db.postgres_config import Base
+from app.config.db.postgres_config import Base
 from uuid import UUID
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 

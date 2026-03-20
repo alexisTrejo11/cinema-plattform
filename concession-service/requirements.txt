@@ -1,7 +1,6 @@
 
 # FastAPI and dependencies
 fastapi[standard]
-fastapi-cache2
 pydantic
 pydantic-settings
 uvicorn 
@@ -10,24 +9,19 @@ SQLAlchemy
 asyncpg
 psycopg2
 greenlet
-redis
+fastapi-cache[redis]
+redis>=5.0.0
 # Testing
 pytest
 pytest-asyncio
 pytest-mock
-
 # Log
 colorlog
-
 # Rate Limiting
 slowapi
-python-jose[cryptography] 
-
-# RabbitMQ
-aio-pika
-
+PyJWT
 # CORS
 fastapi-cors
-
 # ASYNC HTTP
 aiohttp
+alembic

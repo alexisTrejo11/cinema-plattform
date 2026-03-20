@@ -1,11 +1,10 @@
 from sqlalchemy.orm import Session
-from config.db.postgres_config import get_db
+from app.config.db.postgres_config import get_db
 from fastapi import Depends
 from app.combos.domain.repository import ComboRepository
 from app.products.domain.repositories import ProductRepository
 from app.combos.application.use_cases.container import ComboUseCases
 from sqlalchemy.ext.asyncio import AsyncSession
-
 
 from app.combos.infrastructure.persistence.sqlalchemy_combo_repo import (
     SQLAlchemyComboRepository,
