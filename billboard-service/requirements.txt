@@ -1,0 +1,30 @@
+# FastAPI and related dependencies for building the API
+fastapi[standard]
+pydantic
+pydantic-settings
+
+# Object-relational mapping and database tools
+SQLAlchemy
+asyncpg
+alembic
+aiosqlite
+
+# Asynchronous programming support
+greenlet
+
+# Testing and development tools
+pytest
+pytest-asyncio
+colorlog
+
+# Rate limiting library for FastAPI
+slowapi
+# JWT handling library for authentication
+pyjwt
+
+# Redis caching
+fastapi-cache[redis]
+redis>=5.0.0
+
+# Production ASGI server
+gunicorn>=20.1.0
