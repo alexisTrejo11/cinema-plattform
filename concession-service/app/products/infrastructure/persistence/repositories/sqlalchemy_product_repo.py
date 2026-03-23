@@ -16,11 +16,11 @@ class SQLAlchemyProductRepository(ProductRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get_by_id(self, product_id: ProductId) -> Optional[Product]:
+    async def find_by_id(self, product_id: ProductId) -> Optional[Product]:
         stmt = select(ProductModel).where(
             and_(
                 ProductModel.id == str(product_id.value),
-                ProductModel.is_available == True,
+                ProductModel.deleted_at == None,
             )
         )
         result = await self.session.execute(stmt)
@@ -28,7 +28,7 @@ class SQLAlchemyProductRepository(ProductRepository):
 
         return ModelMapper.to_domain(model) if model else None
 
-    async def get_by_id_in(
+    async def find_by_id_in(
         self, product_id_list: List[ProductId]
     ) -> Dict[ProductId, Product]:
         if not product_id_list:
@@ -37,12 +37,14 @@ class SQLAlchemyProductRepository(ProductRepository):
         stmt = select(ProductModel).where(
             and_(
                 ProductModel.id.in_([str(p_id.value) for p_id in product_id_list]),
-                ProductModel.is_available == True,
+                ProductModel.deleted_at == None,
             )
         )
         result = await self.session.execute(stmt)
         models = result.scalars().all()
-        return {ProductId(model.id): ModelMapper.to_domain(model) for model in models}
+        return {
+            ProductId(value=model.id): ModelMapper.to_domain(model) for model in models
+        }
 
     async def search(
         self, search_params: SearchProductsQuery
@@ -101,3 +103,15 @@ class SQLAlchemyProductRepository(ProductRepository):
         stmt = delete(ProductModel).where(ProductModel.id == str(product_id.value))
         await self.session.execute(stmt)
         await self.session.commit()
+
+    async def find_deleted_by_id(self, product_id: ProductId) -> Optional[Product]:
+        stmt = select(ProductModel).where(
+            and_(
+                ProductModel.id == str(product_id.value),
+                ProductModel.deleted_at != None,
+            )
+        )
+        result = await self.session.execute(stmt)
+        model = result.scalar_one_or_none()
+
+        return ModelMapper.to_domain(model) if model else None

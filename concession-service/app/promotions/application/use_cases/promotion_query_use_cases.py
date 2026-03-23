@@ -34,7 +34,7 @@ class GetPromotionByIdUseCase:
         if not query.include_products:
             return PromotionResponse.from_domain(promotion)
 
-        products = await self.product_repository.get_by_id_in(
+        products = await self.product_repository.find_by_id_in(
             promotion.applicable_product_ids
         )
         return PromotionResponse.from_domain(promotion, list(products.values()))

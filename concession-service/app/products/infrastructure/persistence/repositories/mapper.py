@@ -8,7 +8,7 @@ class ModelMapper:
     @staticmethod
     def to_domain(model: "ProductModel") -> "Product":
         return Product(
-            id=ProductId(model.id),
+            id=ProductId(value=model.id),
             name=model.name,
             image_url=model.image_url,
             description=model.description,
@@ -19,22 +19,15 @@ class ModelMapper:
             category_id=model.category_id,
             created_at=model.created_at,
             updated_at=model.updated_at,
+            deleted_at=model.deleted_at,
         )
 
     @staticmethod
     def from_domain(product: "Product") -> "ProductModel":
+        dumped_data = product.model_dump(exclude={"id"})
         return ProductModel(
             id=product.id.value,
-            name=product.name,
-            image_url=product.image_url,
-            description=product.description,
-            price=Decimal(f"{product.price}"),
-            is_available=product.is_available,
-            preparation_time_mins=product.preparation_time_mins,
-            calories=product.calories,
-            category_id=product.category_id,
-            created_at=product.created_at,
-            updated_at=product.updated_at,
+            **dumped_data,
         )
 
     @staticmethod
@@ -45,4 +38,6 @@ class ModelMapper:
             description=model.description,
             is_active=model.is_active,
             created_at=model.created_at,
+            updated_at=model.updated_at,
+            deleted_at=model.deleted_at,
         )

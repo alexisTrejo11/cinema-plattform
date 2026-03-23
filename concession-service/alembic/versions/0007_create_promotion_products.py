@@ -21,15 +21,15 @@ def upgrade() -> None:
     op.execute(
         sa.text(
             """
-CREATE TABLE IF NOT EXISTS promotion_products (
+CREATE TABLE promotion_products (
     promotion_id UUID NOT NULL,
     product_id UUID NOT NULL,
     PRIMARY KEY (promotion_id, product_id),
-    CONSTRAINT fk_promotion
+    CONSTRAINT promotion_products_promotion_id_fkey
         FOREIGN KEY (promotion_id)
         REFERENCES promotions(id)
         ON DELETE CASCADE,
-    CONSTRAINT fk_product
+    CONSTRAINT promotion_products_product_id_fkey
         FOREIGN KEY (product_id)
         REFERENCES products(id)
         ON DELETE CASCADE

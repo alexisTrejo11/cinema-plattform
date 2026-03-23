@@ -1,36 +1,20 @@
-from uuid import UUID
 import uuid
-from typing import Any
-from pydantic import GetCoreSchemaHandler
-from pydantic_core import core_schema
-from app.shared.schema import AbstractId
+
+from app.shared.schema import PydanticUUID
 
 
-class ComboId(AbstractId):
-    @staticmethod
-    def generate() -> "ComboId":
-        """Generate a new UUID."""
-        return ComboId(uuid.uuid4())
+class ComboId(PydanticUUID):
+    pass
 
-    @staticmethod
-    def from_string(value: str) -> "ComboId":
-        """Create a ComboId from a string."""
+
+class ComboItemId(PydanticUUID):
+    @classmethod
+    def generate(cls) -> "ComboItemId":
+        return cls.model_construct(value=uuid.uuid4())
+
+    @classmethod
+    def from_string(cls, value: str) -> "ComboItemId":
         try:
-            return ComboId(uuid.UUID(value))
-        except ValueError:
-            raise ValueError("Invalid UUID string format")
-
-
-class ComboItemId(AbstractId):
-    @staticmethod
-    def generate() -> "ComboItemId":
-        """Generate a new UUID."""
-        return ComboItemId(uuid.uuid4())
-
-    @staticmethod
-    def from_string(value: str) -> "ComboItemId":
-        """Create a ComboItemId from a string."""
-        try:
-            return ComboItemId(uuid.UUID(value))
+            return cls.model_construct(value=uuid.UUID(value))
         except ValueError:
             raise ValueError("Invalid UUID string format")

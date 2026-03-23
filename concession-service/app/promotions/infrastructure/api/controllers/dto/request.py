@@ -4,6 +4,12 @@ from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 from app.promotions.domain.entities.value_objects import PromotionType
+from app.promotions.application.command.promotion_command import (
+    ExtendPromotionCommand,
+    PromotionCreateCommand,
+)
+from app.products.domain.entities.value_objects import ProductId
+from app.promotions.domain.entities.promotion import PromotionId
 
 
 class PromotionCreateRequest(BaseModel):
@@ -56,6 +62,22 @@ class PromotionCreateRequest(BaseModel):
         arbitrary_types_allowed=True,
     )
 
+    def to_command(self) -> PromotionCreateCommand:
+        return PromotionCreateCommand(
+            name=self.name,
+            description=self.description,
+            start_date=self.start_date,
+            promotion_type=self.promotion_type,
+            rule=self.rule.model_dump(),
+            is_active=self.is_active,
+            max_uses=self.max_uses,
+            end_date=self.end_date,
+            applicable_product_ids=[
+                ProductId(value=pid) for pid in (self.applicable_product_ids or [])
+            ],
+            applicable_category_id=self.applicable_category_id,
+        )
+
     class PromotionRuleRequest(BaseModel):
         """
         Pydantic model for the promotion rule.
@@ -99,8 +121,6 @@ class ExtendPromotionRequest(BaseModel):
     Used as input for an 'extend promotion' use case.
     """
 
-    id: UUID = Field(..., description="Unique identifier of the promotion to extend")
-
     available_until: datetime = Field(
         ..., description="New end date for the promotion's validity"
     )
@@ -108,6 +128,12 @@ class ExtendPromotionRequest(BaseModel):
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
     )
+
+    def to_command(self, promotion_id: UUID) -> ExtendPromotionCommand:
+        return ExtendPromotionCommand(
+            id=PromotionId(value=promotion_id),
+            available_until=self.available_until,
+        )
 
 
 class PromotionItemRequest(BaseModel):

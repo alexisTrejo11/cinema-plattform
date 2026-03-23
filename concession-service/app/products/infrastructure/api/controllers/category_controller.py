@@ -8,7 +8,7 @@ from app.products.application.use_cases.container import (
     CategoryCreateCommand,
     CategoryUpdateCommand,
 )
-from app.products.application.responses import ProductCategoryResponse
+from app.products.infrastructure.api.dtos import ProductCategoryResponse
 from ..requests_dto import CategoryRequest
 from ..dependencies import get_category_use_cases
 from ..doc_data import (
@@ -41,7 +41,8 @@ async def create_category(
     admin_user: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     command = CategoryCreateCommand(**category_data.model_dump())
-    return await useCases.create_category(command)
+    category = await useCases.create_category(command)
+    return ProductCategoryResponse.model_validate(category)
 
 
 @router.get(
@@ -59,7 +60,8 @@ async def get_category(
     ),
     useCases: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
-    return await useCases.get_category_by_id(category_id)
+    category = await useCases.get_category_by_id(category_id)
+    return ProductCategoryResponse.model_validate(category)
 
 
 @router.get(
@@ -74,7 +76,8 @@ async def list_categories(
     request: Request,
     useCase: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
-    return await useCase.list_categories()
+    categories = await useCase.list_categories()
+    return [ProductCategoryResponse.model_validate(c) for c in categories]
 
 
 @router.put(
@@ -89,11 +92,14 @@ async def update_category(
     request: Request,
     update_data: CategoryRequest,
     admin_user: AuthUserContext = Depends(require_roles("admin", "manager")),
-    category_id: int = Path(..., description="ID of the category to update", examples=[1]),
+    category_id: int = Path(
+        ..., description="ID of the category to update", examples=[1]
+    ),
     useCase: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
     command = CategoryUpdateCommand(id=category_id, **update_data.model_dump())
-    return await useCase.update_category(category_id, command)
+    category = await useCase.update_category(category_id, command)
+    return ProductCategoryResponse.model_validate(category)
 
 
 @router.delete(
@@ -106,8 +112,10 @@ async def update_category(
 @limiter.limit("10/minute")
 async def delete_category(
     request: Request,
-    category_id: int = Path(..., description="ID of the category to delete", examples=[1]),
+    category_id: int = Path(
+        ..., description="ID of the category to delete", examples=[1]
+    ),
     admin_user: AuthUserContext = Depends(require_roles("admin", "manager")),
     useCase: ProductCategoryUseCases = Depends(get_category_use_cases),
 ):
-    await useCase.soft_delete_category(category_id)
+    await useCase.delete_category(category_id)

@@ -45,13 +45,13 @@ def DiscountPercentageException(
 
     return ValidationException(
         "discount percentage",
-        f"discount {discount} does not match price ratio",
+        f"discount {discount} does not match price ratio for {details}",
         details=details,
     )
 
 
-def QuantityRangeException(product_id: str, min: int, max: int) -> ValidationException:
+def QuantityRangeException(product_id, min: int, max: int) -> ValidationException:
     return ValidationException(
         "quantity range",
-        f"invalid quantity for product {product_id}: {min} - {max}",
+        f"invalid quantity for product {product_id.to_string()}: {min} - {max}",
     )

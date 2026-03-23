@@ -1,27 +1,27 @@
-from datetime import datetime, timedelta
+from typing import Any, Dict
+from decimal import Decimal
 import pytest
 import pytest_asyncio
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from app.config.db.postgres_config import Base
 from app.combos.infrastructure.persistence.models import ComboModel, ComboItemModel
-from app.products.infrastructure.persistence.db.sql.models import (
+from app.products.infrastructure.persistence.models.product_models import (
     ProductModel,
     ProductCategoryModel,
 )
-
-from typing import Any, Dict
-from decimal import Decimal
 from app.products.domain.entities.product import Product, ProductId
-from app.products.infrastructure.persistence.db.repositories.sqlalchemy_product_repo import (
-    SqlAlchemyProductRepository,
+from app.products.infrastructure.persistence.repositories.sqlalchemy_product_repo import (
+    SQLAlchemyProductRepository,
 )
+from app.products.infrastructure.persistence.repositories.mapper import ModelMapper
 from app.combos.infrastructure.persistence.sqlalchemy_combo_repo import (
     SQLAlchemyComboRepository,
 )
+from app.config import settings
 
 
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:root@localhost:5432/tests"
+TEST_DATABASE_URL = settings.TEST_DATABASE_URL
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -72,7 +72,7 @@ async def sample_product_data(sample_category) -> Dict[str, Any]:
 async def sample_product(sample_product_data: Dict[str, Any], session) -> Product:
     """Create a Product entity from sample data"""
     product = Product(**sample_product_data)
-    product_model = ProductModel(**product.to_dict())
+    product_model = ModelMapper.from_domain(product)
     session.add(product_model)
     await session.commit()
     return product
@@ -101,19 +101,15 @@ async def another_product(another_product_data: Dict[str, Any]) -> Product:
 
 
 @pytest.fixture(scope="function")
-def product_repository(session) -> SqlAlchemyProductRepository:
+def product_repository(session) -> SQLAlchemyProductRepository:
     """Fixture to provide a product repository instance"""
-    return SqlAlchemyProductRepository(session)
+    return SQLAlchemyProductRepository(session)
 
 
 @pytest_asyncio.fixture(scope="function")
 async def sample_category(session):
     """Create a sample category for testing"""
-    from app.products.infrastructure.persistence.db.sql.models import (
-        ProductCategoryModel as CategoryModel,
-    )
-
-    category = CategoryModel(
+    category = ProductCategoryModel(
         name="Test Category", description="Test Category Description"
     )
     session.add(category)
@@ -173,4 +169,4 @@ from unittest.mock import AsyncMock, MagicMock
 @pytest.fixture
 def mock_user_repository() -> AsyncMock:
     """Provides an AsyncMock for the UserRepository."""
-    return AsyncMock(spec=SqlAlchemyProductRepository)
+    return AsyncMock(spec=SQLAlchemyProductRepository)

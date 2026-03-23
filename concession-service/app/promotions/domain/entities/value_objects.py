@@ -1,52 +1,23 @@
-from dataclasses import asdict, dataclass, field
-from decimal import Decimal
-from typing import Optional, Any
-from app.products.domain.entities.product import Product
-from app.shared.schema import AbstractId
 import uuid
+from decimal import Decimal
 from enum import Enum
+from typing import Any, Optional
+
+from pydantic import BaseModel, ConfigDict
+from pydantic_core import core_schema
+
 from app.products.domain.entities.value_objects import ProductId
-from abc import ABC, abstractmethod
+from app.shared.schema import PydanticUUID
 
 
-class PromotionId(AbstractId):
+class PromotionId(PydanticUUID):
     """Value object for Promotion ID."""
 
-    def __init__(self, value: Any):
-        super().__init__(value)
-
-    def __str__(self):
-        return str(self.value)
-
-    @staticmethod
-    def from_string(value: str) -> "PromotionId":
-        """Create a PromotionId from a string."""
-        return PromotionId(AbstractId.from_string(value).value)
-
-    @staticmethod
-    def generate() -> "PromotionId":
-        """Generate a new PromotionId."""
-        return PromotionId(AbstractId.generate().value)
-
-    @classmethod
-    def _validate(cls, value: Any) -> "PromotionId":
-        """Validate input and convert to PromotionId."""
-        if isinstance(value, cls):
-            return value
-        elif isinstance(value, str):
-            return cls.from_string(value)
-        elif isinstance(value, uuid.UUID):
-            return cls(value)
-        else:
-            raise ValueError(f"Cannot convert {type(value)} to PromotionId")
-
-    class Config:
-        orm_mode = True
-        json_encoders = {"PromotionId": lambda v: str(v.value)}
+    pass
 
 
 class PromotionType(str, Enum):
-    """Tipos de promociones soportados por el sistema"""
+    """Supported promotion types."""
 
     PERCENTAGE_DISCOUNT = "PERCENTAGE_DISCOUNT"
     BUY_X_GET_Y_FREE = "BUY_X_GET_Y_FREE"
@@ -54,12 +25,15 @@ class PromotionType(str, Enum):
     MINIMUM_QUANTITY_DISCOUNT = "MINIMUM_QUANTITY_DISCOUNT"
 
 
-class RulesParams:
-    def __init__(self, **kwargs):
-        self.minimum_quantity: Optional[int] = kwargs.get("minimum_quantity")
-        self.maximum_quantity: Optional[int] = kwargs.get("maximum_quantity")
-        self.min_discount: Optional[Decimal] = kwargs.get("min_discount")
-        self.max_discount: Optional[Decimal] = kwargs.get("max_discount")
+class RulesParams(BaseModel):
+    """Validated rule parameters for promotion rules."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    minimum_quantity: Optional[int] = None
+    maximum_quantity: Optional[int] = None
+    min_discount: Optional[Decimal] = None
+    max_discount: Optional[Decimal] = None
 
     def validate(self, promotion_type: PromotionType) -> None:
         if self.minimum_quantity is not None and self.minimum_quantity < 1:
@@ -101,22 +75,4 @@ class RulesParams:
                 raise ValueError("Minimum discount is required for PERCENTAGE_DISCOUNT")
 
 
-class PromotionRule(ABC):
-    @abstractmethod
-    def apply(self, product: Product) -> Decimal:
-        pass
-
-    @abstractmethod
-    def validate(self) -> None:
-        """Validate the promotion rule fields."""
-        pass
-
-    @abstractmethod
-    def to_dict(self) -> dict:
-        """Convert the PromotionRule to a dictionary."""
-        pass
-
-    @abstractmethod
-    def from_dict(self, data: dict) -> "PromotionRule":
-        """Convert a dictionary to a PromotionRule."""
-        pass
+__all__ = ["PromotionId", "PromotionType", "ProductId", "RulesParams"]

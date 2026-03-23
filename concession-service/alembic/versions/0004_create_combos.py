@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS combos (
     is_available BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT chk_combos_price CHECK (price > 0),
     CONSTRAINT chk_combos_discount CHECK (discount_percentage BETWEEN 0 AND 100)
 )

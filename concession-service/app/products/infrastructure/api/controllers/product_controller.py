@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, Path, Request, status
 from uuid import UUID
-from typing import List
 
 from app.config.rate_limit import limiter
 from app.config.security import require_roles, AuthUserContext
 from app.products.domain.entities.value_objects import ProductId
 from app.products.application.commands import ProductUpdateCommand, ProductCreateCommand
 from app.products.application.queries import GetProductByIdQuery, SearchProductsQuery
-from app.products.application.responses import ProductDetails, ProductSearchResponse
+from app.shared.pagination import PaginationQuery, SortOrder as PaginationSortOrder
+from app.products.infrastructure.api.dtos import (
+    ProductResponse,
+    ProductPaginatedResponse,
+)
 from app.products.application.use_cases.container import ProductUseCases
 
 from ..dependencies import get_product_use_cases
@@ -27,9 +30,28 @@ from ..doc_data import (
 router = APIRouter(prefix="/api/v2/products", tags=["Food Products"])
 
 
+def _search_products_query_from_request(q: ProductSearchQuery) -> SearchProductsQuery:
+    limit = max(1, q.limit)
+    offset = max(0, q.offset)
+    page_num = (offset // limit) + 1
+    return SearchProductsQuery(
+        page=PaginationQuery(
+            page=page_num,
+            page_size=limit,
+            sort_by=q.sort_by.value,
+            sort_order=PaginationSortOrder(q.sort_order.value),
+        ),
+        min_price=q.min_price,
+        max_price=q.max_price,
+        name=q.name_like,
+        category=q.category_id,
+        active_only=q.available_only,
+    )
+
+
 @router.get(
     "/{product_id}",
-    response_model=ProductDetails,
+    response_model=ProductResponse,
     summary="Get product by ID",
     description="Retrieve detailed information about a specific food product",
     responses={**get_product_examples},
@@ -44,13 +66,17 @@ async def get_product_by_id(
     ),
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
-    query = GetProductByIdQuery(product_id=ProductId(product_id))
-    return await usecase.get_product_by_id(query)
+    product_id_obj = ProductId(value=product_id)
+    query = GetProductByIdQuery(product_id=product_id_obj)
+
+    product = await usecase.get_product_by_id(query)
+
+    return ProductResponse.from_entity(product)
 
 
 @router.get(
     "/",
-    response_model=ProductSearchResponse,
+    response_model=ProductPaginatedResponse,
     summary="Search food products",
     description="Search and filter food products with pagination",
     responses={**search_products_examples},
@@ -61,17 +87,13 @@ async def search_products(
     search_params: ProductSearchQuery = Depends(),
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
-    params = SearchProductsQuery(**search_params.model_dump())
-    response = await usecase.search_products(params)
-    return ProductSearchResponse(
-        product_page=response.product_page,
-        metadata=response.metadata,
-    )
+    params = _search_products_query_from_request(search_params)
+    return await usecase.search_products(params)
 
 
 @router.post(
     "/",
-    response_model=ProductDetails,
+    response_model=ProductResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new food product",
     description="Creates a new food product with the provided details",
@@ -81,16 +103,17 @@ async def search_products(
 async def create_product(
     request: Request,
     product_data: CreateProductRequest,
-    admin_user: AuthUserContext = Depends(require_roles("admin", "manager")),
+    perfomed_by: AuthUserContext = Depends(require_roles("admin", "manager")),
     usecase: ProductUseCases = Depends(get_product_use_cases),
 ):
     command = ProductCreateCommand(**product_data.model_dump())
-    return await usecase.create_product(command)
+    product = await usecase.create_product(command)
+    return ProductResponse.from_entity(product)
 
 
 @router.patch(
     "/{product_id}",
-    response_model=ProductDetails,
+    response_model=ProductResponse,
     summary="Update a food product",
     description="Update details of an existing food product",
     responses={**create_update_examples},
@@ -99,14 +122,18 @@ async def create_product(
 async def update_product(
     request: Request,
     update_data: UpdateProductRequest,
-    product_id: UUID = Path(..., description="ID of the product to update", examples=[1]),
+    product_id: UUID = Path(
+        ..., description="ID of the product to update", examples=[1]
+    ),
     usecase: ProductUseCases = Depends(get_product_use_cases),
-    admin_user: AuthUserContext = Depends(require_roles("admin", "manager")),
+    perfomed_by: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
+    product_id_obj = ProductId(value=product_id)
     command = ProductUpdateCommand(
-        product_id=ProductId(product_id), **update_data.model_dump()
+        product_id=product_id_obj, **update_data.model_dump()
     )
-    return await usecase.update_product(command)
+    product = await usecase.update_product(command)
+    return ProductResponse.from_entity(product)
 
 
 @router.delete(
@@ -119,8 +146,11 @@ async def update_product(
 @limiter.limit("10/minute")
 async def delete_product(
     request: Request,
-    product_id: UUID = Path(..., description="ID of the product to delete", examples=[1]),
+    product_id: UUID = Path(
+        ..., description="ID of the product to delete", examples=[1]
+    ),
     usecase: ProductUseCases = Depends(get_product_use_cases),
-    admin_user: AuthUserContext = Depends(require_roles("admin", "manager")),
+    perfomed_by: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
-    await usecase.soft_delete_product(ProductId(product_id))
+    product_id_obj = ProductId(value=product_id)
+    await usecase.delete_product(product_id_obj)

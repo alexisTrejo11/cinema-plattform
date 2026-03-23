@@ -17,12 +17,6 @@ from app.config.db.postgres_config import Base
 from sqlalchemy.orm import relationship, mapped_column, Mapped
 from app.products.domain.entities.product_category import ProductCategory
 
-if TYPE_CHECKING:
-    from app.combos.infrastructure.persistence.models import ComboItemModel
-    from app.promotions.infrastructure.persistence.model.promotion_model import (
-        PromotionModel,
-    )
-
 
 class ProductCategoryModel(Base):
     __tablename__ = "product_categories"
@@ -32,6 +26,10 @@ class ProductCategoryModel(Base):
     description: Mapped[str] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now(), onupdate=datetime.now()
+    )
+    deleted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     products = relationship("ProductModel", back_populates="category")
     promotions = relationship("PromotionModel", back_populates="category")
@@ -69,6 +67,7 @@ class ProductModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now(), onupdate=datetime.now()
     )
+    deleted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     category = relationship("ProductCategoryModel", back_populates="products")
     combo_items = relationship("ComboItemModel", back_populates="product")

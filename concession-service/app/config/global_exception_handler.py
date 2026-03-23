@@ -1,5 +1,6 @@
 import logging
 from http import HTTPStatus
+from fastapi import FastAPI
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
@@ -14,6 +15,8 @@ from app.shared.base_exceptions import (
 )
 
 logger = logging.getLogger("app")
+
+app = FastAPI()
 
 
 def _error_response(
@@ -50,6 +53,7 @@ def _flatten_validation_errors(errors: list[dict]) -> list[dict]:
 # ─── Domain (4xx — safe to expose to clients) ────────────────────────
 
 
+@app.exception_handler(ApplicationException)
 async def handle_domain_exceptions(request: Request, exc: DomainException):
     logger.warning(
         "Domain error [%s] %s | path=%s",
@@ -68,6 +72,7 @@ async def handle_domain_exceptions(request: Request, exc: DomainException):
 # ─── Application (5xx — internal details hidden) ─────────────────────
 
 
+@app.exception_handler(ApplicationException)
 async def handle_application_exceptions(request: Request, exc: ApplicationException):
     logger.error(
         "Application error [%s] %s | path=%s",
@@ -86,6 +91,7 @@ async def handle_application_exceptions(request: Request, exc: ApplicationExcept
 # ─── Authorization ───────────────────────────────────────────────────
 
 
+@app.exception_handler(AuthorizationException)
 async def handle_auth_exceptions(request: Request, exc: AuthorizationException):
     logger.warning(
         "Auth error [%s] %s | path=%s",
@@ -104,6 +110,7 @@ async def handle_auth_exceptions(request: Request, exc: AuthorizationException):
 # ─── Validation (Pydantic + FastAPI path/query) ──────────────────────
 
 
+@app.exception_handler(ValidationError)
 async def handle_pydantic_validation_errors(request: Request, exc: ValidationError):
     details = _flatten_validation_errors(exc.errors())
     logger.warning(
@@ -119,6 +126,7 @@ async def handle_pydantic_validation_errors(request: Request, exc: ValidationErr
     )
 
 
+@app.exception_handler(RequestValidationError)
 async def handle_path_validation_errors(request: Request, exc: RequestValidationError):
     details = _flatten_validation_errors(exc.errors())
     logger.warning(
@@ -137,6 +145,7 @@ async def handle_path_validation_errors(request: Request, exc: RequestValidation
 # ─── Database (SQLAlchemy — details hidden, logged in full) ──────────
 
 
+@app.exception_handler(SQLAlchemyError)
 async def handle_db_exceptions(request: Request, exc: SQLAlchemyError):
     logger.error(
         "Database error [%s] | path=%s",
@@ -151,26 +160,10 @@ async def handle_db_exceptions(request: Request, exc: SQLAlchemyError):
     )
 
 
-# ─── Bad input (ValueError / AttributeError) ─────────────────────────
-
-
-async def handle_value_errors(request: Request, exc: Exception):
-    logger.warning(
-        "%s | path=%s | detail=%s",
-        type(exc).__name__,
-        request.url.path,
-        exc,
-    )
-    return _error_response(
-        status_code=HTTPStatus.BAD_REQUEST,
-        code="BAD_REQUEST",
-        message=str(exc),
-    )
-
-
 # ─── Catch-all ────────────────────────────────────────────────────────
 
 
+@app.exception_handler(Exception)
 async def handle_generic_exceptions(request: Request, exc: Exception):
     logger.error(
         "Unhandled exception [%s] | path=%s",

@@ -8,9 +8,8 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
 
-from app.config import exception_handlers
-from app.config import setup_logging
-from app.config import RegistryMicroservice
+from app.config import RegistryMicroservice, setup_logging, exception_handlers
+from app.config.app_config import settings
 
 from app.combos.infrastructure.api import combo_controllers
 from app.products.infrastructure.api.controllers import (
@@ -18,8 +17,7 @@ from app.products.infrastructure.api.controllers import (
     product_controller,
 )
 from app.promotions.infrastructure.api.controllers import (
-    promotion_command_controller,
-    promotion_query_controllers,
+    promotion_controller,
     promotion_items_controller,
 )
 from app.config.cache_config import init_cache, close_cache
@@ -38,13 +36,13 @@ async def lifespan(app: FastAPI):
     await init_cache()
     logger.info("Redis initialized.")
 
-    await registry_microservice()
+    # await registry_microservice()
     yield
 
     # Shutdown process
     logger.info("Shutting down service...")
     if registry_client:
-        registry_client.stop_heartbeat_loop()
+        # registry_client.stop_heartbeat_loop()
         logger.info("Heartbeat loop stopped.")
 
     await close_cache()
@@ -53,7 +51,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     lifespan=lifespan,
     title="Cinema Backend: Product Service API",
-    debug=True,
+    # Starlette uses debug=True to return HTML tracebacks for *uncaught* errors and
+    # ignores the custom Exception handler for those. Use DEBUG_MODE from env instead.
+    debug=settings.DEBUG_MODE,
     summary="Product Service for Cinema API that includes all product catalog and combos offers and all related to Product directly",
     version="1.0.0",
     exception_handlers=exception_handlers,
@@ -109,6 +109,5 @@ def stop_heartbeat_loop(registry_client: RegistryMicroservice):
 app.include_router(category_controller.router)
 app.include_router(product_controller.router)
 app.include_router(combo_controllers.router)
-app.include_router(promotion_command_controller.router)
-app.include_router(promotion_query_controllers.router)
+app.include_router(promotion_controller.router)
 app.include_router(promotion_items_controller.router)

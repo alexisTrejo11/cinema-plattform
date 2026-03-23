@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS products (
     category_id INTEGER NOT NULL,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc'),
     updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc'),
+    deleted_at TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT fk_products_category_id
         FOREIGN KEY (category_id)
         REFERENCES product_categories (id)
@@ -43,15 +44,21 @@ CREATE TABLE IF NOT EXISTS products (
     )
     op.execute(sa.text("CREATE INDEX IF NOT EXISTS idx_products_id ON products (id)"))
     op.execute(
-        sa.text("CREATE INDEX IF NOT EXISTS idx_products_category_id ON products (category_id)")
+        sa.text(
+            "CREATE INDEX IF NOT EXISTS idx_products_category_id ON products (category_id)"
+        )
     )
     op.execute(
         sa.text(
             "CREATE INDEX IF NOT EXISTS idx_products_is_available ON products (is_available) WHERE is_available = TRUE"
         )
     )
-    op.execute(sa.text("CREATE INDEX IF NOT EXISTS idx_products_price ON products (price)"))
-    op.execute(sa.text("CREATE INDEX IF NOT EXISTS idx_products_name ON products (name)"))
+    op.execute(
+        sa.text("CREATE INDEX IF NOT EXISTS idx_products_price ON products (price)")
+    )
+    op.execute(
+        sa.text("CREATE INDEX IF NOT EXISTS idx_products_name ON products (name)")
+    )
 
 
 def downgrade() -> None:

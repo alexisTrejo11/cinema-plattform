@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS product_categories (
     description TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc'),
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT (now() AT TIME ZONE 'utc'),
+    deleted_at TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT uq_product_categories_name UNIQUE (name)
 )
 """

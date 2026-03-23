@@ -1,14 +1,26 @@
 import logging
-from tests.repository.fixture.combos_fixtures import *
-from app.shared.base_exceptions import DatabaseException
+from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 from sqlalchemy.exc import SQLAlchemyError
-from app.shared.pagination import PaginationQuery
+
+from app.products.infrastructure.persistence.repositories.sqlalchemy_product_repo import (
+    SqlAlchemyProductRepository,
+)
 from app.promotions.application.queries.promotion_query import (
     GetPromotionByProductIdQuery,
 )
+from app.promotions.domain.entities.promotion import Promotion
 from app.promotions.infrastructure.persistence.model.promotion_model import (
     PromotionModel,
 )
+from app.promotions.infrastructure.persistence.repository.sql_alchemy_promotion_repository import (
+    SQLAlchemyPromotionRepository as PromotionRepo,
+)
+from app.shared.base_exceptions import DatabaseException
+from app.shared.pagination import PaginationQuery
+from tests.repository.fixture.combos_fixtures import *  # noqa: F403
 
 
 class TestSQLAlchemyPromotionRepository:
@@ -28,7 +40,7 @@ class TestSQLAlchemyPromotionRepository:
         assert retrieved_promotion is not None
         assert retrieved_promotion.id == promotion.id
         assert retrieved_promotion.name == promotion.name
-        assert retrieved_promotion.discount_value == promotion.discount_value
+        assert retrieved_promotion.rule == promotion.rule
         assert retrieved_promotion.is_active == promotion.is_active
 
     @pytest.mark.asyncio
@@ -78,13 +90,13 @@ class TestSQLAlchemyPromotionRepository:
 
         # Assert
         assert retrieved_promotion is not None
-        # assert len(retrieved_promotion.applicable_product_ids) == 1
-        # assert retrieved_promotion.applicable_product_ids[0] == sample_product.id
+        assert len(retrieved_promotion.applicable_product_ids) == 1
+        assert retrieved_promotion.applicable_product_ids[0] == sample_product.id
 
     @pytest.mark.asyncio
     async def test_get_by_id_database_error(self, promotion_repository, mocker):
         # Arrange
-        mock_session = mocker.MagicMock()
+        mock_session = mocker.AsyncMock()
         mock_session.execute.side_effect = SQLAlchemyError("Database error")
         repo = PromotionRepo(mock_session)
         test_id = PromotionId.generate()
@@ -100,15 +112,13 @@ class TestSQLAlchemyPromotionRepository:
         # Arrange: No hay promociones en la base de datos
         query = PaginationQuery(page=1, page_size=10)
 
-        # Act
-        promotions, metadata = await promotion_repository.get_active_promotions(query)
+        page_result = await promotion_repository.get_active_promotions(query)
 
-        # Assert
-        assert len(promotions) == 0
-        assert metadata.total_items == 0
-        assert metadata.total_pages == 1
-        assert metadata.current_page == 1
-        assert metadata.items_per_page == 10
+        assert len(page_result.items) == 0
+        assert page_result.metadata.total_items == 0
+        assert page_result.metadata.total_pages == 1
+        assert page_result.metadata.current_page == 1
+        assert page_result.metadata.items_per_page == 10
 
     @pytest.mark.asyncio
     async def test_get_active_promotions_multiple_active_promotions_single_page(
@@ -117,8 +127,8 @@ class TestSQLAlchemyPromotionRepository:
         # Arrange: Crear 5 promociones activas
         for _ in range(5):
             promo_data = sample_promotion_data.copy()
-            promo_data["start_date"] = datetime.now() - timedelta(days=5)
-            promo_data["end_date"] = datetime.now() + timedelta(days=5)
+            promo_data["start_date"] = datetime.now(timezone.utc) - timedelta(days=5)
+            promo_data["end_date"] = datetime.now(timezone.utc) + timedelta(days=5)
             promo_data["is_active"] = True
             promotion = Promotion(**promo_data, id=PromotionId.generate())
             await promotion_repository.create(promotion)
@@ -126,20 +136,17 @@ class TestSQLAlchemyPromotionRepository:
 
         query = PaginationQuery(page=1, page_size=10)
 
-        # Act
-        promotions, metadata = await promotion_repository.get_active_promotions(query)
+        page_result = await promotion_repository.get_active_promotions(query)
 
-        # Assert
-        assert len(promotions) == 5
-        assert metadata.total_items == 5
-        assert metadata.total_pages == 1
-        assert metadata.current_page == 1
-        assert metadata.items_per_page == 10
-        # Verificar que todas las promociones recuperadas son activas y dentro del rango de fechas
-        for promo in promotions:
+        assert len(page_result.items) == 5
+        assert page_result.metadata.total_items == 5
+        assert page_result.metadata.total_pages == 1
+        assert page_result.metadata.current_page == 1
+        assert page_result.metadata.items_per_page == 10
+        for promo in page_result.items:
             assert promo.is_active is True
-            assert promo.start_date <= datetime.now()
-            assert promo.end_date >= datetime.now()
+            assert promo.start_date <= datetime.now(timezone.utc)
+            assert promo.end_date >= datetime.now(timezone.utc)
 
     @pytest.mark.asyncio
     async def test_get_active_promotions_multiple_pages(
@@ -150,69 +157,57 @@ class TestSQLAlchemyPromotionRepository:
         for i in range(15):
             promo_data = sample_promotion_data.copy()
             promo_data["name"] = f"Active Promotion {i+1}"
-            promo_data["start_date"] = datetime.now() - timedelta(days=10)
-            promo_data["end_date"] = datetime.now() + timedelta(days=10)
+            promo_data["start_date"] = datetime.now(timezone.utc) - timedelta(days=10)
+            promo_data["end_date"] = datetime.now(timezone.utc) + timedelta(days=10)
             promo_data["is_active"] = True
             promotion = Promotion(**promo_data, id=PromotionId.generate())
             await promotion_repository.create(promotion)
             expected_active_promotions.append(promotion)
         await session.commit()
 
-        # Test Page 1
         query_page1 = PaginationQuery(page=1, page_size=5)
-        promotions_page1, metadata_page1 = (
-            await promotion_repository.get_active_promotions(query_page1)
-        )
+        page1 = await promotion_repository.get_active_promotions(query_page1)
 
-        assert len(promotions_page1) == 5
-        assert metadata_page1.total_items == 15
-        assert metadata_page1.total_pages == 3
-        assert metadata_page1.current_page == 1
-        assert metadata_page1.items_per_page == 5
-        assert set(p.id for p in promotions_page1) == set(
+        assert len(page1.items) == 5
+        assert page1.metadata.total_items == 15
+        assert page1.metadata.total_pages == 3
+        assert page1.metadata.current_page == 1
+        assert page1.metadata.items_per_page == 5
+        assert set(p.id for p in page1.items) == set(
             p.id for p in expected_active_promotions[0:5]
         )
 
-        # Test Page 2
         query_page2 = PaginationQuery(page=2, page_size=5)
-        promotions_page2, metadata_page2 = (
-            await promotion_repository.get_active_promotions(query_page2)
-        )
+        page2 = await promotion_repository.get_active_promotions(query_page2)
 
-        assert len(promotions_page2) == 5
-        assert metadata_page2.total_items == 15
-        assert metadata_page2.total_pages == 3
-        assert metadata_page2.current_page == 2
-        assert metadata_page2.items_per_page == 5
-        assert set(p.id for p in promotions_page2) == set(
+        assert len(page2.items) == 5
+        assert page2.metadata.total_items == 15
+        assert page2.metadata.total_pages == 3
+        assert page2.metadata.current_page == 2
+        assert page2.metadata.items_per_page == 5
+        assert set(p.id for p in page2.items) == set(
             p.id for p in expected_active_promotions[5:10]
         )
 
-        # Test Page 3
         query_page3 = PaginationQuery(page=3, page_size=5)
-        promotions_page3, metadata_page3 = (
-            await promotion_repository.get_active_promotions(query_page3)
-        )
+        page3 = await promotion_repository.get_active_promotions(query_page3)
 
-        assert len(promotions_page3) == 5
-        assert metadata_page3.total_items == 15
-        assert metadata_page3.total_pages == 3
-        assert metadata_page3.current_page == 3
-        assert metadata_page3.items_per_page == 5
-        assert set(p.id for p in promotions_page3) == set(
+        assert len(page3.items) == 5
+        assert page3.metadata.total_items == 15
+        assert page3.metadata.total_pages == 3
+        assert page3.metadata.current_page == 3
+        assert page3.metadata.items_per_page == 5
+        assert set(p.id for p in page3.items) == set(
             p.id for p in expected_active_promotions[10:15]
         )
 
-        # Test a page beyond the last one
         query_page4 = PaginationQuery(page=4, page_size=5)
-        promotions_page4, metadata_page4 = (
-            await promotion_repository.get_active_promotions(query_page4)
-        )
-        assert len(promotions_page4) == 0
-        assert metadata_page4.total_items == 15
-        assert metadata_page4.total_pages == 3  # Still 3 total pages
-        assert metadata_page4.current_page == 4  # Current page requested
-        assert metadata_page4.items_per_page == 5
+        page4 = await promotion_repository.get_active_promotions(query_page4)
+        assert len(page4.items) == 0
+        assert page4.metadata.total_items == 15
+        assert page4.metadata.total_pages == 3
+        assert page4.metadata.current_page == 4
+        assert page4.metadata.items_per_page == 5
 
     @pytest.mark.asyncio
     async def test_get_active_promotions_with_inactive_promotions(
@@ -221,8 +216,8 @@ class TestSQLAlchemyPromotionRepository:
         # Arrange: Crear promociones activas e inactivas
         # Activa
         active_promo_data = sample_promotion_data.copy()
-        active_promo_data["start_date"] = datetime.now() - timedelta(days=5)
-        active_promo_data["end_date"] = datetime.now() + timedelta(days=5)
+        active_promo_data["start_date"] = datetime.now(timezone.utc) - timedelta(days=5)
+        active_promo_data["end_date"] = datetime.now(timezone.utc) + timedelta(days=5)
         active_promo_data["is_active"] = True
         active_promotion = Promotion(**active_promo_data, id=PromotionId.generate())
         await promotion_repository.create(active_promotion)
@@ -235,16 +230,16 @@ class TestSQLAlchemyPromotionRepository:
 
         # Inactiva (fecha de inicio futura)
         inactive_promo_data_2 = sample_promotion_data.copy()
-        inactive_promo_data_2["start_date"] = datetime.now() + timedelta(days=1)
-        inactive_promo_data_2["end_date"] = datetime.now() + timedelta(days=30)
+        inactive_promo_data_2["start_date"] = datetime.now(timezone.utc) + timedelta(days=1)
+        inactive_promo_data_2["end_date"] = datetime.now(timezone.utc) + timedelta(days=30)
         inactive_promo_data_2["is_active"] = True  # Activa pero no en rango
         inactive_promo_2 = Promotion(**inactive_promo_data_2, id=PromotionId.generate())
         await promotion_repository.create(inactive_promo_2)
 
         # Inactiva (fecha de fin pasada)
         inactive_promo_data_3 = sample_promotion_data.copy()
-        inactive_promo_data_3["start_date"] = datetime.now() - timedelta(days=30)
-        inactive_promo_data_3["end_date"] = datetime.now() - timedelta(days=1)
+        inactive_promo_data_3["start_date"] = datetime.now(timezone.utc) - timedelta(days=30)
+        inactive_promo_data_3["end_date"] = datetime.now(timezone.utc) - timedelta(days=1)
         inactive_promo_data_3["is_active"] = True  # Activa pero no en rango
         inactive_promo_3 = Promotion(**inactive_promo_data_3, id=PromotionId.generate())
         await promotion_repository.create(inactive_promo_3)
@@ -253,16 +248,14 @@ class TestSQLAlchemyPromotionRepository:
 
         query = PaginationQuery(page=1, page_size=10)
 
-        # Act
-        promotions, metadata = await promotion_repository.get_active_promotions(query)
+        page_result = await promotion_repository.get_active_promotions(query)
 
-        # Assert
-        assert len(promotions) == 1
-        assert promotions[0].id == active_promotion.id
-        assert metadata.total_items == 1
-        assert metadata.total_pages == 1
-        assert metadata.current_page == 1
-        assert metadata.items_per_page == 10
+        assert len(page_result.items) == 1
+        assert page_result.items[0].id == active_promotion.id
+        assert page_result.metadata.total_items == 1
+        assert page_result.metadata.total_pages == 1
+        assert page_result.metadata.current_page == 1
+        assert page_result.metadata.items_per_page == 10
 
     @pytest.mark.asyncio
     async def test_get_active_promotions_database_error(
@@ -277,7 +270,6 @@ class TestSQLAlchemyPromotionRepository:
         repo = PromotionRepo(mock_session)
         query = PaginationQuery(page=1, page_size=10)
 
-        # Act & Assert
         with pytest.raises(DatabaseException):
             await repo.get_active_promotions(query)
 
@@ -290,15 +282,13 @@ class TestSQLAlchemyPromotionRepository:
             product_id=sample_product.id, pagination=PaginationQuery()
         )
 
-        # Act
-        promotions, metadata = await promotion_repository.get_by_product(query)
+        page_result = await promotion_repository.get_by_product(query)
 
-        # Assert
-        assert len(promotions) == 0
-        assert metadata.total_items == 0
-        assert metadata.total_pages == 1
-        assert metadata.current_page == 1
-        assert metadata.items_per_page == 10
+        assert len(page_result.items) == 0
+        assert page_result.metadata.total_items == 0
+        assert page_result.metadata.total_pages == 1
+        assert page_result.metadata.current_page == 1
+        assert page_result.metadata.items_per_page == 10
 
     @pytest.mark.asyncio
     async def test_get_by_product_single_page_active_promotions(
@@ -310,8 +300,8 @@ class TestSQLAlchemyPromotionRepository:
             promo_data = sample_promotion_data.copy()
             promo_data["name"] = f"Promo for Prod {i+1}"
             promo_data["applicable_product_ids"] = [sample_product.id]
-            promo_data["start_date"] = datetime.now() - timedelta(days=5)
-            promo_data["end_date"] = datetime.now() + timedelta(days=5)
+            promo_data["start_date"] = datetime.now(timezone.utc) - timedelta(days=5)
+            promo_data["end_date"] = datetime.now(timezone.utc) + timedelta(days=5)
             promo_data["is_active"] = True
             promotion = Promotion(**promo_data, id=PromotionId.generate())
             await promotion_repository.create(promotion)
@@ -322,23 +312,20 @@ class TestSQLAlchemyPromotionRepository:
             product_id=sample_product.id, pagination=PaginationQuery(page_size=10)
         )
 
-        # Act
-        promotions, metadata = await promotion_repository.get_by_product(query)
+        page_result = await promotion_repository.get_by_product(query)
 
-        # Assert
-        assert len(promotions) == 3
-        assert metadata.total_items == 3
-        assert metadata.total_pages == 1
-        assert metadata.current_page == 1
-        assert metadata.items_per_page == 10
-        # Verify that the correct promotions are returned
-        retrieved_ids = {p.id for p in promotions}
+        assert len(page_result.items) == 3
+        assert page_result.metadata.total_items == 3
+        assert page_result.metadata.total_pages == 1
+        assert page_result.metadata.current_page == 1
+        assert page_result.metadata.items_per_page == 10
+        retrieved_ids = {p.id for p in page_result.items}
         expected_ids = {p.id for p in expected_promotions}
         assert retrieved_ids == expected_ids
-        for promo in promotions:
+        for promo in page_result.items:
             assert promo.is_active is True
-            assert promo.start_date <= datetime.now()
-            assert promo.end_date >= datetime.now()
+            assert promo.start_date <= datetime.now(timezone.utc)
+            assert promo.end_date >= datetime.now(timezone.utc)
 
     @pytest.mark.asyncio
     async def test_create_promotion_no_products(

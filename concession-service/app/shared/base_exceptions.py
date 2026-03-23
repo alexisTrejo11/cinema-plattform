@@ -20,7 +20,9 @@ class DomainException(Exception):
         super().__init__(self.message)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(code={self.error_code!r}, message={self.message!r})"
+        return (
+            f"{type(self).__name__}(code={self.error_code!r}, message={self.message!r})"
+        )
 
 
 class ApplicationException(Exception):
@@ -41,7 +43,9 @@ class ApplicationException(Exception):
         super().__init__(self.message)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(code={self.error_code!r}, message={self.message!r})"
+        return (
+            f"{type(self).__name__}(code={self.error_code!r}, message={self.message!r})"
+        )
 
 
 class AuthorizationException(Exception):
@@ -61,7 +65,9 @@ class AuthorizationException(Exception):
         super().__init__(self.message)
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(code={self.error_code!r}, message={self.message!r})"
+        return (
+            f"{type(self).__name__}(code={self.error_code!r}, message={self.message!r})"
+        )
 
 
 # ─── Domain-level (4xx, client-visible) ──────────────────────────────
@@ -91,6 +97,7 @@ class ValidationException(DomainException):
         self,
         field: Optional[str] = None,
         reason: str = "Validation failed.",
+        error_code: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
     ):
         message = (
@@ -101,7 +108,7 @@ class ValidationException(DomainException):
             _details["field"] = field
         if details:
             _details.update(details)
-        super().__init__(message=message, error_code="VALIDATION_ERROR", details=_details)
+        super().__init__(message=message, error_code=error_code, details=_details)
 
 
 # ─── Application-level (5xx, details hidden from client) ─────────────

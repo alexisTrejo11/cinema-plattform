@@ -1,11 +1,14 @@
 from datetime import datetime
 from typing import List, Optional
-from app.shared.schema import PydanticUUID
-from app.products.domain.entities.value_objects import ProductId
+
+
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+
+from app.products.domain.entities.value_objects import ProductId
 from app.promotions.domain.entities.promotion import (
-    PromotionType,
     Promotion,
+    PromotionType,
+    PromotionId,
 )
 
 
@@ -29,7 +32,7 @@ class PromotionCreateCommand(BaseModel):
         description="List of product IDs to which the promotion applies",
     )
     applicable_category_id: Optional[int] = Field(
-        ...,
+        None,
         description="ID of the category to which the promotion applies",
     )
     rule: dict = Field(..., description="Additional rules for applying the promotion")
@@ -50,14 +53,11 @@ class PromotionCreateCommand(BaseModel):
     )
 
     def map_to_domain(self) -> Promotion:
-        """
-        Converts the Pydantic model to a domain command object.
-        """
-        promotion = Promotion(
+        return Promotion(
             name=self.name,
             promotion_type=self.promotion_type,
             applicable_product_ids=(
-                self.applicable_product_ids if self.applicable_product_ids else []
+                list(self.applicable_product_ids) if self.applicable_product_ids else []
             ),
             rule=self.rule,
             start_date=self.start_date,
@@ -66,14 +66,12 @@ class PromotionCreateCommand(BaseModel):
             is_active=self.is_active,
             max_uses=self.max_uses,
         )
-        return promotion
 
 
 class ExtendPromotionCommand(BaseModel):
-    """
-    Pydantic model for extending an existing Promotion's validity.
-    Used as input for an 'extend promotion' use case.
-    """
+    """Pydantic model for extending an existing Promotion's validity."""
 
-    id: PydanticUUID
+    id: PromotionId
     available_until: datetime
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)

@@ -1,85 +1,93 @@
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, delete, func
+from sqlalchemy import select, delete, func
 from sqlalchemy.orm import selectinload
 
 from app.combos.domain.repository import ComboRepository
 from app.combos.domain.entities.combo import Combo
-from .models import ComboModel, ComboItemModel
 from app.combos.domain.entities.value_objects import ComboId
-from app.combos.application.queries import GetComboByIdQuery, GetCombosByProductIdQuery
 from app.shared.pagination import PaginationQuery, Page, PaginationMetadata
-from .model_mapper import ModelMapper
+from .models import ComboModel, ComboItemModel
+from .model_mapper import combo_model_to_domain
+from app.products.domain.entities.value_objects import ProductId
 
 
 class SQLAlchemyComboRepository(ComboRepository):
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get_by_id(self, query: GetComboByIdQuery) -> Optional[Combo]:
+    async def find_by_id(
+        self, combo_id: ComboId, include_items: bool
+    ) -> Optional[Combo]:
         stmt = select(ComboModel).where(
-            ComboModel.id == query.combo_id.value,
+            ComboModel.id == combo_id.value,
             ComboModel.is_available == True,
         )
 
-        if query.include_items:
-            stmt = stmt.options(selectinload(ComboModel.items))
+        stmt = stmt.options(selectinload(ComboModel.items))
 
         result = await self.session.execute(stmt)
+
         combo_model = result.scalar_one_or_none()
+        if not combo_model:
+            return None
 
-        return (
-            ModelMapper.to_domain(
-                combo_model,
-                query.include_items if query.include_items else False,
-            )
-            if combo_model
-            else None
+        return combo_model_to_domain(
+            combo_model,
+            True,  # Always include items when finding by ID
         )
 
-    async def list_by_product(self, query: GetCombosByProductIdQuery) -> Page[Combo]:
-        stmt = select(ComboModel).where(
-            and_(
-                ComboItemModel.product_id == query.product_id.value,
-                ComboModel.is_available == True,
+    async def find_by_product(
+        self,
+        product_id: ProductId,
+        pagination: PaginationQuery,
+        include_items: bool = False,
+    ) -> Page[Combo]:
+        base = (
+            select(ComboModel)
+            .join(ComboItemModel, ComboItemModel.combo_id == ComboModel.id)
+            .where(
+                ComboItemModel.product_id == product_id.value,
+                ComboModel.is_available.is_(True),
             )
+            .distinct()
         )
-
-        if query.include_items:
+        stmt = base
+        if include_items:
             stmt = stmt.options(selectinload(ComboModel.items))
+        stmt = PaginationQuery.paginate_stmt(stmt, pagination)
 
         result = await self.session.execute(stmt)
 
-        count_stmt = (
-            select(func.count())
-            .select_from(ComboModel)
-            .where(ComboModel.is_available == True)
+        count_stmt = select(func.count()).select_from(
+            select(ComboModel.id)
+            .join(ComboItemModel, ComboItemModel.combo_id == ComboModel.id)
+            .where(
+                ComboItemModel.product_id == product_id.value,
+                ComboModel.is_available.is_(True),
+            )
+            .distinct()
+            .subquery()
         )
         total_items = (await self.session.execute(count_stmt)).scalar_one()
 
         pagination_metadata = PaginationMetadata.get_search_pagination_metadata(
-            query.pagination, total_items
+            pagination, total_items
         )
 
-        return Page(
+        return Page[Combo](
             [
-                ModelMapper.to_domain(
-                    combo,
-                    query.include_items if query.include_items else False,
-                )
-                for combo in result.scalars().all()
+                combo_model_to_domain(combo, include_items)
+                for combo in result.scalars().unique().all()
             ],
             pagination_metadata,
         )
 
-    async def list_active(
-        self, pagination: PaginationQuery, include_items: bool
-    ) -> Page[Combo]:
+    async def find_active(self, pagination: PaginationQuery) -> Page[Combo]:
         stmt = select(ComboModel).where(ComboModel.is_available == True)
-        if include_items:
-            stmt = stmt.options(selectinload(ComboModel.items))
-
         stmt = PaginationQuery.paginate_stmt(stmt, pagination)
+
+        stmt = stmt.options(selectinload(ComboModel.items))
 
         result = await self.session.execute(stmt)
         combo_models = result.scalars().unique().all()
@@ -95,8 +103,17 @@ class SQLAlchemyComboRepository(ComboRepository):
             pagination, total_items
         )
 
-        combos = [ModelMapper.to_domain(combo, True) for combo in combo_models]
-        return Page(combos, pagination_metadata)
+        combos = [combo_model_to_domain(combo, True) for combo in combo_models]
+        return Page[Combo](combos, pagination_metadata)
+
+    async def find_deleted_by_id(self, combo_id: ComboId) -> Optional[Combo]:
+        stmt = select(ComboModel).where(
+            ComboModel.id == combo_id.value,
+            ComboModel.is_available.is_(False),
+        )
+        result = await self.session.execute(stmt)
+        combo_model = result.scalar_one_or_none()
+        return combo_model_to_domain(combo_model, False) if combo_model else None
 
     async def save(self, combo: Combo) -> None:
         select_stmt = select(ComboModel).where(ComboModel.id == combo.id.value)
@@ -168,7 +185,7 @@ class SQLAlchemyComboRepository(ComboRepository):
         stmt = delete(ComboModel).where(ComboModel.id == combo_id.value)
         result = await self.session.execute(stmt)
 
-        if result.rowcount == 0:
+        if not result.scalar_one_or_none():
             raise ValueError(f"Combo with ID {combo_id.value} does not exist.")
 
         await self.session.commit()

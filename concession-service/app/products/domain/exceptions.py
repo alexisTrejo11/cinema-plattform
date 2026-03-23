@@ -5,6 +5,7 @@ from app.shared.base_exceptions import (
     ValidationException,
     DomainException,
 )
+from app.products.domain.entities.product import ProductId
 from typing import Any, Dict, Optional
 from http import HTTPStatus
 
@@ -25,8 +26,8 @@ class ProductNotFoundError(NotFoundException):
     Inherits from NotFoundException, setting entity_name to "Product".
     """
 
-    def __init__(self, product_id: Any):
-        super().__init__(entity_name="Product", entity_id=product_id)
+    def __init__(self, product_id: ProductId):
+        super().__init__(entity_name="Product", entity_id=str(product_id.value))
 
 
 class InvalidCategoryError(ValidationException):
@@ -41,8 +42,12 @@ class InvalidCategoryError(ValidationException):
         reason: str = "Invalid category data provided.",
         details: Optional[Dict[str, Any]] = None,
     ):
-        super().__init__(field=field, reason=reason, details=details)
-        self.error_code = "INVALID_CATEGORY_DATA"  # More specific error code
+        super().__init__(
+            field=field,
+            reason=reason,
+            details=details,
+            error_code="INVALID_CATEGORY_DATA",
+        )
 
 
 class CategoryNameConflict(DomainException):

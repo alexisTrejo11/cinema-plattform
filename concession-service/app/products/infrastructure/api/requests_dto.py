@@ -91,11 +91,8 @@ class ProductSearchQuery(BaseModel):
 
 
 class UpdateProductRequest(BaseModel):
-    product_id: UUID = Field(
-        ...,
-        description="ID of the product to update",
-    )
     """Schema for updating existing food products (all fields optional)"""
+
     name: Optional[str] = Field(
         None,
         min_length=1,

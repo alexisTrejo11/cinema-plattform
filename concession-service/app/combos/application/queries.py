@@ -17,13 +17,4 @@ class GetComboByIdQuery(BaseModel):
     combo_id: ComboId
     include_items: Optional[bool] = False
 
-    pagination: Optional[PaginationQuery] = None
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    def to_dict(self) -> dict:
-        return {
-            "combo_id": str(self.combo_id),
-            "include_items": self.include_items,
-            "pagination": self.pagination.model_dump() if self.pagination else None,
-        }

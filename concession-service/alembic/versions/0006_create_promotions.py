@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS promotions (
     current_uses INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITHOUT TIME ZONE,
     category_id INTEGER,
     CONSTRAINT fk_category
         FOREIGN KEY (category_id)
@@ -44,7 +45,9 @@ CREATE TABLE IF NOT EXISTS promotions (
 """
         )
     )
-    op.execute(sa.text("CREATE INDEX IF NOT EXISTS idx_promotions_id ON promotions (id)"))
+    op.execute(
+        sa.text("CREATE INDEX IF NOT EXISTS idx_promotions_id ON promotions (id)")
+    )
     op.execute(
         sa.text(
             "CREATE INDEX IF NOT EXISTS idx_promotions_active ON promotions (is_active) WHERE is_active = TRUE"

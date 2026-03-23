@@ -1,41 +1,32 @@
 from typing import Optional, Dict, Any
 from datetime import datetime
 
+from pydantic import BaseModel, Field, field_validator
 
-class ProductCategory:
+
+class ProductCategory(BaseModel):
     """Represents a category for food products."""
 
-    def __init__(
-        self,
-        id: Optional[int] = None,
-        name: str = "",
-        description: Optional[str] = None,
-        is_active: bool = True,
-        created_at: Optional[datetime] = None,
-    ):
-        """
-        Initialize a FoodCategory with validation.
-
-        Args:
-            id: Unique identifier (0 for new categories)
-            name: Category name (1-100 chars)
-            description: Optional description
-            is_active: Active status
-
-        Raises:
-            ValueError: For invalid name
-        """
-        self.id = id
-        self.name = name
-        self.description = description
-        self.is_active = is_active
-        self.created_at = created_at or datetime.now()
-
-        self.validate()
+    id: Optional[int] = None
+    name: str = ""
+    description: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    deleted_at: Optional[datetime] = None
 
     def validate(self):
         """Validate category attributes."""
         self._validate_name()
+
+    @field_validator("name")
+    @classmethod
+    def _validate_name_field(cls, value: str) -> str:
+        if not isinstance(value, str):
+            raise ValueError("Name must be a string")
+        if not 1 <= len(value) <= 100:
+            raise ValueError("Name must be between 1 and 100 characters")
+        return value
 
     def _validate_name(self):
         """Validate name meets requirements."""
@@ -47,13 +38,9 @@ class ProductCategory:
     def soft_delete(self):
         """Mark the category as inactive (soft delete)."""
         self.is_active = False
+        self.deleted_at = datetime.now()
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Converts the FoodCategory instance to a dictionary."""
-        return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "is_active": self.is_active,
-            "created_at": self.created_at if self.created_at else None,
-        }
+    def restore(self):
+        """Restore the category from deleted."""
+        self.is_active = True
+        self.deleted_at = None

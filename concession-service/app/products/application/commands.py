@@ -43,7 +43,7 @@ class ProductUpdateCommand(BaseModel):
         json_schema_extra={"example": False},
     )
 
-    preparation_time: Optional[int] = Field(
+    preparation_time_mins: Optional[int] = Field(
         None,
         ge=0,
         description="Updated preparation time",
@@ -66,6 +66,9 @@ class ProductCreateCommand(ProductBase):
     """Schema for creating new food products"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def __repr__(self) -> str:
+        return f"ProductCreateCommand(name={self.name}, price={self.price}, category_id={self.category_id})"
 
 
 class CategoryCreateCommand(ProductCategoryBase):

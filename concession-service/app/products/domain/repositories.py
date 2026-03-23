@@ -15,7 +15,7 @@ class ProductCategoryRepository(ABC):
     """
 
     @abstractmethod
-    async def get_by_id(self, category_id: int) -> Optional[ProductCategory]:
+    async def find_by_id(self, category_id: int) -> Optional[ProductCategory]:
         """
         Retrieves a single food category by its unique identifier.
 
@@ -28,7 +28,7 @@ class ProductCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    async def list(self) -> List[ProductCategory]:
+    async def find_all(self) -> List[ProductCategory]:
         """
         Retrieves a list of all food categories.
 
@@ -103,7 +103,7 @@ class ProductRepository(ABC):
     """
 
     @abstractmethod
-    async def get_by_id(self, product_id: ProductId) -> Optional[Product]:
+    async def find_by_id(self, product_id: ProductId) -> Optional[Product]:
         """
         Retrieves a single food product by its ID.
 
@@ -116,7 +116,7 @@ class ProductRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_id_in(
+    async def find_by_id_in(
         self, product_id_list: List[ProductId]
     ) -> Dict[ProductId, Product]:
         """
@@ -177,5 +177,18 @@ class ProductRepository(ABC):
 
         Returns:
             None
+        """
+        pass
+
+    @abstractmethod
+    async def find_deleted_by_id(self, product_id: ProductId) -> Optional[Product]:
+        """
+        Retrieves a deleted food product by its unique identifier.
+
+        Args:
+            product_id (ProductId): The unique identifier of the food product.
+
+        Returns:
+            Optional[Product]: The deleted Product entity if found, otherwise None.
         """
         pass

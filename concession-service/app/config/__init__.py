@@ -27,7 +27,6 @@ from .global_exception_handler import (
     handle_pydantic_validation_errors,
     handle_path_validation_errors,
     handle_db_exceptions,
-    handle_value_errors,
     handle_generic_exceptions,
 )
 
@@ -38,7 +37,5 @@ exception_handlers: Any = {
     ValidationError: handle_pydantic_validation_errors,
     RequestValidationError: handle_path_validation_errors,
     SQLAlchemyError: handle_db_exceptions,
-    ValueError: handle_value_errors,
-    AttributeError: handle_value_errors,
     Exception: handle_generic_exceptions,
 }

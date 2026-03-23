@@ -1,7 +1,8 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING
 import uuid
-from pydantic import BaseModel, ConfigDict, Field
 from decimal import Decimal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 if TYPE_CHECKING:
     from app.products.domain.entities.value_objects import ProductId
@@ -157,60 +158,56 @@ class ProductCategoryBase(BaseModel):
     )
 
 
-class AbstractId:
-    """Abstract base class for all ID value objects."""
+class PydanticUUID(BaseModel):
+    """
+    Base ID class as a Pydantic Model.
+    Provides immutability, validation, and auto-serialization.
+    """
+
+    value: uuid.UUID = Field(default_factory=uuid.uuid4)
 
     def __init__(self, value: uuid.UUID):
-        if isinstance(value, str):
-            value = uuid.UUID(value)
-        if not isinstance(value, uuid.UUID):
-            raise ValueError("ID must be a valid UUID")
-        if value is None:
-            raise ValueError("ID cannot be None")
-
-        self.value = value
-
-    @staticmethod
-    def from_string(value: str) -> "AbstractId":
-        """Create a UUID from a string."""
-        try:
-            return AbstractId(uuid.UUID(value))
-        except ValueError:
-            raise ValueError("Invalid UUID string format")
-
-    @staticmethod
-    def generate() -> "AbstractId":
-        """Generate a new UUID."""
-        return AbstractId(uuid.uuid4())
+        super().__init__(value=value)
 
     def to_string(self) -> str:
         return str(self.value)
 
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+    )
+
     def __str__(self) -> str:
         return str(self.value)
 
-    def __eq__(self, other) -> bool:
-        if isinstance(other, AbstractId):
-            return self.value == other.value
-        return False
-
-    def __hash__(self) -> int:
-        return hash(self.value)
-
-
-class PydanticUUID(BaseModel):
-    """
-    Custom Pydantic model for UUID validation.
-    """
-
-    id: uuid.UUID = Field(..., description="UUID string")
+    @classmethod
+    def generate(cls) -> "PydanticUUID":
+        """Factory method to create a new ID."""
+        return cls.model_construct(value=uuid.uuid4())
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate_uuid
+    def from_string(cls, v: str) -> "PydanticUUID":
+        """Manual factory for strings."""
+        return cls.model_construct(value=uuid.UUID(v))
 
+    @model_validator(mode="before")
     @classmethod
-    def validate_uuid(cls, value):
-        if not isinstance(value, str) or len(value) != 36:
-            raise ValueError("Invalid UUID format")
-        return value
+    def _coerce_root_input(cls, data: Any) -> Any:
+        if isinstance(data, cls):
+            return data
+        if isinstance(data, uuid.UUID):
+            return {"value": data}
+        if isinstance(data, str):
+            return {"value": data}
+        return data
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def _coerce_value(cls, v: Any) -> uuid.UUID:
+        if isinstance(v, uuid.UUID):
+            return v
+        if isinstance(v, str):
+            return uuid.UUID(v)
+        raise ValueError(
+            f"Cannot convert {type(v).__name__!r} to UUID for {cls.__name__}"
+        )

@@ -43,7 +43,7 @@ class ComboItemModel(Base):
     __tablename__ = "combo_items"
 
     id: Mapped[UUID] = mapped_column(
-        PostgreSQLUUID(as_uuid=True), primary_key=True, index=True
+        PostgreSQLUUID[UUID](as_uuid=True), primary_key=True, index=True
     )
     combo_id: Mapped[int] = mapped_column(ForeignKey("combos.id", ondelete="CASCADE"))
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))

@@ -4,6 +4,7 @@ from app.products.domain.repositories import (
     ProductRepository,
     ProductCategoryRepository as CategoryRepository,
 )
+from app.promotions.domain.entities.promotion import Promotion
 from app.promotions.domain.factory.promotion_rule_factory import PromotionRuleFactory
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
 from app.promotions.domain.entities.promotion import PromotionId
@@ -29,46 +30,37 @@ class CreatePromotionUseCase:
         self.product_repository = product_repository
         self.category_repository = category_repository
 
-    async def execute(self, command: PromotionCreateCommand) -> CommandResult:
-        try:
-            promotion = command.map_to_domain()
-            promotion.validate_creation_fields()
+    async def execute(self, command: PromotionCreateCommand) -> Promotion:
+        promotion = command.map_to_domain()
+        promotion.validate_creation_fields()
 
-            promotion.rule = self.create_rule(command.rule, promotion.promotion_type)
+        promotion.rule = self.create_rule(command.rule, promotion.promotion_type)
 
-            if command.applicable_product_ids:
-                promotion.applicable_product_ids = await self.get_products(
-                    command.applicable_product_ids
-                )
-
-            if command.applicable_category_id:
-                self.get_category(command.applicable_category_id)
-
-            await self.promotion_repository.create(promotion)
-
-            return CommandResult.success(
-                promotion.id,
-                "Promotion created successfully",
+        if command.applicable_product_ids:
+            promotion.applicable_product_ids = await self.get_products(
+                command.applicable_product_ids
             )
-        except DomainException as e:
-            return CommandResult.error(message=f"Error creating promotion: {str(e)}")
+
+        if command.applicable_category_id:
+            self.get_category(command.applicable_category_id)
+
+        await self.promotion_repository.create(promotion)
+
+        return promotion
 
     async def get_products(self, product_ids: list) -> list:
-        product_map = await self.product_repository.get_by_id_in(product_ids)
-        products = list(product_map.keys())
+        product_map = await self.product_repository.find_by_id_in(product_ids)
+        products = list[Any](product_map.keys())
         if not len(products) == len(product_ids):
             raise DomainException("Some products not found")
 
         return products
 
-    def create_rule(self, rule: Dict[str, Any], promotion_type: PromotionType) -> Any:
-        promotion_rule = PromotionRuleFactory.create_promotion_rule(
-            promotion_type, rule
-        )
-        return promotion_rule.to_dict()
+    def create_rule(self, rule: Dict[str, Any], promotion_type: PromotionType) -> dict:
+        return PromotionRuleFactory.create_promotion_rule(promotion_type, rule)
 
     def get_category(self, category_id: int) -> Any:
-        category = self.category_repository.get_by_id(category_id)
+        category = self.category_repository.find_by_id(category_id)
         if not category:
             raise DomainException(f"Category with ID {category_id} not found")
         return category
@@ -80,11 +72,10 @@ class ExtendPromotionUseCase:
 
     async def execute(self, command: ExtendPromotionCommand) -> CommandResult:
         try:
-            promotion_id = PromotionId(command.id)
-            promotion = await self.promotion_repository.get_by_id(promotion_id)
+            promotion = await self.promotion_repository.get_by_id(command.id)
             if not promotion:
                 return CommandResult.error(
-                    promotion_id=promotion_id, message="Promotion not found"
+                    promotion_id=command.id, message="Promotion not found"
                 )
 
             promotion.extend_validity(command.available_until)
@@ -201,7 +192,7 @@ class ApplyPromotionUseCase:
         )
 
     async def _get_products(self, product_ids: list) -> list:
-        product_map = await self.product_repository.get_by_id_in(product_ids)
+        product_map = await self.product_repository.find_by_id_in(product_ids)
         products = list(product_map.keys())
         if not len(products) == len(product_ids):
             raise DomainException("Some products not found")
@@ -222,13 +213,7 @@ class RemoveProductsPromotionUseCase:
             )
 
         promotion.remove_applicable_products(command.product_ids)
-        await self.promotion_repository.update_products(
-            promotion.id, command.product_ids
-        )
-
-        await self.promotion_repository.update_products(
-            promotion.id, promotion.applicable_product_ids
-        )
+        await self.promotion_repository.update(promotion)
 
         return CommandResult.success(
             promotion_id=promotion.id,
@@ -302,7 +287,7 @@ class AddProductsToPromotionUseCase:
                 message="Promotion not found",
             )
 
-        products = await self.product_repository.get_by_id_in(
+        products = await self.product_repository.find_by_id_in(
             add_products_command.product_ids
         )
         if len(products) != len(add_products_command.product_ids):
@@ -334,7 +319,7 @@ class AddCategoryPromotionUseCase:
                 message="Promotion not found",
             )
 
-        category = await self.category_repository.get_by_id(command.category_id)
+        category = await self.category_repository.find_by_id(command.category_id)
         if not category:
             return CommandResult.error(
                 message=f"Category with ID {command.category_id} not found"

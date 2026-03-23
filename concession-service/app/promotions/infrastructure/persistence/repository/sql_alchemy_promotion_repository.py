@@ -18,13 +18,14 @@ from app.promotions.application.queries.promotion_query import (
 )
 from app.products.infrastructure.persistence.models.product_models import (
     ProductModel,
+    ProductCategoryModel,
 )
 from ..model.promotion_model import (
     PromotionModel,
     PromotionCategoryModel,
     PromotionProductModel,
 )
-from ..model.model_mapper import PromotionModelMapper
+from ..model.model_mapper import promotion_model_from_domain, promotion_model_to_domain
 
 logger = logging.getLogger(__name__)
 
@@ -39,19 +40,23 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
         is_active: Optional[bool] = True,
     ) -> Optional[Promotion]:
         try:
-            stmt = select(PromotionModel).where(
-                and_(
-                    PromotionModel.id == str(promotion_id.value),
-                    PromotionModel.is_active == is_active,
+            stmt = (
+                select(PromotionModel)
+                .where(
+                    and_(
+                        PromotionModel.id == str(promotion_id.value),
+                        PromotionModel.is_active == is_active,
+                    )
+                )
+                .options(
+                    selectinload(PromotionModel.products),
+                    selectinload(PromotionModel.categories),
                 )
             )
             result = await self.session.execute(stmt)
 
-            stmt = stmt.options(selectinload(PromotionModel.products))
-            stmt = stmt.options(selectinload(PromotionModel.categories))
-
             model = result.unique().scalar_one_or_none()
-            return PromotionModelMapper.to_domain(model) if model else None
+            return promotion_model_to_domain(model) if model else None
         except SQLAlchemyError as e:
             logger.error(f"Error getting promotion {promotion_id}: {e}")
             raise DatabaseException(f"Failed to get promotion {promotion_id}") from e
@@ -80,12 +85,16 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
     ) -> Page[Promotion]:
         try:
             where_clause = and_(
-                ProductModel.id == str(query.product_id.value),
+                PromotionModel.id.in_(
+                    select(PromotionProductModel.promotion_id).where(
+                        PromotionProductModel.product_id == query.product_id.value
+                    )
+                ),
                 PromotionModel.is_active == True,
             )
 
             stmt = select(PromotionModel).where(where_clause)
-            stmt = PaginationQuery.paginate_stmt(stmt, query)
+            stmt = PaginationQuery.paginate_stmt(stmt, query.pagination)
 
             result = await self.session.execute(stmt)
 
@@ -102,7 +111,7 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
 
     async def create(self, promotion: Promotion) -> Promotion:
         try:
-            promotion_model = PromotionModelMapper.from_domain(promotion)
+            promotion_model = promotion_model_from_domain(promotion)
 
             product_models_to_associate = []
             if promotion.applicable_product_ids:
@@ -132,20 +141,68 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
             self.session.add(promotion_model)
             await self.session.commit()
 
-            return PromotionModelMapper.to_domain(promotion_model)
+            return promotion_model_to_domain(promotion_model)
         except SQLAlchemyError as e:
             logger.error(f"Error creating promotion: {e}")
             raise DatabaseException("Failed to create promotion") from e
 
     async def update(self, promotion: Promotion) -> Promotion:
+        """Persist scalar fields and sync many-to-many products/categories from domain."""
         try:
             async with self.session.begin_nested():
-                promotion_model = PromotionModelMapper.from_domain(promotion)
+                stmt = (
+                    select(PromotionModel)
+                    .where(PromotionModel.id == promotion.id.value)
+                    .options(
+                        selectinload(PromotionModel.products),
+                        selectinload(PromotionModel.categories),
+                    )
+                )
+                result = await self.session.execute(stmt)
+                model = result.unique().scalar_one_or_none()
+                if model is None:
+                    raise DatabaseException(
+                        f"Failed to update promotion {promotion.id}: not found"
+                    )
 
-                promotion_model = await self.session.merge(promotion_model)
+                model.name = promotion.name
+                model.description = promotion.description
+                model.promotion_type = str(promotion.promotion_type.value)
+                model.rule = promotion.rule
+                model.start_date = promotion.start_date
+                model.end_date = promotion.end_date
+                model.is_active = promotion.is_active
+                model.max_uses = promotion.max_uses
+                model.current_uses = promotion.current_uses
+                model.created_at = promotion.created_at
+                model.updated_at = promotion.updated_at
+
+                if promotion.applicable_product_ids:
+                    product_ids_values = [
+                        p_id.value for p_id in promotion.applicable_product_ids
+                    ]
+                    products_stmt = select(ProductModel).where(
+                        ProductModel.id.in_(product_ids_values)
+                    )
+                    products_result = await self.session.execute(products_stmt)
+                    model.products = list(products_result.scalars().all())
+                else:
+                    model.products = []
+
+                if promotion.applicable_categories_ids:
+                    cat_stmt = select(ProductCategoryModel).where(
+                        ProductCategoryModel.id.in_(
+                            promotion.applicable_categories_ids
+                        )
+                    )
+                    cat_result = await self.session.execute(cat_stmt)
+                    model.categories = list(cat_result.scalars().all())
+                else:
+                    model.categories = []
+
                 await self.session.commit()
 
-                return PromotionModelMapper.to_domain(promotion_model)
+                return promotion_model_to_domain(model)
         except SQLAlchemyError as e:
             logger.error(f"Error updating promotion {promotion.id}: {e}")
             raise DatabaseException(f"Failed to update promotion {promotion.id}") from e
@@ -264,7 +321,7 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
     ) -> Page[Promotion]:
         pagination_metadata = await self.get_pagination_metadata(where_clause, query)
         promotions = [
-            PromotionModelMapper.to_domain(model)
+            promotion_model_to_domain(model)
             for model in result.scalars().unique().all()
             if model
         ]

@@ -17,6 +17,7 @@ from .promotion_query_use_cases import (
     GetPromotionByProductIdUseCase,
 )
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
+from app.promotions.domain.entities.promotion import Promotion
 
 from app.products.domain.repositories import (
     ProductRepository,
@@ -27,7 +28,6 @@ from ..command.promotion_command import (
     ExtendPromotionCommand,
 )
 
-from ..command.promotion_result import PromotionCommandResult as CommandResult
 from ..queries.promotion_query import (
     PaginationQuery,
     GetPromotionByIdQuery,
@@ -83,20 +83,20 @@ class PromotionsUseCases:
         self.remove_products = RemoveProductsPromotionUseCase(promotion_repository)
         self.remove_category = RemoveCategoryPromotionUseCase(promotion_repository)
 
-    async def create_promotion(self, command: PromotionCreateCommand) -> CommandResult:
+    async def create_promotion(self, command: PromotionCreateCommand) -> Promotion:
         return await self.create.execute(command)
 
-    async def activate_promotion(self, promotion_id: PromotionId) -> CommandResult:
-        return await self.activate.execute(promotion_id)
+    async def activate_promotion(self, promotion_id: PromotionId) -> None:
+        await self.activate.execute(promotion_id)
 
-    async def deactivate_promotion(self, promotion_id: PromotionId) -> CommandResult:
-        return await self.deactivate.execute(promotion_id)
+    async def deactivate_promotion(self, promotion_id: PromotionId) -> None:
+        await self.deactivate.execute(promotion_id)
 
-    async def extend_promotion(self, command: ExtendPromotionCommand) -> CommandResult:
-        return await self.extend.execute(command)
+    async def extend_promotion(self, command: ExtendPromotionCommand) -> None:
+        await self.extend.execute(command)
 
-    async def clear_promotions(self, promotion_id: PromotionId) -> CommandResult:
-        return await self.clear.execute(promotion_id)
+    async def clear_promotions(self, promotion_id: PromotionId) -> None:
+        await self.clear.execute(promotion_id)
 
     async def get_active_promotions(
         self, pagination: PaginationQuery
@@ -115,28 +115,28 @@ class PromotionsUseCases:
 
     async def apply_promotion(
         self, promotion_id: PromotionId, product_ids: list[ProductId]
-    ) -> CommandResult:
-        return await self.apply.execute(promotion_id, product_ids)
+    ) -> None:
+        await self.apply.execute(promotion_id, product_ids)
 
-    async def delete_promotion(self, promotion_id: PromotionId) -> CommandResult:
-        return await self.delete.execute(promotion_id)
+    async def delete_promotion(self, promotion_id: PromotionId) -> None:
+        await self.delete.execute(promotion_id)
 
     async def add_products_to_promotion(
         self, command: AddProductsPromotionCommand
-    ) -> CommandResult:
-        return await self.add_products.execute(command)
+    ) -> None:
+        await self.add_products.execute(command)
 
     async def add_category_to_promotion(
         self, command: AddCategoryPromotionCommand
-    ) -> CommandResult:
-        return await self.add_category.execute(command)
+    ) -> None:
+        await self.add_category.execute(command)
 
     async def remove_products_from_promotion(
         self, command: RemoveProductsPromotionCommand
-    ) -> CommandResult:
-        return await self.remove_products.execute(command)
+    ) -> None:
+        await self.remove_products.execute(command)
 
     async def remove_category_from_promotion(
         self, command: RemoveCategoryPromotionCommand
-    ) -> CommandResult:
-        return await self.remove_category.execute(command)
+    ) -> None:
+        await self.remove_category.execute(command)

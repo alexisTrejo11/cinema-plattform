@@ -1,7 +1,4 @@
 from app.products.domain.repositories import ProductCategoryRepository
-from app.products.application.responses import (
-    ProductCategoryResponse as CategoryResponse,
-)
 from app.products.application.commands import (
     CategoryUpdateCommand,
     CategoryCreateCommand,
@@ -15,51 +12,50 @@ from typing import List
 
 
 class GetCategoryByIdUseCase:
-    def __init__(self, category_repo: ProductCategoryRepository) -> None:
-        self.category_repo = category_repo
+    def __init__(self, category_repository: ProductCategoryRepository) -> None:
+        self.category_repository = category_repository
 
-    async def execute(self, category_id: int) -> CategoryResponse:
-        category = await self.category_repo.get_by_id(category_id)
+    async def execute(self, category_id: int) -> ProductCategory:
+        category = await self.category_repository.find_by_id(category_id)
         if not category:
             raise CategoryNotFoundError(category_id)
 
-        return CategoryResponse(**category.to_dict())
+        return category
 
 
-class ListCategoryUseCase:
-    def __init__(self, category_repo: ProductCategoryRepository) -> None:
-        self.category_repo = category_repo
+class GetAllCategoriesUseCase:
+    def __init__(self, category_repository: ProductCategoryRepository) -> None:
+        self.category_repository = category_repository
 
-    async def execute(self) -> List[CategoryResponse]:
-        category_list = await self.category_repo.list()
-        return [CategoryResponse(**category.to_dict()) for category in category_list]
+    async def execute(self) -> List[ProductCategory]:
+        return await self.category_repository.find_all()
 
 
 class CreateCategoryUseCase:
-    def __init__(self, category_repo: ProductCategoryRepository) -> None:
-        self.category_repo = category_repo
+    def __init__(self, category_repository: ProductCategoryRepository) -> None:
+        self.category_repository = category_repository
 
-    async def execute(self, create_data: CategoryCreateCommand) -> CategoryResponse:
-        await self._validate_name(create_data.name)
+    async def execute(self, data: CategoryCreateCommand) -> ProductCategory:
+        await self._validate_name(data.name)
 
-        new_category = ProductCategory(**create_data.model_dump())
-        category_created = await self.category_repo.save(new_category)
+        new_category = ProductCategory(**data.model_dump())
+        created_category = await self.category_repository.save(new_category)
 
-        return CategoryResponse(**category_created.to_dict())
+        return created_category
 
     async def _validate_name(self, name: str):
-        if await self.category_repo.exists_by_name(name.strip()):
+        if await self.category_repository.exists_by_name(name.strip()):
             raise CategoryNameConflict(category_name=name.strip())
 
 
 class UpdateCategoryUseCase:
-    def __init__(self, category_repo: ProductCategoryRepository) -> None:
-        self.category_repo = category_repo
+    def __init__(self, category_repository: ProductCategoryRepository) -> None:
+        self.category_repository = category_repository
 
     async def execute(
         self, category_id: int, update_data: CategoryUpdateCommand
-    ) -> CategoryResponse:
-        category = await self.category_repo.get_by_id(category_id)
+    ) -> ProductCategory:
+        category = await self.category_repository.find_by_id(category_id)
         if not category:
             raise CategoryNotFoundError(category_id)
 
@@ -67,9 +63,9 @@ class UpdateCategoryUseCase:
             await self._validate_name(update_data.name)
 
         self._update_fields(category, update_data)
-        await self.category_repo.save(category)
 
-        return CategoryResponse(**category.to_dict())
+        updated_category = await self.category_repository.save(category)
+        return updated_category
 
     def _update_fields(
         self, category: ProductCategory, category_data: CategoryUpdateCommand
@@ -79,23 +75,34 @@ class UpdateCategoryUseCase:
             setattr(category, k, v)
 
     async def _validate_name(self, name: str) -> None:
-        if await self.category_repo.exists_by_name(name.strip()):
+        if await self.category_repository.exists_by_name(name.strip()):
             raise CategoryNameConflict(message="Category Name already Taken.")
 
 
-class SoftDeleteCategoryUseCase:
-    def __init__(self, category_repo: ProductCategoryRepository) -> None:
-        self.category_repo = category_repo
+class DeleteCategoryUseCase:
+    def __init__(self, category_repository: ProductCategoryRepository) -> None:
+        self.category_repository = category_repository
 
-    async def execute(self, category_id: int, is_soft_delete=True) -> bool:
+    async def execute(self, category_id: int, is_soft_delete=True) -> None:
         if is_soft_delete:
-            category = await self.category_repo.get_by_id(category_id)
+            category = await self.category_repository.find_by_id(category_id)
             if not category:
                 raise CategoryNotFoundError(category_id)
 
             category.soft_delete()
-            await self.category_repo.save(category)
-
-            return True
+            await self.category_repository.save(category)
         else:
-            return await self.category_repo.delete(category_id)
+            await self.category_repository.delete(category_id)
+
+
+class RestoreCategoryUseCase:
+    def __init__(self, category_repository: ProductCategoryRepository) -> None:
+        self.category_repository = category_repository
+
+    async def execute(self, category_id: int) -> None:
+        category = await self.category_repository.find_by_id(category_id)
+        if not category:
+            raise CategoryNotFoundError(category_id)
+
+        category.restore()
+        await self.category_repository.save(category)

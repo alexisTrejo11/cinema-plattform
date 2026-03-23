@@ -1,129 +1,77 @@
-from typing import Any, Dict, Optional, TYPE_CHECKING
-from decimal import Decimal
-from typing import Optional
 from datetime import datetime
+from decimal import Decimal
+from typing import Any, Dict, Optional
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
 from .value_objects import ProductId
 from ..validator import ProductValidator
 
 
-class Product:
+class Product(BaseModel):
     """Represents a food product in the domain with business validations."""
 
-    def __init__(
-        self,
-        id: ProductId,
-        name: str = "",
-        price: Decimal = Decimal("0.00"),
-        category_id: int = 0,
-        description: Optional[str] = None,
-        image_url: Optional[str] = None,
-        is_available: bool = True,
-        preparation_time_mins: Optional[int] = None,
-        calories: Optional[int] = None,
-        created_at: Optional[datetime] = None,
-        updated_at: Optional[datetime] = None,
-    ):
-        """
-        Initialize a FoodProduct with validation of all attributes.
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-        Args:
-            id: Unique identifier (0 for new products)
-            name: Product name (1-200 chars, not just whitespace)
-            price: Product price (positive, max 2 decimal places)
-            category_id: ID of the category this belongs to
-            description: Optional description
-            image_url: Optional image URL
-            is_available: Availability status
-            preparation_time_mins: Optional prep time in minutes (0-240)
-            calories: Optional calorie count (0-5000)
+    id: ProductId = Field(default_factory=ProductId.generate)
+    name: str = ""
+    price: Decimal = Decimal("0.00")
+    category_id: int = 0
+    description: Optional[str] = None
+    image_url: str
+    is_available: bool = True
+    preparation_time_mins: Optional[int] = None
+    calories: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    deleted_at: Optional[datetime] = None
 
-        Raises:
-            ValueError: For any invalid attribute values
-        """
-        self.id = id if id else ProductId.generate()
-        self.name = name
-        self.description = description
-        self.price = price
-        self.image_url = image_url
-        self.is_available = is_available
-        self.preparation_time_mins = preparation_time_mins
-        self.calories = calories
-        self.category_id = category_id
-        self.created_at = created_at or datetime.now()
-        self.updated_at = updated_at or datetime.now()
+    @field_validator("id", mode="before")
+    @classmethod
+    def _validate_id_field(cls, value: Any) -> ProductId:
+        if value in (None, ""):
+            return ProductId.generate()
+        if isinstance(value, ProductId):
+            return value
+        if isinstance(value, UUID):
+            return ProductId(value)
+        if isinstance(value, str):
+            return ProductId.from_string(value)
+        raise ValueError(f"Cannot convert {type(value)} to ProductId")
 
-    def validate_product(self):
+    @classmethod
+    def create(cls, data: Dict[str, Any]) -> "Product":
+        default_image_url: str = "https://via.placeholder.com/150"
+
+        data["id"] = ProductId.generate()
+        data["price"] = Decimal(str(data["price"]))
+        data["image_url"] = data["image_url"] or default_image_url
+        return cls(**data)
+
+    @field_validator("price", mode="before")
+    @classmethod
+    def _validate_price_field(cls, value: Any) -> Decimal:
+        if isinstance(value, Decimal):
+            return value
+        if isinstance(value, str):
+            return Decimal(value)
+        if isinstance(value, float):
+            return Decimal(str(value))
+        return Decimal(value)
+
+    @model_validator(mode="after")
+    def _run_business_validation(self) -> "Product":
+        ProductValidator.validate_product(self)
+        return self
+
+    def validate_business_rules(self):
         """Validate all business rules for this product."""
         ProductValidator.validate_product(self)
 
-    def __repr__(self):
-        return f"Product(id={self.id}, name={self.name}, price={self.price}, is_available={self.is_available})"
+    def restore(self) -> "Product":
+        self.deleted_at = None
+        return self
 
-    def __eq__(self, other):
-        if not isinstance(other, Product):
-            return NotImplemented
-        return (
-            self.id == other.id
-            and self.name == other.name
-            and self.price == other.price
-        )
-
-    def __hash__(self):
-        return hash((self.id, self.name, self.price))
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Converts the FoodProduct instance to a dictionary."""
-        return {
-            "id": self.id.value if isinstance(self.id, ProductId) else str(self.id),
-            "name": self.name,
-            "description": self.description,
-            "price": str(self.price),
-            "image_url": self.image_url,
-            "is_available": self.is_available,
-            "preparation_time_mins": self.preparation_time_mins,
-            "calories": self.calories,
-            "category_id": self.category_id,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at,
-        }
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Product":
-        """Creates a FoodProduct instance from a dictionary."""
-        product_id = data.get("id")
-        if isinstance(product_id, str):
-            product_id = ProductId.from_string(product_id)
-        elif not isinstance(product_id, ProductId):
-            product_id = product_id
-        elif isinstance(product_id, UUID):
-            product_id = ProductId(product_id)
-
-        price = data.get("price", Decimal("0.00"))
-        if isinstance(price, str):
-            price = Decimal(price)
-        elif isinstance(price, float):
-            price = Decimal(str(price))
-        elif not isinstance(price, Decimal):
-            price = Decimal(price)
-
-        created_at = data.get("created_at", datetime.now())
-        updated_at = data.get("updated_at", datetime.now())
-        if isinstance(created_at, str):
-            created_at = datetime.fromisoformat(created_at)
-        if isinstance(updated_at, str):
-            updated_at = datetime.fromisoformat(updated_at)
-
-        return Product(
-            id=product_id,
-            name=data["name"],
-            description=data.get("description"),
-            price=price,
-            image_url=data.get("image_url"),
-            is_available=data["is_available"],
-            preparation_time_mins=data.get("preparation_time_mins"),
-            calories=data.get("calories"),
-            category_id=data["category_id"],
-            created_at=created_at,
-            updated_at=updated_at,
-        )
+    def __repr__(self) -> str:
+        return f"Product(id={self.id}, name={self.name}, price={self.price}, category_id={self.category_id})"

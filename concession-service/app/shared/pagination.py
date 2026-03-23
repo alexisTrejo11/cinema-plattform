@@ -1,6 +1,6 @@
 import math
 from pydantic import BaseModel, Field
-from typing import List, Optional, TypeVar, Generic
+from typing import Any, List, Optional, TypeVar, Generic
 from enum import Enum
 from dataclasses import dataclass
 
@@ -13,12 +13,10 @@ class Page(Generic[T]):
     metadata: "PaginationMetadata"
 
     def map(self, func):
-        return Page(
+        return Page[T](
             items=[func(item) for item in self.items],
             metadata=self.metadata,
         )
-
-
 
 
 class SortOrder(str, Enum):
