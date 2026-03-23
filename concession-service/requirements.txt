@@ -26,3 +26,6 @@ aiohttp
 alembic
 
 gunicorn>=20.1.0
+
+grpcio 
+grpcio-tools

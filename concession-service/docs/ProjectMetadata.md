@@ -1,25 +1,13 @@
 ---
-projectId: "billboard-service"
-name: "Cinema Billboard Service"
-shortName: "Billboard API"
-status: "production"
-docsVersion: "1.0.0"
-lastUpdated: "2026-03-19"
-owner: "Alexis"
-repositoryUrl: "https://github.com/your-org/billboard-service"
-tags:
-  [
-    "cinema",
-    "fastapi",
-    "ddd",
-    "postgresql",
-    "redis",
-    "microservice",
-    "rest-api",
-    "python",
-    "async",
-    "docker",
-  ]
+projectId: ""
+name: ""
+shortName: ""
+status: "draft"
+docsVersion: "0.1.0"
+lastUpdated: ""
+owner: ""
+repositoryUrl: ""
+tags: []
 ---
 
 # Project Documentation
@@ -27,29 +15,29 @@ tags:
 ## 1. Code Showcase
 
 - **File**: [ProjectCodeShowCase.md](ProjectCodeShowCase.md)
-- **Description**: Code examples that highlight key implementation details and patterns including DDD architecture, repository pattern, caching strategies, and API controllers.
+- **Description**: Code examples that highlight key implementation details and patterns.
 
 ## 2. Overview
 
-- **File**: [ProjectOverview.md](ProjectOverview.md)
-- **Description**: Business context, problem statement, solution approach, and key metrics for the cinema billboard management platform.
+- **File**: [overview.md](overview.md)
+- **Description**: Business context, problem, solution, and key metrics.
 
 ## 3. Infrastructure
 
 - **File**: [InfrastructureModel.md](InfrastructureModel.md)
-- **Description**: Docker deployments, PostgreSQL and Redis configuration, multi-stage builds, health checks, and production infrastructure metrics.
+- **Description**: Deployments, Docker, cloud services, and infra metrics.
 
 ## 4. Architecture
 
 - **File**: [ProjectArchitectureModel.md](ProjectArchitectureModel.md)
-- **Description**: Domain-Driven Design layers, architectural patterns (Repository, Data Mapper, Use Case), security strategies, and data flow diagrams.
+- **Description**: Layers, patterns, strategies, diagrams, and data flows.
 
 ## 5. Features
 
 - **File**: [ProjectFeatures.md](ProjectFeatures.md)
-- **Description**: Core features including cinema management, movie catalog, theater operations, showtime scheduling, seat inventory, authentication, caching, and scheduled jobs.
+- **Description**: End-user / system features and their status, metrics, and code snippets.
 
 ## 6. APIs
 
 - **File**: [APISchema.md](APISchema.md)
-- **Description**: HTTP API endpoints, request/response schemas, authentication requirements, and rate limiting specifications.
+- **Description**: HTTP API endpoints, request/response schemas, and examples.

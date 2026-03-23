@@ -35,6 +35,10 @@ case "$mode" in
       --bind 0.0.0.0:8000 \
       --workers "${GUNICORN_WORKERS:-4}"
     ;;
+  serve-grpc)
+    run_migrations
+    exec python -m app.grpc.server
+    ;;
   *)
     exec "$@"
     ;;
