@@ -1,11 +1,34 @@
 """Shared fixtures for HTTP / API integration tests."""
 
+from datetime import datetime, timedelta, timezone
+
+import jwt
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from main import app
+from app.config.app_config import settings
 from app.config.db.postgres_config import get_db
-from app.config.security import AuthUserContext
+
+
+def _encode_test_jwt(roles: list[str]) -> str:
+    """HS256 token signed with app JWT_SECRET_KEY; matches jwt_auth_middleware validation."""
+    now = datetime.now(timezone.utc)
+    payload: dict = {
+        "sub": "e2e-test-user",
+        "roles": roles,
+        "iat": now,
+        "exp": now + timedelta(hours=1),
+    }
+    if settings.JWT_AUDIENCE:
+        payload["aud"] = settings.JWT_AUDIENCE
+    if settings.JWT_ISSUER:
+        payload["iss"] = settings.JWT_ISSUER
+    return jwt.encode(
+        payload,
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -35,23 +58,6 @@ def disable_route_rate_limits(monkeypatch):
         monkeypatch.setattr(f"{mod}.limiter.limit", fake_limit)
 
 
-@pytest.fixture(autouse=True)
-def inject_test_auth_from_bearer_header(monkeypatch):
-    """Map Authorization header to roles without real JWT (main app has no JWT middleware)."""
-
-    def _get_current_user(request):
-        auth = request.headers.get("authorization", "")
-        if auth == "Bearer test-admin-token":
-            return AuthUserContext(roles=["admin"])
-        if auth == "Bearer test-manager-token":
-            return AuthUserContext(roles=["manager"])
-        if auth == "Bearer test-customer-token":
-            return AuthUserContext(roles=["customer"])
-        return None
-
-    monkeypatch.setattr("app.config.security.get_current_user", _get_current_user)
-
-
 @pytest.fixture
 async def async_client(session):
     async def override_get_db():
@@ -66,14 +72,14 @@ async def async_client(session):
 
 @pytest.fixture
 def admin_headers():
-    return {"Authorization": "Bearer test-admin-token"}
+    return {"Authorization": f"Bearer {_encode_test_jwt(['admin'])}"}
 
 
 @pytest.fixture
 def manager_headers():
-    return {"Authorization": "Bearer test-manager-token"}
+    return {"Authorization": f"Bearer {_encode_test_jwt(['manager'])}"}
 
 
 @pytest.fixture
 def customer_headers():
-    return {"Authorization": "Bearer test-customer-token"}
+    return {"Authorization": f"Bearer {_encode_test_jwt(['customer'])}"}

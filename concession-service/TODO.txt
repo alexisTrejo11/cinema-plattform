@@ -1,3 +1,6 @@
 -- Add new exception handler to billboard
 -- Add regiustration from billboard to admin service
 -- Migrate and fix from PYDANTIC AND FIX MAPPING AND CONVENTIONS
+
+-- Fix Percenage Business bug,
+-- Improve mapping

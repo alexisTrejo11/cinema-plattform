@@ -8,9 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.products.infrastructure.persistence.repositories.sqlalchemy_product_repo import (
     SqlAlchemyProductRepository,
 )
-from app.promotions.application.queries.promotion_query import (
-    GetPromotionByProductIdQuery,
-)
+from app.promotions.application.queries import GetPromotionByProductIdQuery
 from app.promotions.domain.entities.promotion import Promotion
 from app.promotions.infrastructure.persistence.model.promotion_model import (
     PromotionModel,
@@ -230,16 +228,24 @@ class TestSQLAlchemyPromotionRepository:
 
         # Inactiva (fecha de inicio futura)
         inactive_promo_data_2 = sample_promotion_data.copy()
-        inactive_promo_data_2["start_date"] = datetime.now(timezone.utc) + timedelta(days=1)
-        inactive_promo_data_2["end_date"] = datetime.now(timezone.utc) + timedelta(days=30)
+        inactive_promo_data_2["start_date"] = datetime.now(timezone.utc) + timedelta(
+            days=1
+        )
+        inactive_promo_data_2["end_date"] = datetime.now(timezone.utc) + timedelta(
+            days=30
+        )
         inactive_promo_data_2["is_active"] = True  # Activa pero no en rango
         inactive_promo_2 = Promotion(**inactive_promo_data_2, id=PromotionId.generate())
         await promotion_repository.create(inactive_promo_2)
 
         # Inactiva (fecha de fin pasada)
         inactive_promo_data_3 = sample_promotion_data.copy()
-        inactive_promo_data_3["start_date"] = datetime.now(timezone.utc) - timedelta(days=30)
-        inactive_promo_data_3["end_date"] = datetime.now(timezone.utc) - timedelta(days=1)
+        inactive_promo_data_3["start_date"] = datetime.now(timezone.utc) - timedelta(
+            days=30
+        )
+        inactive_promo_data_3["end_date"] = datetime.now(timezone.utc) - timedelta(
+            days=1
+        )
         inactive_promo_data_3["is_active"] = True  # Activa pero no en rango
         inactive_promo_3 = Promotion(**inactive_promo_data_3, id=PromotionId.generate())
         await promotion_repository.create(inactive_promo_3)

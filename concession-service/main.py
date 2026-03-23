@@ -11,6 +11,9 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.config import RegistryMicroservice, setup_logging, exception_handlers
 from app.config.app_config import settings
 
+from app.middleware.logging_middleware import logging_middleware
+from app.middleware.jwt_auth_middleware import jwt_auth_middleware
+
 from app.combos.infrastructure.api import combo_controllers
 from app.products.infrastructure.api.controllers import (
     category_controller,
@@ -51,8 +54,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     lifespan=lifespan,
     title="Cinema Backend: Product Service API",
-    # Starlette uses debug=True to return HTML tracebacks for *uncaught* errors and
-    # ignores the custom Exception handler for those. Use DEBUG_MODE from env instead.
     debug=settings.DEBUG_MODE,
     summary="Product Service for Cinema API that includes all product catalog and combos offers and all related to Product directly",
     version="1.0.0",
@@ -65,6 +66,9 @@ origins = [
     "http://localhost:8000",
 ]
 
+
+app.middleware("http")(logging_middleware)
+app.middleware("http")(jwt_auth_middleware)
 app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(

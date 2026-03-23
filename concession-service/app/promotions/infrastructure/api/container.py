@@ -1,4 +1,6 @@
-from .promotion_command_use_cases import (
+from typing import List
+from app.shared.pagination import Page
+from app.promotions.application.use_cases import (
     CreatePromotionUseCase,
     ActivatePromotionUseCase,
     DeactivatePromotionUseCase,
@@ -11,7 +13,7 @@ from .promotion_command_use_cases import (
     AddProductsToPromotionUseCase,
     RemoveProductsPromotionUseCase,
 )
-from .promotion_query_use_cases import (
+from app.promotions.application.use_cases import (
     GetActivePromotionsUseCase,
     GetPromotionByIdUseCase,
     GetPromotionByProductIdUseCase,
@@ -23,20 +25,19 @@ from app.products.domain.repositories import (
     ProductRepository,
     ProductCategoryRepository,
 )
-from ..command.promotion_command import (
+from app.promotions.application.commands import (
     PromotionCreateCommand,
     ExtendPromotionCommand,
 )
 
-from ..queries.promotion_query import (
+from app.promotions.application.queries import (
     PaginationQuery,
     GetPromotionByIdQuery,
     GetPromotionByProductIdQuery,
     PromotionId,
 )
-from ..queries.promotion_response import PromotionResponse, PromotionSearchResponse
 from app.products.domain.entities.value_objects import ProductId
-from ..command.add_item_promotion_command import (
+from app.promotions.application.commands import (
     AddProductsPromotionCommand,
     AddCategoryPromotionCommand,
     RemoveCategoryPromotionCommand,
@@ -44,7 +45,7 @@ from ..command.add_item_promotion_command import (
 )
 
 
-class PromotionsUseCases:
+class PromotionsUseCasesContainer:
     def __init__(
         self,
         promotion_repository: PromotionRepository,
@@ -100,17 +101,15 @@ class PromotionsUseCases:
 
     async def get_active_promotions(
         self, pagination: PaginationQuery
-    ) -> PromotionSearchResponse:
+    ) -> Page[Promotion]:
         return await self.get_active.execute(pagination)
 
-    async def get_promotion_by_id(
-        self, query: GetPromotionByIdQuery
-    ) -> PromotionResponse:
+    async def get_promotion_by_id(self, query: GetPromotionByIdQuery) -> Promotion:
         return await self.get_by_id.execute(query)
 
     async def get_promotions_by_product(
         self, query: GetPromotionByProductIdQuery
-    ) -> PromotionSearchResponse:
+    ) -> Page[Promotion]:
         return await self.get_by_product.execute(query)
 
     async def apply_promotion(

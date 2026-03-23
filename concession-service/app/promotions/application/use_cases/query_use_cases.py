@@ -1,13 +1,13 @@
-from ..queries.promotion_query import (
-    PromotionQuery,
+from ..queries import (
     GetPromotionByIdQuery,
     GetPromotionByProductIdQuery,
 )
-from ..queries.promotion_response import PromotionResponse, PromotionSearchResponse
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
 from app.products.domain.repositories import ProductRepository
 from app.shared.pagination import PaginationQuery
 from app.shared.base_exceptions import NotFoundException
+from app.promotions.domain.entities.promotion import Promotion
+from app.shared.pagination import Page
 
 
 class GetPromotionByIdUseCase:
@@ -23,7 +23,7 @@ class GetPromotionByIdUseCase:
         self.promotion_query = promotion_query
         self.product_repository = product_repository
 
-    async def execute(self, query: GetPromotionByIdQuery) -> PromotionResponse:
+    async def execute(self, query: GetPromotionByIdQuery) -> Promotion:
         """
         Execute the use case to get a promotion by its ID.
         """
@@ -31,13 +31,12 @@ class GetPromotionByIdUseCase:
         if not promotion:
             raise NotFoundException("Promotion", query.id.to_string())
 
-        if not query.include_products:
-            return PromotionResponse.from_domain(promotion)
+        if query.include_products:
+            await self.product_repository.find_by_id_in(
+                promotion.applicable_product_ids
+            )
 
-        products = await self.product_repository.find_by_id_in(
-            promotion.applicable_product_ids
-        )
-        return PromotionResponse.from_domain(promotion, list(products.values()))
+        return promotion
 
 
 class GetActivePromotionsUseCase:
@@ -47,21 +46,19 @@ class GetActivePromotionsUseCase:
 
     def __init__(
         self,
-        promotion_query: PromotionRepository,
+        promotion_repository: PromotionRepository,
         product_repository: ProductRepository,
     ):
-        self.promotion_query = promotion_query
+        self.promotion_repository = promotion_repository
         self.product_repository = product_repository
 
-    async def execute(self, query: PaginationQuery) -> PromotionSearchResponse:
+    async def execute(self, query: PaginationQuery) -> Page[Promotion]:
         """
         Execute the use case to get a promotion by its ID.
         """
-        promotion_page = await self.promotion_query.get_active_promotions(query)
+        promotion_page = await self.promotion_repository.get_active_promotions(query)
 
-        return PromotionSearchResponse.from_domain(
-            promotion_page.items, promotion_page.metadata
-        )
+        return promotion_page
 
 
 class GetPromotionByProductIdUseCase:
@@ -77,14 +74,10 @@ class GetPromotionByProductIdUseCase:
         self.promotion_repository = promotion_repository
         self.product_repository = product_repository
 
-    async def execute(
-        self, query: GetPromotionByProductIdQuery
-    ) -> PromotionSearchResponse:
+    async def execute(self, query: GetPromotionByProductIdQuery) -> Page[Promotion]:
         """
         Execute the use case to search for promotions based on the provided query.
         """
         promotion_page = await self.promotion_repository.get_by_product(query)
 
-        return PromotionSearchResponse.from_domain(
-            promotion_page.items, promotion_page.metadata
-        )
+        return promotion_page

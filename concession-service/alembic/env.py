@@ -25,15 +25,17 @@ target_metadata = None
 
 
 def _build_database_url() -> str:
-    explicit_url = os.getenv("DATABASE_URL")
-    if explicit_url:
+    explicit_url = (os.getenv("DATABASE_URL") or "").strip()
+    # env_file values are not shell-expanded; ignore broken placeholder URLs.
+    if explicit_url and "${" not in explicit_url:
         return explicit_url
 
-    db_user = os.getenv("DB_USER", "alexistrejo")
-    db_password = os.getenv("DB_PASSWORD", "postgresadmin")
-    db_host = os.getenv("DB_HOST", "localhost")
-    db_port = os.getenv("DB_PORT", "5432")
-    db_name = os.getenv("DB_NAME", "cinema_concession")
+    db_user = os.getenv("POSTGRES_USER") or os.getenv("DB_USER", "postgres")
+    db_password = os.getenv("POSTGRES_PASSWORD") or os.getenv("DB_PASSWORD", "postgres")
+    # Compose service is "db"; DB_HOST is set there. Prefer over POSTGRES_HOST from .env.
+    db_host = os.getenv("DB_HOST") or os.getenv("POSTGRES_HOST", "localhost")
+    db_port = os.getenv("POSTGRES_PORT") or os.getenv("DB_PORT", "5432")
+    db_name = os.getenv("POSTGRES_DB") or os.getenv("DB_NAME", "cinema_concession")
     return f"postgresql+asyncpg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
 

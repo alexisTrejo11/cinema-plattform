@@ -1,19 +1,17 @@
-from uuid import UUID
+from http import HTTPStatus
 from fastapi import APIRouter, Depends, Body, Request
 
 from app.config.rate_limit import limiter
-from app.products.domain.entities.value_objects import ProductId
-from app.promotions.application.command.add_item_promotion_command import (
-    AddProductsPromotionCommand,
-    AddCategoryPromotionCommand,
-    RemoveCategoryPromotionCommand,
-    RemoveProductsPromotionCommand,
+from ..dependencies import (
+    get_promotion_use_cases,
+    PromotionsUseCasesContainer as UseCasesContainer,
 )
-from app.promotions.application.queries.promotion_query import PromotionId
-from app.promotions.application.use_cases.promotions_use_cases import PromotionsUseCases
-from http import HTTPStatus
-
-from ..dependencies import get_promotion_use_cases
+from .dto import (
+    AddProductsToPromotionRequest,
+    AddCategoryToPromotionRequest,
+    RemoveCategoryFromPromotionRequest,
+    RemoveProductsFromPromotionRequest,
+)
 
 router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions Items"])
 
@@ -28,18 +26,12 @@ router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions Items"])
 @limiter.limit("10/minute")
 async def add_products_to_promotion(
     request: Request,
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
-    product_ids: list[UUID] = Body(..., description="ID of the product to add"),
-    promotion_id: UUID = Body(
-        ..., description="ID of the promotion to add products to"
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
+    request_data: AddProductsToPromotionRequest = Body(
+        ..., description="Promotion and product IDs to add"
     ),
 ):
-
-    command = AddProductsPromotionCommand(
-        product_ids=[ProductId(value=pid) for pid in product_ids],
-        promotion_id=PromotionId(value=promotion_id),
-    )
-
+    command = request_data.to_command()
     await use_cases.add_products_to_promotion(command)
 
 
@@ -53,14 +45,12 @@ async def add_products_to_promotion(
 @limiter.limit("10/minute")
 async def add_category_to_promotion(
     request: Request,
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
-    category_id: int = Body(..., description="ID of the category to add"),
-    promotionId: UUID = Body(..., description="ID of the promotion to add products to"),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
+    body: AddCategoryToPromotionRequest = Body(
+        ..., description="Promotion and category to add"
+    ),
 ):
-    command = AddCategoryPromotionCommand(
-        category_id=category_id,
-        promotion_id=PromotionId(value=promotionId),
-    )
+    command = body.to_command()
     await use_cases.add_category_to_promotion(command)
 
 
@@ -74,17 +64,12 @@ async def add_category_to_promotion(
 @limiter.limit("10/minute")
 async def remove_category_from_promotion(
     request: Request,
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
-    category_id: int = Body(..., description="ID of the category to remove"),
-    promotionId: UUID = Body(
-        ..., description="ID of the promotion to remove products from"
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
+    request_data: RemoveCategoryFromPromotionRequest = Body(
+        ..., description="Promotion and category to remove"
     ),
 ):
-    command = RemoveCategoryPromotionCommand(
-        category_id=category_id,
-        promotion_id=PromotionId(value=promotionId),
-    )
-
+    command = request_data.to_command()
     await use_cases.remove_category_from_promotion(command)
 
 
@@ -98,15 +83,10 @@ async def remove_category_from_promotion(
 @limiter.limit("10/minute")
 async def remove_products_from_promotion(
     request: Request,
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
-    product_ids: list[UUID] = Body(..., description="IDs of the products to remove"),
-    promotion_id: UUID = Body(
-        ..., description="ID of the promotion to remove products from"
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
+    body: RemoveProductsFromPromotionRequest = Body(
+        ..., description="Promotion and product IDs to remove"
     ),
 ):
-    command = RemoveProductsPromotionCommand(
-        product_ids=[ProductId(value=pid) for pid in product_ids],
-        promotion_id=PromotionId(value=promotion_id),
-    )
-
+    command = body.to_command()
     await use_cases.remove_products_from_promotion(command)

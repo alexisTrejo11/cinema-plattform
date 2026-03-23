@@ -7,15 +7,12 @@ from sqlalchemy import func, select, delete, and_, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
 
-
 from app.shared.base_exceptions import DatabaseException
 from app.shared.pagination import PaginationMetadata, PaginationQuery, Page
 
 from app.promotions.domain.repository.promotion_repository import PromotionRepository
 from app.promotions.domain.entities.promotion import Promotion, PromotionId, ProductId
-from app.promotions.application.queries.promotion_query import (
-    GetPromotionByProductIdQuery,
-)
+from app.promotions.application.queries import GetPromotionByProductIdQuery
 from app.products.infrastructure.persistence.models.product_models import (
     ProductModel,
     ProductCategoryModel,
@@ -191,9 +188,7 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
 
                 if promotion.applicable_categories_ids:
                     cat_stmt = select(ProductCategoryModel).where(
-                        ProductCategoryModel.id.in_(
-                            promotion.applicable_categories_ids
-                        )
+                        ProductCategoryModel.id.in_(promotion.applicable_categories_ids)
                     )
                     cat_result = await self.session.execute(cat_stmt)
                     model.categories = list(cat_result.scalars().all())
@@ -210,9 +205,18 @@ class SQLAlchemyPromotionRepository(PromotionRepository):
     async def delete(self, promotion_id: PromotionId) -> bool:
         try:
             async with self.session.begin_nested():
-                stmt = delete(PromotionModel).where(
-                    PromotionModel.id == str(promotion_id.value)
+                pid = promotion_id.value
+                await self.session.execute(
+                    delete(PromotionProductModel).where(
+                        PromotionProductModel.promotion_id == pid
+                    )
                 )
+                await self.session.execute(
+                    delete(PromotionCategoryModel).where(
+                        PromotionCategoryModel.promotion_id == pid
+                    )
+                )
+                stmt = delete(PromotionModel).where(PromotionModel.id == pid)
                 result = await self.session.execute(stmt)
                 if result.rowcount == 0:
                     logger.warning(f"No promotion found with ID {promotion_id}")

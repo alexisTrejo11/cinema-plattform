@@ -43,7 +43,7 @@ async def jwt_auth_middleware(
         )
         return _unauthorized("Bearer token is empty.")
 
-    if not settings.jwt_secret_key:
+    if not settings.JWT_SECRET_KEY:
         logger.error(
             "JWT_SECRET_KEY is not configured; token validation cannot be performed."
         )
@@ -52,20 +52,20 @@ async def jwt_auth_middleware(
     options = cast(
         Options,
         {
-            "verify_aud": settings.jwt_audience is not None,
-            "verify_iss": settings.jwt_issuer is not None,
+            "verify_aud": settings.JWT_AUDIENCE is not None,
+            "verify_iss": settings.JWT_ISSUER is not None,
         },
     )
 
     try:
         claims = jwt.decode(
             token,
-            settings.jwt_secret_key,
-            algorithms=settings.jwt_algorithms_list,
-            audience=settings.jwt_audience,
-            issuer=settings.jwt_issuer,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
+            audience=settings.JWT_AUDIENCE,
+            issuer=settings.JWT_ISSUER,
             options=options,
-            leeway=settings.jwt_leeway_seconds,
+            leeway=settings.JWT_LEEWAY_SECONDS,
         )
         current_user = AuthUserContext.from_claims(claims)
         request.state.jwt_claims = claims

@@ -57,7 +57,9 @@ class TestPromotionControllerA_Read:
 
 @pytest.mark.asyncio
 class TestPromotionControllerB_Write:
-    async def test_create_promotion_201(self, async_client, sample_product, admin_headers):
+    async def test_create_promotion_201(
+        self, async_client, sample_product, admin_headers
+    ):
         r = await async_client.post(
             f"{PROMOTIONS}/",
             json=_promotion_create_payload(sample_product),
@@ -75,7 +77,9 @@ class TestPromotionControllerB_Write:
         )
         assert r.status_code == 401
 
-    async def test_create_promotion_403(self, async_client, sample_product, customer_headers):
+    async def test_create_promotion_403(
+        self, async_client, sample_product, customer_headers
+    ):
         r = await async_client.post(
             f"{PROMOTIONS}/",
             json=_promotion_create_payload(sample_product),
@@ -125,7 +129,9 @@ class TestPromotionControllerB_Write:
         )
         assert r.status_code == 204
 
-    async def test_deactivate_promotion_401(self, async_client, sample_product, admin_headers):
+    async def test_deactivate_promotion_401(
+        self, async_client, sample_product, admin_headers
+    ):
         create_r = await async_client.post(
             f"{PROMOTIONS}/",
             json=_promotion_create_payload(
@@ -143,9 +149,7 @@ class TestPromotionControllerB_Write:
     ):
         create_r = await async_client.post(
             f"{PROMOTIONS}/",
-            json=_promotion_create_payload(
-                sample_product, name="E2E Delete Promotion"
-            ),
+            json=_promotion_create_payload(sample_product, name="E2E Delete Promotion"),
             headers=admin_headers,
         )
         pid = UUID(str(create_r.json()))
@@ -153,7 +157,9 @@ class TestPromotionControllerB_Write:
         r = await async_client.delete(f"{PROMOTIONS}/{pid}", headers=admin_headers)
         assert r.status_code == 204
 
-    async def test_delete_promotion_401(self, async_client, sample_product, admin_headers):
+    async def test_delete_promotion_401(
+        self, async_client, sample_product, admin_headers
+    ):
         create_r = await async_client.post(
             f"{PROMOTIONS}/",
             json=_promotion_create_payload(
@@ -174,15 +180,13 @@ class TestPromotionControllerC_ApplyPatch:
     ):
         create_r = await async_client.post(
             f"{PROMOTIONS}/",
-            json=_promotion_create_payload(
-                sample_product, name="E2E Apply Promotion"
-            ),
+            json=_promotion_create_payload(sample_product, name="E2E Apply Promotion"),
             headers=admin_headers,
         )
         pid = UUID(str(create_r.json()))
 
         r = await async_client.patch(
             f"{PROMOTIONS}/{pid}/apply",
-            json=[str(sample_product.id.value)],
+            json={"product_ids": [str(sample_product.id.value)]},
         )
         assert r.status_code == 204

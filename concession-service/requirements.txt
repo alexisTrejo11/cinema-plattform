@@ -3,11 +3,10 @@
 fastapi[standard]
 pydantic
 pydantic-settings
-uvicorn 
 # Database and ORM
 SQLAlchemy
 asyncpg
-psycopg2
+psycopg2-binary
 greenlet
 fastapi-cache[redis]
 redis>=5.0.0
@@ -25,3 +24,5 @@ fastapi-cors
 # ASYNC HTTP
 aiohttp
 alembic
+
+gunicorn>=20.1.0

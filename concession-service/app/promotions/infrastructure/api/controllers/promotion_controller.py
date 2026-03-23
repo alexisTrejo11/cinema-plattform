@@ -1,34 +1,19 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, Body, Path, Request, Query
-
 from http import HTTPStatus
-
 from app.config.rate_limit import limiter
+from app.config.security import require_roles, AuthUserContext
 from app.shared.pagination import PaginationQuery
-from app.promotions.application.queries.promotion_response import (
-    PromotionResponse,
-    PromotionSearchResponse,
-)
-from app.promotions.application.use_cases.promotions_use_cases import PromotionsUseCases
-from app.promotions.application.queries.promotion_query import (
+from app.promotions.domain.entities.promotion import PromotionId
+from app.products.domain.entities.value_objects import ProductId
+from app.promotions.application.queries import (
     GetPromotionByIdQuery,
     GetPromotionByProductIdQuery,
 )
-from app.promotions.domain.entities.promotion import PromotionId
-from app.products.domain.entities.value_objects import ProductId
-
-from ..dependencies import get_promotion_use_cases
-from http import HTTPStatus
-
-from app.config.rate_limit import limiter
-from app.shared.base_exceptions import DomainException
-from app.config.security import require_roles, AuthUserContext
-from app.products.domain.entities.value_objects import ProductId
-from app.promotions.application.command.promotion_command import (
-    ExtendPromotionCommand,
-    PromotionCreateCommand,
+from ..dependencies import (
+    get_promotion_use_cases,
+    PromotionsUseCasesContainer as UseCasesContainer,
 )
-from ..dependencies import get_promotion_use_cases
 from ..docs.examples import (
     get_promotion_by_id_examples,
     list_promotions_examples,
@@ -37,11 +22,12 @@ from ..docs.examples import (
     deactivate_promotion_examples,
     extend_promotion_examples,
 )
-from app.promotions.application.use_cases.promotions_use_cases import PromotionsUseCases
-from app.promotions.domain.entities.promotion import PromotionId
-from .dto.request import (
+from .dto import (
+    PromotionResponse,
+    PromotionPaginatedResponse,
     PromotionCreateRequest,
     ExtendPromotionRequest,
+    ApplyPromotionRequest,
 )
 
 router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions"])
@@ -52,16 +38,17 @@ router = APIRouter(prefix="/api/v2/promotions", tags=["Promotions"])
     status_code=HTTPStatus.OK,
     summary="Get all active promotions",
     description="Retrieves a paginated list of all active promotions.",
-    response_model=PromotionSearchResponse,
+    response_model=PromotionPaginatedResponse,
     responses={**list_promotions_examples},
 )
 @limiter.limit("60/minute")
 async def get_active_promotions(
     request: Request,
     pagination: PaginationQuery = Depends(),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
 ):
-    return await use_cases.get_active_promotions(pagination)
+    page = await use_cases.get_active_promotions(pagination)
+    return PromotionPaginatedResponse.from_domain(page.items, page.metadata)
 
 
 @router.get(
@@ -69,7 +56,7 @@ async def get_active_promotions(
     status_code=HTTPStatus.OK,
     summary="Get promotions by product ID",
     description="Retrieves a paginated list of promotions applicable to a specific product.",
-    response_model=PromotionSearchResponse,
+    response_model=PromotionPaginatedResponse,
     responses={**list_promotions_examples},
 )
 @limiter.limit("60/minute")
@@ -84,14 +71,15 @@ async def get_promotions_by_product(
         False, description="Whether to include associated product details"
     ),
     pagination_query: PaginationQuery = Depends(),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
 ):
     query = GetPromotionByProductIdQuery(
         product_id=ProductId(value=product_id),
         include_products=include_products,
         pagination=pagination_query,
     )
-    return await use_cases.get_promotions_by_product(query)
+    page = await use_cases.get_promotions_by_product(query)
+    return PromotionPaginatedResponse.from_domain(page.items, page.metadata)
 
 
 @router.get(
@@ -112,7 +100,7 @@ async def get_promotion_by_id(
     include_products: bool = Query(
         False, description="Whether to include associated product details"
     ),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
 ):
     query = GetPromotionByIdQuery(
         id=PromotionId(value=promotion_id),
@@ -120,7 +108,8 @@ async def get_promotion_by_id(
         pagination=pagination_query,
     )
 
-    return await use_cases.get_promotion_by_id(query)
+    promotion = await use_cases.get_promotion_by_id(query)
+    return PromotionResponse.from_domain(promotion)
 
 
 @router.post(
@@ -137,7 +126,7 @@ async def create_promotion(
     request_data: PromotionCreateRequest = Body(
         ..., description="Details for the new promotion"
     ),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
     performed_by: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     command = request_data.to_command()
@@ -159,7 +148,7 @@ async def activate_promotion(
     promotion_id: UUID = Path(
         ..., description="ID of the promotion to activate", examples=["promo-123"]
     ),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
     performed_by: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
 
@@ -182,7 +171,7 @@ async def deactivate_promotion(
         description="ID of the promotion to deactivate",
         examples=["123e4567-e89b-12d3-a456-426614174000"],
     ),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
     performed_by: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     promotion_id_obj = PromotionId(value=promotion_id)
@@ -205,7 +194,7 @@ async def extend_promotion(
     promotion_id: UUID = Path(
         ..., description="ID of the promotion to extend", examples=["promo-123"]
     ),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
     performed_by: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     extend_command = request_data.to_command(promotion_id)
@@ -224,15 +213,15 @@ async def apply_promotion(
     promotion_id: UUID = Path(
         ..., description="ID of the promotion to apply", examples=["promo-123"]
     ),
-    product_ids: list[UUID] = Body(
-        ..., description="List of product IDs to apply the promotion to"
+    body: ApplyPromotionRequest = Body(
+        ..., description="Product IDs to apply the promotion to"
     ),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
 ):
-    promotion_id_obj = PromotionId(value=promotion_id)
-    product_ids_obj = [ProductId(value=pid) for pid in product_ids]
-
-    await use_cases.apply_promotion(promotion_id_obj, product_ids_obj)
+    await use_cases.apply_promotion(
+        PromotionId(value=promotion_id),
+        body.product_ids_as_domain(),
+    )
 
 
 @router.delete(
@@ -250,7 +239,7 @@ async def delete_promotion(
         description="ID of the promotion to delete",
         examples=["123e4567-e89b-12d3-a456-426614174000"],
     ),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
     performed_by: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     promotion_id_obj = PromotionId(value=promotion_id)
@@ -269,7 +258,7 @@ async def clear_promotions(
     promotion_id: UUID = Path(
         ..., description="ID of the promotion to clear", examples=["promo-123"]
     ),
-    use_cases: PromotionsUseCases = Depends(get_promotion_use_cases),
+    use_cases: UseCasesContainer = Depends(get_promotion_use_cases),
     performed_by: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     promotion_id_obj = PromotionId(value=promotion_id)

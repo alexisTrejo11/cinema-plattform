@@ -4,7 +4,6 @@ from pydantic.types import PositiveInt, NonNegativeInt
 from datetime import datetime
 from typing import List, Optional
 from app.promotions.domain.entities.promotion import PromotionType, Promotion
-from app.products.domain.entities.product import Product
 from app.shared.pagination import PaginationMetadata
 
 
@@ -73,11 +72,28 @@ class PromotionResponse(BaseModel):
         return response
 
     model_config = ConfigDict(
-        arbitrary_types_allowed=True,
+        json_schema_extra={
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "name": "Promotion 1",
+                "promotion_type": "PERCENTAGE_DISCOUNT",
+                "rule": {"percentage": 10},
+                "start_date": "2021-01-01",
+                "end_date": "2021-01-01",
+                "description": "Promotion 1 description",
+                "is_active": True,
+                "max_uses": 100,
+                "current_uses": 0,
+                "created_at": "2021-01-01",
+                "updated_at": "2021-01-01",
+                "applicable_product_ids": ["123e4567-e89b-12d3-a456-426614174000"],
+                "applicable_category_ids": ["123e4567-e89b-12d3-a456-426614174000"],
+            }
+        }
     )
 
 
-class PromotionSearchResponse(BaseModel):
+class PromotionPaginatedResponse(BaseModel):
     """
     Pydantic model for representing a list of promotions in API responses.
     This is used when returning multiple promotions from search queries.
@@ -100,7 +116,7 @@ class PromotionSearchResponse(BaseModel):
         cls, promotions: List[Promotion], pagination_metadata: PaginationMetadata
     ):
         """
-        Convert a list of domain Promotion entities to a PromotionSearchResponse model.
+        Convert a list of domain Promotion entities to a PromotionPaginatedResponse model.
         """
         if not promotions:
             return cls(promotions=[], paginationMetadata=pagination_metadata)
@@ -112,3 +128,15 @@ class PromotionSearchResponse(BaseModel):
             promotions=promotion_responses,
             paginationMetadata=pagination_metadata,
         )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "promotions": [
+                    {
+                        "id": "123e4567-e89b-12d3-a456-426614174000",
+                    }
+                ]
+            }
+        }
+    )

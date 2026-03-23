@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import List, Optional
 
-
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt
 
 from app.products.domain.entities.value_objects import ProductId
@@ -10,6 +9,36 @@ from app.promotions.domain.entities.promotion import (
     PromotionType,
     PromotionId,
 )
+
+_ITEM_CMD_CONFIG = ConfigDict(arbitrary_types_allowed=True, frozen=True)
+
+
+class AddProductsPromotionCommand(BaseModel):
+    product_ids: List[ProductId]
+    promotion_id: PromotionId
+
+    model_config = _ITEM_CMD_CONFIG
+
+
+class RemoveProductsPromotionCommand(BaseModel):
+    product_ids: List[ProductId]
+    promotion_id: PromotionId
+
+    model_config = _ITEM_CMD_CONFIG
+
+
+class AddCategoryPromotionCommand(BaseModel):
+    category_id: int
+    promotion_id: PromotionId
+
+    model_config = _ITEM_CMD_CONFIG
+
+
+class RemoveCategoryPromotionCommand(BaseModel):
+    category_id: int
+    promotion_id: PromotionId
+
+    model_config = _ITEM_CMD_CONFIG
 
 
 class PromotionCreateCommand(BaseModel):
@@ -75,3 +104,8 @@ class ExtendPromotionCommand(BaseModel):
     available_until: datetime
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
+class ApplyPromotionCommand(BaseModel):
+    promotion_id: PromotionId
+    product_ids: List[ProductId]

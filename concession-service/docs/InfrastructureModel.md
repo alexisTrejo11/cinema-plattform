@@ -136,7 +136,7 @@
   EXPOSE 8000
   HEALTHCHECK --interval=30s --timeout=3s \
     CMD python -c "import requests; requests.get('http://localhost:8000/')"
-  CMD ["gunicorn", "main:fast_api_app", "-k", "uvicorn.workers.UvicornWorker", \
+  CMD ["gunicorn", "main:app", "-k", "uvicorn.workers.UvicornWorker", \
        "-w", "4", "-b", "0.0.0.0:8000"]
   ```
 

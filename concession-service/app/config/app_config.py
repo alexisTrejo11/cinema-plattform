@@ -1,3 +1,6 @@
+from typing import Optional
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
@@ -15,6 +18,18 @@ class Settings(BaseSettings):
     # JWT Configuration
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
+    JWT_AUDIENCE: Optional[str] = None
+    JWT_ISSUER: Optional[str] = None
+    JWT_LEEWAY_SECONDS: int = 0
+
+    @field_validator("JWT_AUDIENCE", "JWT_ISSUER", mode="before")
+    @classmethod
+    def _jwt_optional_empty_to_none(cls, v: object) -> Optional[str]:
+        if v is None:
+            return None
+        if isinstance(v, str) and not v.strip():
+            return None
+        return str(v)
 
     # Database Configuration
     DATABASE_URL: str

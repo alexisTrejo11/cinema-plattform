@@ -2,9 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from app.shared.pagination import PaginationQuery, Page
 from app.products.domain.entities.value_objects import ProductId
-from app.promotions.application.queries.promotion_query import (
-    GetPromotionByProductIdQuery,
-)
+from app.promotions.application.queries import GetPromotionByProductIdQuery
 from ...domain.entities.promotion import Promotion, PromotionId
 
 

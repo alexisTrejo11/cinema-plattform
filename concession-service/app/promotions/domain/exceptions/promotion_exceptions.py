@@ -1,12 +1,76 @@
 from app.shared.base_exceptions import DomainException
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
+
+
+def _promotion_id_str(promotion_id: Any) -> str:
+    if promotion_id is None:
+        return ""
+    return promotion_id.to_string() if hasattr(promotion_id, "to_string") else str(
+        promotion_id
+    )
 
 
 class PromotionError(DomainException):
     """Base exception for all Promotion-related errors."""
 
     pass
+
+
+class PromotionNotFoundError(PromotionError):
+    """Raised when a promotion does not exist."""
+
+    def __init__(
+        self,
+        message: str = "Promotion not found.",
+        promotion_id: Optional[Any] = None,
+        **kwargs,
+    ):
+        super().__init__(message, **kwargs)
+        if promotion_id is not None:
+            self.details["promotion_id"] = _promotion_id_str(promotion_id)
+
+
+class InactivePromotionNotFoundError(PromotionError):
+    """Raised when no inactive promotion exists to activate (missing or already active)."""
+
+    def __init__(
+        self,
+        message: str = "No inactive promotion found to activate.",
+        promotion_id: Optional[Any] = None,
+        **kwargs,
+    ):
+        super().__init__(message, **kwargs)
+        if promotion_id is not None:
+            self.details["promotion_id"] = _promotion_id_str(promotion_id)
+
+
+class PromotionNotActiveError(PromotionError):
+    """Raised when an operation requires an active promotion but it is inactive."""
+
+    def __init__(
+        self,
+        message: str = "Promotion is not active.",
+        promotion_id: Optional[Any] = None,
+        **kwargs,
+    ):
+        super().__init__(message, **kwargs)
+        if promotion_id is not None:
+            self.details["promotion_id"] = _promotion_id_str(promotion_id)
+
+
+class PromotionCatalogProductsNotFoundError(PromotionError):
+    """Raised when one or more product IDs are not present in the catalog."""
+
+    def __init__(
+        self,
+        message: str = "Some products not found.",
+        missing_product_ids: Optional[list] = None,
+        **kwargs,
+    ):
+        super().__init__(message, **kwargs)
+        if missing_product_ids is not None:
+            self.details["missing_product_ids"] = missing_product_ids
 
 
 class InvalidPromotionDataError(PromotionError):

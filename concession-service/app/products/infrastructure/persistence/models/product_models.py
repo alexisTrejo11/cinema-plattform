@@ -2,7 +2,7 @@ import __future__
 from uuid import UUID
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (
     DECIMAL,
     Integer,
@@ -58,8 +58,10 @@ class ProductModel(Base):
     price: Mapped[Decimal] = mapped_column(DECIMAL(10, 2), nullable=False)
     image_url: Mapped[str] = mapped_column(String(500))
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
-    preparation_time_mins: Mapped[int] = mapped_column(Integer)
-    calories: Mapped[int] = mapped_column(Integer)
+    preparation_time_mins: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True
+    )
+    calories: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     category_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("product_categories.id"), nullable=False
     )

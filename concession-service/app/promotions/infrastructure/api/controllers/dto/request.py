@@ -2,11 +2,15 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, PositiveInt
 from app.promotions.domain.entities.value_objects import PromotionType
-from app.promotions.application.command.promotion_command import (
+from app.promotions.application.commands import (
     ExtendPromotionCommand,
     PromotionCreateCommand,
+    AddProductsPromotionCommand,
+    AddCategoryPromotionCommand,
+    RemoveProductsPromotionCommand,
+    RemoveCategoryPromotionCommand,
 )
 from app.products.domain.entities.value_objects import ProductId
 from app.promotions.domain.entities.promotion import PromotionId
@@ -136,17 +140,82 @@ class ExtendPromotionRequest(BaseModel):
         )
 
 
-class PromotionItemRequest(BaseModel):
-    """
-    Pydantic model for adding a product to a promotion.
-    Used as input for an 'add product to promotion' use case.
-    """
+class ApplyPromotionRequest(BaseModel):
+    """Body for applying a promotion to a set of products."""
 
-    productId: list[UUID] = Field(..., description="ID of the product to add")
-    promotionId: UUID = Field(
-        ..., description="ID of the promotion to which the product will be added"
+    product_ids: list[UUID] = Field(
+        ..., description="List of product IDs to apply the promotion to"
     )
 
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True,
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def product_ids_as_domain(self) -> list[ProductId]:
+        return [ProductId(value=pid) for pid in self.product_ids]
+
+
+class AddProductsToPromotionRequest(BaseModel):
+    """Body for adding products to a promotion."""
+
+    product_ids: list[UUID] = Field(..., description="Product IDs to add")
+    promotion_id: UUID = Field(..., description="Promotion to add products to")
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def to_command(self) -> AddProductsPromotionCommand:
+        return AddProductsPromotionCommand(
+            product_ids=[ProductId(value=pid) for pid in self.product_ids],
+            promotion_id=PromotionId(value=self.promotion_id),
+        )
+
+
+class AddCategoryToPromotionRequest(BaseModel):
+    """Body for associating a category with a promotion."""
+
+    category_id: int = Field(..., description="Category to add")
+    promotion_id: UUID = Field(
+        ...,
+        description="Promotion to add the category to",
+        validation_alias=AliasChoices("promotion_id", "promotionId"),
     )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def to_command(self) -> AddCategoryPromotionCommand:
+        return AddCategoryPromotionCommand(
+            category_id=self.category_id,
+            promotion_id=PromotionId(value=self.promotion_id),
+        )
+
+
+class RemoveCategoryFromPromotionRequest(BaseModel):
+    """Body for removing a category from a promotion."""
+
+    category_id: int = Field(..., description="Category to remove")
+    promotion_id: UUID = Field(
+        ...,
+        description="Promotion to remove the category from",
+        validation_alias=AliasChoices("promotion_id", "promotionId"),
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def to_command(self) -> RemoveCategoryPromotionCommand:
+        return RemoveCategoryPromotionCommand(
+            category_id=self.category_id,
+            promotion_id=PromotionId(value=self.promotion_id),
+        )
+
+
+class RemoveProductsFromPromotionRequest(BaseModel):
+    """Body for removing products from a promotion."""
+
+    product_ids: list[UUID] = Field(..., description="Product IDs to remove")
+    promotion_id: UUID = Field(..., description="Promotion to remove products from")
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def to_command(self) -> RemoveProductsPromotionCommand:
+        return RemoveProductsPromotionCommand(
+            product_ids=[ProductId(value=pid) for pid in self.product_ids],
+            promotion_id=PromotionId(value=self.promotion_id),
+        )

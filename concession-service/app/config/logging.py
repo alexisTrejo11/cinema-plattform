@@ -1,21 +1,34 @@
-import logging
-from logging.config import dictConfig
 import json
-from datetime import datetime
-from typing import Any, Dict
+import logging
 import os
+from datetime import datetime, timezone
+from logging.config import dictConfig
+from typing import Any, Dict, Optional
+
+
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 class JsonFormatter(logging.Formatter):
-    def format(self, record: Any):
+    """One JSON object per line (NDJSON), suitable for log shippers and ELK."""
+
+    def __init__(self, *args, service: Optional[str] = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._service = service or os.environ.get("SERVICE_NAME", "concession-service")
+
+    def format(self, record: logging.LogRecord) -> str:
         log_record: Dict[str, Any] = {
-            "timestamp": datetime.now().isoformat(),
+            "@timestamp": _utc_now_iso(),
+            "timestamp": _utc_now_iso(),
             "level": record.levelname,
             "logger": record.name,
             "message": record.getMessage(),
             "module": record.module,
             "function": record.funcName,
             "line": record.lineno,
+            "service": self._service,
+            "environment": os.environ.get("ENVIRONMENT", os.environ.get("ENV", "development")),
         }
 
         if hasattr(record, "props"):
@@ -24,10 +37,16 @@ class JsonFormatter(logging.Formatter):
         if record.exc_info:
             log_record["exception"] = self.formatException(record.exc_info)
 
-        return json.dumps(log_record)
+        return json.dumps(log_record, default=str)
 
 
-def setup_logging():
+def setup_logging() -> None:
+    log_dir = os.environ.get("LOG_DIR", "logs")
+    os.makedirs(log_dir, exist_ok=True)
+
+    app_log_path = os.path.join(log_dir, "app.log")
+    audit_log_path = os.path.join(log_dir, "audit.log")
+
     logging_config: Dict[str, Any] = {
         "version": 1,
         "disable_existing_loggers": False,
@@ -52,7 +71,10 @@ def setup_logging():
                 },
                 "style": "%",
             },
-            "json": {
+            "json_app": {
+                "()": JsonFormatter,
+            },
+            "json_audit": {
                 "()": JsonFormatter,
             },
         },
@@ -63,27 +85,36 @@ def setup_logging():
                 "class": "logging.StreamHandler",
                 "stream": "ext://sys.stdout",
             },
-            "file": {
+            "app_file": {
                 "level": "DEBUG",
-                "formatter": "json",
+                "formatter": "json_app",
                 "class": "logging.handlers.RotatingFileHandler",
-                "filename": "logs/app.log",
-                "maxBytes": 10485760,  # 10MB
+                "filename": app_log_path,
+                "maxBytes": 10485760,
                 "backupCount": 5,
+                "encoding": "utf-8",
+            },
+            "audit_file": {
+                "level": "INFO",
+                "formatter": "json_audit",
+                "class": "logging.handlers.RotatingFileHandler",
+                "filename": audit_log_path,
+                "maxBytes": 10485760,
+                "backupCount": 10,
+                "encoding": "utf-8",
             },
         },
         "loggers": {
             "app": {
-                "handlers": ["console", "file"],
+                "handlers": ["console", "app_file"],
                 "level": "INFO",
                 "propagate": False,
             },
             "audit": {
-                "handlers": ["console", "file"],
+                "handlers": ["audit_file"],
                 "level": "INFO",
                 "propagate": False,
             },
-            # SQLAlchemy silenced
             "sqlalchemy.engine": {
                 "handlers": [],
                 "level": "CRITICAL",
@@ -103,7 +134,6 @@ def setup_logging():
         },
     }
 
-    os.makedirs("logs", exist_ok=True)
     dictConfig(logging_config)
 
     sqlalchemy_loggers = [
@@ -114,10 +144,10 @@ def setup_logging():
     ]
 
     for logger_name in sqlalchemy_loggers:
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(logging.CRITICAL)
+        sa_logger = logging.getLogger(logger_name)
+        sa_logger.setLevel(logging.CRITICAL)
 
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
+        for handler in sa_logger.handlers[:]:
+            sa_logger.removeHandler(handler)
 
-        logger.propagate = False
+        sa_logger.propagate = False
