@@ -1,16 +1,16 @@
 ---
-projectId: ""
-name: ""
-shortName: ""
-status: "draft"
-docsVersion: "0.1.0"
-lastUpdated: ""
-owner: ""
-repositoryUrl: ""
-tags: []
+projectId: "concession-service"
+name: "Cinema Backend: Concession Service API"
+shortName: "Concession Service"
+status: "production"
+docsVersion: "1.0.0"
+lastUpdated: "2026-03-23"
+owner: "Cinema Platform Team"
+repositoryUrl: "https://github.com/anomalyco/cinema-plattform/concession-service"
+tags: ["cinema", "concession", "products", "combos", "promotions", "fastapi", "microservice"]
 ---
 
-# Project Documentation
+# Project Metadata
 
 ## 1. Code Showcase
 
@@ -19,7 +19,7 @@ tags: []
 
 ## 2. Overview
 
-- **File**: [overview.md](overview.md)
+- **File**: [ProjectOverview.md](ProjectOverview.md)
 - **Description**: Business context, problem, solution, and key metrics.
 
 ## 3. Infrastructure
