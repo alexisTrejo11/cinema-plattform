@@ -25,14 +25,10 @@ done
 
 echo "PostgreSQL connection successful"
 
-# Execute SQL files in order 
-cd /app/postgres
-for sql_file in v1__*.sql; do
-  echo "Executing $sql_file"
-  psql -h db -U postgres -d users -f "$sql_file"
-done
+cd /app
+export PYTHONPATH=/app
+echo "Running Alembic migrations..."
+alembic upgrade head
 
 echo "Database setup complete"
-
-cd /app
 exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload

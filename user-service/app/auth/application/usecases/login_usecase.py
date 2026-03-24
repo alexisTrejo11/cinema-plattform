@@ -1,5 +1,5 @@
 from typing import Any
-from app.users.domain.entities import User
+from app.users.domain import User
 from app.token.application.service import TokenService
 from app.shared.response import Result
 from app.token.domain.token import TokenType

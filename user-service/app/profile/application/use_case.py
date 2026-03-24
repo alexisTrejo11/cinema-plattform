@@ -1,6 +1,6 @@
 from .dtos import Profile, ProfileUpdate
 from app.users.application.repositories import UserRepository
-from app.users.domain.entities import User
+from app.users.domain import User
 
 class GetProfileUseCase:    
     def execute(self, user: User) -> Profile:

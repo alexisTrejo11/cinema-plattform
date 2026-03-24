@@ -1,5 +1,5 @@
 from app.users.application.repositories import UserRepository, User
-from app.users.domain.exceptions import User2FaAuthError, TwoFaAlreadyConfiguredError, InvalidTokenError
+from app.users.domain import User2FaAuthError, TwoFaAlreadyConfiguredError, InvalidTokenError
 from app.token.application.service import TokenService
 from app.token.domain.token import TokenType
 

@@ -5,9 +5,7 @@ from datetime import datetime, timezone
 
 from tests.users.conftest import *
 
-from app.users.domain.entities import User
-from app.users.domain.exceptions import UserAlreadyExistsException, UserNotFoundException
-from app.users.domain.enums import UserRole
+from app.users.domain import User, UserAlreadyExistsException, UserNotFoundException, UserRole
 
 # -----------------------------
 # Test: Create User

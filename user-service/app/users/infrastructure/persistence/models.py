@@ -2,8 +2,7 @@ from datetime import datetime, date
 from typing import Optional
 from sqlalchemy import Integer, String, Date, DateTime, Enum as SqlEnum, BOOLEAN
 from sqlalchemy.orm import mapped_column, Mapped
-from app.users.domain.enums import UserRole, Gender, Status
-from app.users.domain.entities import User
+from app.users.domain import UserRole, Gender, Status, User
 from config.postgres_config import Base
 
 class UserModel(Base):

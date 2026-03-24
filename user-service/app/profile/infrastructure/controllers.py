@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Request, status, HTTPException
 from app.shared.response import ApiResponse, ErrorResponse
 from app.auth.infrastructure.api.dependencies import get_logged_user
-from app.users.domain.entities import User
+from app.users.domain import User
 from app.profile.application.dtos import ProfileResponse, ProfileUpdate
 from .dependencies import GetProfileUseCase, UpdateProfileUseCase
 from .dependencies import get_profile_use_case, update_profile_use_case

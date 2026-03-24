@@ -1,4 +1,4 @@
-from app.users.domain.entities import User, Status as UserStatus
+from app.users.domain import User, Status as UserStatus
 from app.users.application.repositories import UserRepository
 from app.users.application.dtos import UserResponse
 from app.shared.response import Result

@@ -5,8 +5,7 @@ from typing import Dict, Any
 from datetime import date
 import uuid
 
-from app.users.domain.entities import User
-from app.users.domain.enums import UserRole 
+from app.users.domain import User, UserRole
 from app.users.infrastructure.persistence.sql_alchemy_user_repo import SQLAlchemyUserRepository as UserRepository
 
 
