@@ -16,7 +16,8 @@ aiosqlite
 alembic
 
 # ---- Caching -------
-redis[hiredis]
+fastapi-cache[redis]
+redis>=5.0.0
 
 # ---- Security -------
 PyJWT

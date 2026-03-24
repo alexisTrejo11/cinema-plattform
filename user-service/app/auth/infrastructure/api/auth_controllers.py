@@ -57,7 +57,7 @@ async def login(
 
 @router.post(
     "/logout",
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
     response_model=dict[str, str],
     summary="Log out a user from a specific session",
     description="Invalidates a specific refresh token, effectively logging out the user from that session.",
@@ -76,12 +76,10 @@ def logout(
     if not is_session_deleted:
         raise HTTPException(status_code=400, detail="Unable to logout. Token Not Found")
 
-    return {"message": "Logged out from session successfully."}
-
 
 @router.post(
     "/logout-all",
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
     response_model=dict[str, str],
     summary="Log out user from all sessions",
     description="Invalidates all refresh tokens for the current user, logging them out from all active sessions.",
@@ -94,7 +92,6 @@ async def logout_all(
     Logs out user from all sessions.
     """
     use_cases.logout_all.execute(logged_user.id)
-    return {"message": "Logged out from all sessions successfully."}
 
 
 @router.post(
@@ -120,11 +117,19 @@ def resend_verification_token(user: User):
     return user
 
 
+@router.post(
+    "/activate-account",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=dict[str, str],
+    summary="Activate a user by their ID",
+    description="Activates a user by their ID.",
+)
 async def activate_account(
-    user_id: int, use_case, logged_user: User = Depends(get_logged_user)
+    user_id: int,
+    use_cases: AuthUseCasesContainer = Depends(get_auth_use_cases),
+    logged_user: User = Depends(get_logged_user),
 ):
     """
     Activate a user by their ID.
     """
-    await use_case.execute(user_id)
-    return {"message": f"User with ID {user_id} banned successfully."}
+    await use_cases.activate_user.execute(user_id)

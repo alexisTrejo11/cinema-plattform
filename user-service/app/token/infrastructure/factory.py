@@ -1,10 +1,26 @@
 from abc import ABC, abstractmethod
-from app.token.domain.token import TokenType, Token
-from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import random
+
+import jwt
 import pyotp
-import os
+
+from app.token.domain.token import TokenType, Token
+from config.app_config import settings
+
+
+def _encode_jwt(payload: dict) -> str:
+    """Sign with app JWT settings; add aud/iss when configured (must match middleware decode)."""
+    if settings.JWT_AUDIENCE is not None:
+        payload["aud"] = settings.JWT_AUDIENCE
+    if settings.JWT_ISSUER is not None:
+        payload["iss"] = settings.JWT_ISSUER
+    encoded = jwt.encode(
+        payload,
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+    return encoded if isinstance(encoded, str) else encoded.decode("utf-8")
 
 
 class StrategyToken(ABC):
@@ -14,69 +30,65 @@ class StrategyToken(ABC):
     
 
 class TokenRefreshJWT(StrategyToken):
-    secret_key = os.getenv("SECRET_KEY", "")
-    algorithm = "HS256"
     refresh_token_expire_days = 7
-            
-    def generate(self,  **kwargs) -> Token:
-        user_id = kwargs.get('user_id')
-        role = kwargs.get('role')
-        email = kwargs.get('email') 
+
+    def generate(self, **kwargs) -> Token:
+        user_id = kwargs.get("user_id")
+        role = kwargs.get("role")
+        email = kwargs.get("email")
         token_type = TokenType.JWT_REFRESH
         expiration_date = datetime.now() + timedelta(days=self.refresh_token_expire_days)
-        
+
         if not user_id:
             raise ValueError("user id required to creation activation token")
-        
-        jwt_payload = {
-            "sub": user_id, 
-            "exp": int(expiration_date.timestamp()), 
-            "type": token_type
-        }
-        
-        if email:
-            jwt_payload["email"] = email
-        if role:
-            jwt_payload["role"] = role
 
-        token_code = jwt.encode(jwt_payload, self.secret_key, algorithm=self.algorithm)
+        jwt_payload = {
+            "sub": str(user_id),
+            "exp": int(expiration_date.timestamp()),
+            "type": token_type.value,
+        }
+
+        if email:
+            jwt_payload["email"] = str(email)
+        if role is not None:
+            jwt_payload["role"] = getattr(role, "value", role)
+
+        token_code = _encode_jwt(jwt_payload)
 
         new_token = Token(
             code=token_code,
-            user_id=user_id, 
-            type=token_type, 
-            expires_at=expiration_date
+            user_id=str(user_id),
+            type=token_type,
+            expires_at=expiration_date,
         )
-         
+
         return new_token
 
 
 class TokenAccessJWT(StrategyToken):
-    secret_key = os.getenv("SECRET_KEY", "")
-    algorithm = "HS256"
     expire_minutes: int = 60
-    
-    def generate(self,  **kwargs) -> Token:
-        user_id = kwargs.get('user_id')
+
+    def generate(self, **kwargs) -> Token:
+        user_id = kwargs.get("user_id")
         token_type = TokenType.JWT_ACCESS
         expiration_date = datetime.now() + timedelta(minutes=self.expire_minutes)
-        
+
         if not user_id:
             raise ValueError("user id required to creation activation token")
-        
+
         jwt_payload = {
-            "sub": user_id, 
-            "exp": int(expiration_date.timestamp()), 
-            "type": token_type
+            "sub": str(user_id),
+            "exp": int(expiration_date.timestamp()),
+            "type": token_type.value,
         }
-        
-        token_code = jwt.encode(jwt_payload, self.secret_key, algorithm=self.algorithm)
+
+        token_code = _encode_jwt(jwt_payload)
 
         new_token = Token(
             code=token_code,
-            user_id=user_id, 
-            type=token_type, 
-            expires_at=expiration_date
+            user_id=str(user_id),
+            type=token_type,
+            expires_at=expiration_date,
         )
         return new_token
 

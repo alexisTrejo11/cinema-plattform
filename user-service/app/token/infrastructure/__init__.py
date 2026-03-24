@@ -1,5 +1,5 @@
 from .redis_repository import RedisTokenRepository
-from .token_service_impl import TokenProviderImpl
+from .provider_impl import TokenProviderImpl
 from .factory import TokenFactory, TokenAccessJWT, TokenVerification
 
 __all__ = [
