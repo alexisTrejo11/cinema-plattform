@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     JWT_ISSUER: Optional[str] = None
     JWT_LEEWAY_SECONDS: int = 0
 
+    GRPC_HOST: str = "0.0.0.0"
+    GRPC_PORT: int = 50051
+
     model_config = SettingsConfigDict(
         env_file="./.env", env_file_encoding="utf-8", extra="ignore"
     )

@@ -1,5 +1,6 @@
 from .entities import Account, User
 from .enums import Gender, Status, UserRole
+from .repositories import UserRepository
 from .exceptions import (
     InvalidTokenError,
     PasswordValidationError,
@@ -13,6 +14,7 @@ from .valueobjects import PhoneNumber, RawPassword, TotpSecret, UserEmail
 __all__ = [
     "Account",
     "User",
+    "UserRepository",
     "Gender",
     "Status",
     "UserRole",

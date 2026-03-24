@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, PastDate
-from app.users.domain import Gender
+from app.users.domain.enums import Gender
 from typing import Optional
 from datetime import date, datetime
 

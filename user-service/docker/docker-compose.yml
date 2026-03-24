@@ -132,6 +132,19 @@ services:
         condition: service_healthy
     ports:
       - "50051:50051"
+    # Override image HEALTHCHECK (HTTP :8000) — this service only listens for gRPC on 50051
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.socket(); s.settimeout(3); s.connect(('127.0.0.1',50051)); s.close()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     networks:
       - account_network
 

@@ -2,6 +2,11 @@
 fastapi[standard]
 uvicorn
 
+# ---- gRPC -------
+protobuf
+grpcio>=1.78.0
+grpcio-tools>=1.78.0
+
 # ---- Validation -------
 pydantic
 pydantic-settings
