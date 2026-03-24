@@ -1,10 +1,10 @@
 from typing import List, Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from app.shared.pagintation import PaginationParams as PageParams
+from app.shared.pagination import PaginationParams as PageParams
 from app.auth.infrastructure.api.dependencies import get_logged_admin_user
 from app.users.application.dtos import UserResponse, UserCreate, UserUpdate
 from app.users.domain import User
-from .dependecies import UsersUseCasesContainer, get_user_use_cases
+from .dependencies import UsersUseCasesContainer, get_user_use_cases
 
 router = APIRouter(prefix="/api/v1/users/admin", tags=["User Administration"])
 

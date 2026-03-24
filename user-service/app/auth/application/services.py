@@ -2,7 +2,7 @@ from typing import Optional
 from datetime import datetime
 from passlib.context import CryptContext
 from app.shared.response import Result
-from app.users.application.repositories import UserRepository
+from app.users.domain import UserRepository
 from app.users.domain import User, Status
 from app.auth.domain.exceptions import TokenExpiredException
 from app.token.application.service import TokenService
@@ -100,9 +100,9 @@ class AuthValidationService:
                 return Result.error("User with this email already exists")
 
         if phone:
-            existing_username = await self.repository.get_by_phone(phone)
-            if existing_username:
-                return Result.error("User with this username already exists")
+            existing_phone = await self.repository.get_by_phone(phone)
+            if existing_phone:
+                return Result.error("User with this phone number already exists")
 
         return Result.success()
 

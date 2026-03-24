@@ -1,9 +1,14 @@
-from typing import Optional, List
+import logging
+from typing import List, Optional
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.users.domain import User, UserRepository
 from app.users.domain.exceptions import *
 from .models import UserModel
+
+logger = logging.getLogger(__name__)
 
 
 class SQLAlchemyUserRepository(UserRepository):
@@ -34,7 +39,7 @@ class SQLAlchemyUserRepository(UserRepository):
     async def save(self, user: User) -> User:
         model = UserModel.from_domain(user)
         try:
-            if user.id is None:
+            if user.id == 0:
                 self.session.add(model)
                 await self.session.flush()
             else:
@@ -48,7 +53,8 @@ class SQLAlchemyUserRepository(UserRepository):
             return model.to_domain()
         except Exception as e:
             await self.session.rollback()
-            raise RuntimeError(f"Failed to save theater: {str(e)}") from e
+            logger.exception("user persist failed")
+            raise RuntimeError(f"Failed to save user: {str(e)}") from e
 
     async def update(self, user: User) -> User:
         result = await self.session.execute(
@@ -75,7 +81,7 @@ class SQLAlchemyUserRepository(UserRepository):
 
         await self.session.delete(user_model)
         await self.session.commit()
-
+        logger.info("user row removed id=%s", user_id)
         return True
 
     async def list_users(self, offset: int = 0, limit: int = 100) -> List[User]:

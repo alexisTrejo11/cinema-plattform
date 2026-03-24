@@ -1,16 +1,18 @@
+import logging
 from typing import List
 
-from app.shared.response import Result
-from app.shared.pagintation import PaginationParams as PageParams
-from app.token.domain.token import TokenType
 from app.auth.application.services import (
-    PasswordService,
     AuthValidationService,
+    PasswordService,
     TokenService,
 )
-
+from app.shared.pagination import PaginationParams as PageParams
+from app.shared.response import Result
+from app.token.domain.token import TokenType
 from app.users.application.dtos import UserCreate, UserUpdate
 from app.users.domain import User, UserNotFoundException, UserRepository
+
+logger = logging.getLogger(__name__)
 
 
 class ListUsersUseCase:
@@ -18,11 +20,7 @@ class ListUsersUseCase:
         self.repository = repository
 
     async def execute(self, page_params: PageParams) -> List[User]:
-        users = await self.repository.list_users(page_params.limit, page_params.offset)
-        if not users or len(users) == 0:
-            return []
-
-        return users
+        return await self.repository.list_users(page_params.offset, page_params.limit)
 
 
 class GetUserUseCase:
@@ -33,7 +31,6 @@ class GetUserUseCase:
         user = await self.repository.get_by_id(user_id)
         if not user:
             raise UserNotFoundException("User", user_id)
-
         return user
 
 
@@ -62,7 +59,7 @@ class CreateUserUseCase:
         user.password = hashed_password
 
         user_created = await self.repository.save(user)
-
+        logger.info("user created id=%s", user_created.id)
         return Result.success(user_created)
 
 
@@ -96,7 +93,7 @@ class UpdateUserUseCase:
         user_updated = update_data.update_user_fields(user, hashed_password)
 
         user = await self.repository.save(user_updated)
-
+        logger.info("user updated id=%s", user_id)
         return Result.success(user)
 
 
@@ -109,7 +106,10 @@ class DeleteUserUseCase:
         if not user:
             raise UserNotFoundException("User", user_id)
 
-        return await self.repository.delete(user_id)
+        deleted = await self.repository.delete(user_id)
+        if deleted:
+            logger.info("user deleted id=%s", user_id)
+        return deleted
 
 
 class ActivateUser:
@@ -130,6 +130,7 @@ class ActivateUser:
 
         user.activate()
         await self.repository.save(user)
+        logger.info("user activated id=%s", user_id)
 
 
 class BanUserUseCase:
@@ -143,3 +144,4 @@ class BanUserUseCase:
 
         user.ban()
         await self.repository.save(user)
+        logger.info("user banned id=%s", user_id)

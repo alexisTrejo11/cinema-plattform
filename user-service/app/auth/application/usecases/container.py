@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
-from app.notification.application.services import NotificationService
+from app.shared.notification.domain.services import NotificationService
 from app.token.application.service import TokenService
-from app.users.application.repositories import UserRepository
+from app.users.domain import UserRepository
 
 from ..services import AuthValidationService, PasswordService, SessionService
 from .login_usecase import LoginUseCase, RefreshTokenUseCase, TwoFALoginUseCase
@@ -47,7 +47,6 @@ def build_auth_use_cases(
         disable_2fa=Disable2FaUseCase(user_repo, token_service),
         two_fa_login=TwoFALoginUseCase(
             token_service,
-            notification_service,
             validation_service,
             session_service,
         ),

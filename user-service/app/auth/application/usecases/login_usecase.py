@@ -1,100 +1,105 @@
+import logging
 from typing import Any
-from app.users.domain import User
-from app.token.application.service import TokenService
+
+from app.shared.qr import generate_qr
 from app.shared.response import Result
+from app.token.application.service import TokenService
 from app.token.domain.token import TokenType
-from app.notification.application.services import NotificationService
-from app.notification.domain.entitites import Notification, NotificationType
-from ..services import SessionService, AuthValidationService
+from app.users.domain import User
+
 from ..dtos import LoginRequest, RefreshTokenRequest, SessionResponse
-from app.shared.qr import generate_QR
+from ..services import AuthValidationService, SessionService
+
+logger = logging.getLogger(__name__)
+
 
 class LoginUseCase:
     def __init__(
-        self, 
-        session_service: SessionService, 
-        validation_service: AuthValidationService, 
+        self,
+        session_service: SessionService,
+        validation_service: AuthValidationService,
         token_service: TokenService,
     ):
         self.session_service = session_service
         self.token_service = token_service
         self.validation_service = validation_service
-    
-    
+
     async def execute(self, request: LoginRequest) -> Result[Any]:
-        user = await self.validation_service.authenticate_user(request.identifier_field, request.password)
+        user = await self.validation_service.authenticate_user(
+            request.identifier_field, request.password
+        )
         if not user:
+            logger.info("login failed: invalid credentials")
             return Result.error("User not found with given credentials")
-        
+
         if user.is_2fa_enabled:
-            qr_code = await self._request_2FA_access(request, user)
-            return Result.success({"QR" : qr_code })
-        else:
-            session = await self._proccess_login(user)
-            return Result.success(session)
-            
-    async def _proccess_login(self, user:User):
+            qr_code = await self._request_2fa_access(request, user)
+            return Result.success({"QR": qr_code})
+
+        session = await self._process_login(user)
+        return Result.success(session)
+
+    async def _process_login(self, user: User):
         self.validation_service.validate_account_status_for_login(user)
-        return await self.session_service.create_session(user)
-            
-    async def _request_2FA_access(self, request: LoginRequest, user:User):
+        session = await self.session_service.create_session(user)
+        logger.info("session created user_id=%s", user.id)
+        return session
+
+    async def _request_2fa_access(self, request: LoginRequest, user: User):
         if not user.totp_secret:
             raise ValueError("User dont have 2FA secret")
-                
-        token = self.token_service.create(TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret})
-        
-        return generate_QR(token.code)
+
+        token = self.token_service.create(
+            TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret}
+        )
+
+        return generate_qr(token.code)
+
 
 class TwoFALoginUseCase:
     def __init__(
-        self, 
-        token_service: TokenService, 
-        notification_service: NotificationService, 
+        self,
+        token_service: TokenService,
         validation_service: AuthValidationService,
-        session_service: SessionService, 
-
+        session_service: SessionService,
     ) -> None:
         self.session_service = session_service
         self.token_service = token_service
-        self.notification_service = notification_service
         self.validation_service = validation_service
 
     async def execute(self, request: LoginRequest) -> Result:
-        user = await self.validation_service.authenticate_user(request.identifier_field, request.password)
+        user = await self.validation_service.authenticate_user(
+            request.identifier_field, request.password
+        )
         if not user:
+            logger.info("login failed: invalid credentials")
             return Result.error("User not found with given credentials")
-        
+
         if not request.twoFACode:
-            return await self._request_2FA_access(user)
-    
-        self.validation_service.validate_2FA_Access(user, request.twoFACode) 
+            return await self._request_2fa_access(user)
+
+        self.validation_service.validate_2FA_Access(user, request.twoFACode)
         session = await self.session_service.create_session(user)
-        return Result.success(session)    
+        logger.info("session created after 2fa user_id=%s", user.id)
+        return Result.success(session)
 
-    async def _request_2FA_access(self, user: User):
+    async def _request_2fa_access(self, user: User):
         if not user.totp_secret:
             raise ValueError("User dont have 2FA secret")
-                
-        token = self.token_service.create(TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret})
-        
-        qr = generate_QR(token.code)
-        return Result.success(qr)
 
-    async def _send_qr(self, user:User):
-        if not user.totp_secret:
-            raise ValueError("User dont have 2FA secret")
-                
-        token = self.token_service.create(TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret})
-        
-        qr = generate_QR(token.code)
+        token = self.token_service.create(
+            TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret}
+        )
+
+        qr = generate_qr(token.code)
         return Result.success(qr)
-    
 
 
 class RefreshTokenUseCase:
     def __init__(self, session_service: SessionService):
         self.session_service = session_service
-    
+
     async def execute(self, request: RefreshTokenRequest, user: User) -> SessionResponse:
         token_response = await self.session_service.refresh_session(request, user)
+        logger.info("token refreshed user_id=%s", user.id)
         return token_response

@@ -1,52 +1,40 @@
-from typing import List, Callable
+from typing import Callable, List
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config.postgres_config import get_db
-from config.redis_config import get_redis_client, Redis
 from config.app_config import settings
+from config.postgres_config import get_db
+from config.redis_config import Redis, get_redis_client
 
-from app.users.infrastructure.persistence.sqlalch_user_repo import (
-    SQLAlchemyUserRepository,
-)
-from app.users.application.repositories import UserRepository
-from app.users.domain import User, UserRole
-
-from app.token.application.repository import TokenRepository
-from app.token.infrastructure.repository.token_repository import TokenRepositoryImpl
-from app.token.infrastructure.services.token_service_impl import TokenServiceImpl
-
-from app.auth.application.usecases import (
-    AuthUseCasesContainer,
-    build_auth_use_cases,
-)
 from app.auth.application.services import (
-    TokenService,
-    PasswordService,
     AuthValidationService,
+    PasswordService,
     SessionService,
 )
+from app.auth.application.usecases import AuthUseCasesContainer, build_auth_use_cases
 from app.auth.domain.exceptions import InvalidCredentialsException
-
-from app.notification.infrastructure.services_impl import NotificationServiceImpl
-from app.notification.application.services import NotificationService
+from app.shared.notification.domain.services import NotificationService
+from app.shared.notification.infrastructure.services_impl import NotificationServiceImpl
+from app.token.application.repository import TokenRepository
+from app.token.application.service import TokenService
+from app.token.infrastructure.redis_repository import RedisTokenRepository
+from app.token.infrastructure.services.token_service_impl import TokenServiceImpl
+from app.users.domain import User, UserRepository, UserRole
+from app.users.infrastructure.persistence.sqlalch_user_repo import SQLAlchemyUserRepository
 
 security = HTTPBearer()
 
 
-# --- Repository Dependencies ---
 def get_user_repository(session: AsyncSession = Depends(get_db)) -> UserRepository:
     return SQLAlchemyUserRepository(session)
 
 
-def get_token_repository(
-    redis_client: Redis = Depends(get_redis_client),
-) -> TokenRepository:
-    return TokenRepositoryImpl(redis_client)
+def get_token_repository(redis_client: Redis = Depends(get_redis_client)) -> TokenRepository:
+    return RedisTokenRepository(redis_client)
 
 
-# --- Service Dependencies ---
 def get_password_service() -> PasswordService:
     return PasswordService()
 
@@ -54,10 +42,6 @@ def get_password_service() -> PasswordService:
 def get_token_service(
     token_repo: TokenRepository = Depends(get_token_repository),
 ) -> TokenService:
-    """
-    Dependency that provides an instance of TokenService,
-    initialized with the secret key from your application settings.
-    """
     return TokenServiceImpl(
         token_repository=token_repo,
         secret_key=settings.SECRET_KEY,
@@ -70,18 +54,12 @@ def get_auth_validation_service(
     password_service: PasswordService = Depends(get_password_service),
     token_service: TokenService = Depends(get_token_service),
 ) -> AuthValidationService:
-    """
-    Provides an instance of AuthValidationService.
-    """
     return AuthValidationService(user_repo, password_service, token_service)
 
 
 def get_session_service(
     token_service: TokenService = Depends(get_token_service),
 ) -> SessionService:
-    """
-    Provides an instance of SessionService.
-    """
     return SessionService(token_service)
 
 
@@ -89,7 +67,6 @@ def get_notification_service() -> NotificationService:
     return NotificationServiceImpl()
 
 
-# --- Auth Use Case Container Dependency ---
 def get_auth_use_cases(
     user_repo: UserRepository = Depends(get_user_repository),
     password_service: PasswordService = Depends(get_password_service),
@@ -108,7 +85,6 @@ def get_auth_use_cases(
     )
 
 
-# --- User Authorization Dependency ---
 async def get_logged_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     user_repository: UserRepository = Depends(get_user_repository),
@@ -142,10 +118,6 @@ async def get_logged_user(
 
 
 def role_required(required_roles: List[UserRole]) -> Callable[[User], User]:
-    """
-    Dependency factory to check if the current user has any of the specified roles.
-    """
-
     def role_checker(logged_user: User = Depends(get_logged_user)) -> User:
         if logged_user.role not in required_roles:
             raise HTTPException(
@@ -164,7 +136,7 @@ def get_logged_admin_user(
 
 
 def get_logged_manager_user(
-    logged_user: User = Depends(role_required([UserRole.MANAGER, UserRole.ADMIN]))
+    logged_user: User = Depends(role_required([UserRole.MANAGER, UserRole.ADMIN])),
 ) -> User:
     return logged_user
 
@@ -172,6 +144,6 @@ def get_logged_manager_user(
 def get_logged_viewer_user(
     logged_user: User = Depends(
         role_required([UserRole.MANAGER, UserRole.CUSTOMER, UserRole.ADMIN])
-    )
+    ),
 ) -> User:
     return logged_user
