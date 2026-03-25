@@ -1,149 +1,103 @@
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
 
-from app.user.domain.value_objects import UserId
-from app.wallet.domain.value_objects import Money, WalletId, Charge
-from app.wallet.domain.enums import Currency, TransactionType
-from .wallet_transaction import PaymentDetails, WalletTransaction
-from ..validators import WalletDomainValidator as WalletValidator
+from pydantic import BaseModel, ConfigDict, Field
+
+from ..enums import Currency, TransactionType
+from ..value_objects import Charge, Money, WalletId, UserId
+from .wallet_transaction import WalletTransaction
+from ..validators import WalletDomainValidator
 
 
-class Wallet:
-    def __init__(
-        self,
-        id: WalletId,
-        user_id: UserId,
-        balance: Money,
-        created_at: Optional[datetime] = None,
-        updated_at: Optional[datetime] = None,
-        transactions: Optional[List[WalletTransaction]] = None,
-    ):
-        self._id = id
-        self._user_id = user_id
-        self._balance = balance
-        self._created_at = (
-            created_at
-            if created_at
-            else datetime.now(timezone.utc).replace(tzinfo=None)
-        )
-        self._updated_at = (
-            updated_at
-            if updated_at
-            else datetime.now(timezone.utc).replace(tzinfo=None)
-        )
-        self._transactions: List[WalletTransaction] = (
-            transactions if transactions is not None else []
-        )
+class Wallet(BaseModel):
+    """
+    Wallet aggregate root. NOT frozen — balance and transactions mutate over its lifetime.
+    Pydantic handles field-type invariants; WalletDomainValidator enforces business rules.
+    to_dict() removed — use model_dump() or the dedicated response DTOs.
+    """
 
-        self._validator = WalletValidator(self)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @property
-    def id(self) -> WalletId:
-        return self._id
+    id: WalletId
+    user_id: UserId
+    balance: Money
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
+    transactions: List[WalletTransaction] = Field(default_factory=list)
 
-    @property
-    def user_id(self) -> UserId:
-        return self._user_id
-
-    @property
-    def balance(self) -> Money:
-        return self._balance
-
-    @property
-    def created_at(self) -> datetime:
-        return self._created_at
-
-    @property
-    def updated_at(self) -> datetime:
-        return self._updated_at
-
-    @property
-    def transactions(self) -> List[WalletTransaction]:
-        return list(self._transactions)
+    # ── Factory ─────────────────────────────────────────────────────────────
 
     @staticmethod
     def create(user_id: UserId, initial_currency: Currency = Currency.USD) -> "Wallet":
-        initial_balance = Money(Decimal("0.00"), initial_currency)
-        wallet_id = WalletId(uuid.uuid4())
-        return Wallet(wallet_id, user_id, initial_balance)
+        return Wallet(
+            id=WalletId(value=uuid.uuid4()),
+            user_id=user_id,
+            balance=Money(amount=Decimal("0.00"), currency=initial_currency),
+        )
 
-    def buy_product(
-        self, payment_details: PaymentDetails, amount: Charge
-    ) -> WalletTransaction:
-        self.remove_credit(amount)  # This already calls validate_credit_decrease
+    # ── High-level operations ────────────────────────────────────────────────
 
-        transaction_amount = Charge(Decimal(-abs(amount.amount)), amount.currency)
+    def buy_product(self, payment_details, amount: Charge) -> WalletTransaction:
+        self.remove_credit(amount)
+        # Transaction stores the absolute amount; BUY_PRODUCT type signals debit direction.
+        # Previously a negative Charge was created here, which was both misleading and broken.
+        transaction_amount = Money(amount=amount.amount, currency=amount.currency)
         return self._create_transaction(
             transaction_amount, TransactionType.BUY_PRODUCT, payment_details
         )
 
-    def buy_credit(
-        self, payment_details: PaymentDetails, amount: Money
-    ) -> WalletTransaction:
+    def buy_credit(self, payment_details, amount: Money) -> WalletTransaction:
         self.add_credit(amount)
         return self._create_transaction(
             amount, TransactionType.ADD_CREDIT, payment_details
         )
 
+    # ── Balance mutation ────────────────────────────────────────────────────
+
     def add_credit(self, amount: Money) -> None:
-        self._validator.validate_credit_increase(amount)
-        self._balance += amount
+        WalletDomainValidator(self).validate_credit_increase(amount)
+        self.balance = self.balance + amount
 
     def remove_credit(self, amount: Charge) -> None:
-        self._validator.validate_credit_decrease(amount)
-        self._balance -= Money(amount.amount, amount.currency)
+        WalletDomainValidator(self).validate_credit_decrease(amount)
+        self.balance = self.balance - Money(
+            amount=amount.amount, currency=amount.currency
+        )
+
+    # ── Transaction helpers ─────────────────────────────────────────────────
 
     def _add_transaction(self, transaction: WalletTransaction) -> WalletTransaction:
-        """
-        Internal method to add a transaction to the wallet's list.
-        """
-        # TODO: CHECK
-        self._transactions.append(transaction)
-        self._updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        self.transactions.append(transaction)
+        self.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         return transaction
 
     def _create_transaction(
         self,
         amount: Money,
         transaction_type: TransactionType,
-        payment_details: PaymentDetails,
+        payment_details,
     ) -> WalletTransaction:
-        """
-        Creates and adds a new WalletTransaction to this wallet.
-        """
         new_transaction = WalletTransaction.create(
             self.id, amount, transaction_type, payment_details
         )
         self._add_transaction(new_transaction)
-        self._updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        self.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
         return new_transaction
 
     def set_transactions(self, transactions: List[WalletTransaction]) -> None:
-        """
-        Allows setting the transactions list from the repository,
-        e.g., after fetching a wallet with its transactions.
-        """
-        # Consider if you want to replace or extend
-        self._transactions = transactions
-        self._updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        """Bulk-replace transactions, e.g. after loading from the repository."""
+        self.transactions = transactions
+        self.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
 
-    def to_dict(self) -> dict:
-        """
-        Converts the Wallet domain object to a dictionary for DTOs/serialization.
-        """
-        return {
-            "id": self.id.to_string(),
-            "user_id": self.user_id.to_string(),
-            "balance": str(self.balance.amount),
-            "currency": self.balance.currency.value,
-            "created_at": self.created_at.isoformat(),
-            "updated_at": self.updated_at.isoformat(),
-            "transactions": [
-                transaction.to_dict() for transaction in self.transactions
-            ],
-        }
+    # ── Identity ─────────────────────────────────────────────────────────────
+    # Wallets are equal if they share the same id, regardless of other fields.
+    # Pydantic's default __eq__ would compare all fields, so we override.
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Wallet):
@@ -154,4 +108,8 @@ class Wallet:
         return hash(self.id)
 
     def __repr__(self) -> str:
-        return f"Wallet(id={self.id.to_string()}, user_id={self.user_id.to_string()}, balance={self.balance})"
+        return (
+            f"Wallet(id={self.id.to_string()}, "
+            f"user_id={self.user_id.to_string()}, "
+            f"balance={self.balance})"
+        )

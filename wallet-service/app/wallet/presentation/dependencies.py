@@ -1,10 +1,16 @@
-from config.postgres_config import get_db
+from app.config.postgres_config import get_db
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.wallet.domain.repositories.wallet_repository import WalletRepository
-from app.wallet.domain.repositories.transaction_repository import WalletTransactionRepository
-from app.wallet.infrastructure.persistence.sql.transaction_repository import SqlAlchemyWalletTransactionRepository
-from app.wallet.infrastructure.persistence.sql.wallet_repository import SqlAlchemyWalletRepository
+from app.wallet.domain.repositories.transaction_repository import (
+    WalletTransactionRepository,
+)
+from app.wallet.infrastructure.persistence.sql.transaction_repository import (
+    SqlAlchemyWalletTransactionRepository,
+)
+from app.wallet.infrastructure.persistence.sql.wallet_repository import (
+    SqlAlchemyWalletRepository,
+)
 from app.wallet.application.use_cases.container import WalletUseCases
 from app.user.presentation.dependencies import get_user_repository, UserRepository
 

@@ -4,16 +4,16 @@ from fastapi import FastAPI
 import logging
 from app.wallet.presentation.controllers import wallet_controller
 from app.user.presentation import user_admin_controller
-from config.app_config import settings
+from app.config.app_config import settings
 import asyncio
-from config.global_exception_handler import GLOBAL_EXCEPTION_HANDLERS
+from app.config.global_exception_handler import GLOBAL_EXCEPTION_HANDLERS
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
-from config.logging import setup_logging
-from config.queue.rabbit_consumer import RabbitMQConsumer
+from app.config.logging import setup_logging
+from app.config.queue.rabbit_consumer import RabbitMQConsumer
 from middleware.logging_middleware import LoggingMiddleware
-from config.register_server import RegistryMicroservice
+from app.config.register_server import RegistryMicroservice
 
 logger = logging.getLogger("app")
 limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
