@@ -79,7 +79,7 @@ async def get_app_info() -> dict[str, Any]:
         "app_name": "Cinema Backend: User Service API",
         "api_version": settings.API_VERSION,
         "debug_mode": str(settings.DEBUG_MODE),
-        "database_url_prefix": settings.DATABASE_URL.split(":")[0],
+        "database_url_prefix": settings.postgres_db_url().split(":")[0],
     }
 
 

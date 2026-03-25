@@ -16,10 +16,12 @@ os.environ.setdefault("POSTGRES_PORT", "5432")
 os.environ.setdefault("POSTGRES_DB", "cinema_users_test")
 os.environ.setdefault("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
-os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret")
+os.environ.setdefault(
+    "JWT_SECRET_KEY",
+    "test-jwt-secret-key-at-least-32-bytes-long",
+)
 
 from app.config.postgres_config import Base
-import sqlite3
 
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
@@ -28,10 +30,11 @@ TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 @pytest_asyncio.fixture(scope="function")
 async def engine():
 
+    # Avoid sqlite3 PARSE_DECLTYPES here: it returns Python dates and breaks
+    # SQLAlchemy Date/DateTime result processors on ORM refresh.
     engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
-        connect_args={"detect_types": sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES},
     )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

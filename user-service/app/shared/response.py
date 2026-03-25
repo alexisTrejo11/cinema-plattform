@@ -154,18 +154,6 @@ class ErrorResponse(BaseModel):
     )
 
 
-class ApiResponse(BaseModel, Generic[T]):
-    """Standard success envelope for API responses (used by profile and other routes)."""
-
-    success: bool = True
-    data: Optional[T] = None
-    message: Optional[str] = None
-
-    @classmethod
-    def success(cls, data: T, message: str = "") -> "ApiResponse[T]":
-        return cls(success=True, data=data, message=message or None)
-
-
 def error_json_response(
     status_code: int,
     *,
