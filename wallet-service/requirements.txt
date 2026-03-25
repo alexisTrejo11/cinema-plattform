@@ -1,28 +1,44 @@
-# Core FastAPI and Uvicorn for the web application
-fastapi
+# ---- Web -------
+fastapi[standard]
 uvicorn
 
-# Database ORM and async drivers
+# ---- gRPC -------
+protobuf
+grpcio>=1.78.0
+grpcio-tools>=1.78.0
+
+# ---- Validation -------
+pydantic
+pydantic-settings
+email-validator
+
+# ---- Database -------
 SQLAlchemy
 asyncpg
+psycopg2-binary
 greenlet
+aiosqlite
+alembic
 
-# Logging and API rate limiting
-colorlog  # Enhanced colored logging
-slowapi   # API rate limiting
+# ---- Caching -------
+fastapi-cache[redis]
+redis>=5.0.0
 
-# Pydantic
-pydantic==2.11.7
-pydantic-settings
-pydantic[email] 
+# ---- Security -------
+PyJWT
+passlib[bcrypt]
+python-multipart
 
-# Asynchronous messaging/task queue (RabbitMQ)
-aio_pika
+# ---- Rate limiting -------
+slowapi
 
-# Authentication and HTTP client
-aiohttp                # Asynchronous HTTP client
-python-jose[cryptography] # JOSE (JSON Object Signing and Encryption) 
+# ---- Messaging -------
+kafka-python
 
-# Testing framework
+# ---- Logging -------
+colorlog
+
+
+# ---- Testing -------
 pytest
 pytest-asyncio
