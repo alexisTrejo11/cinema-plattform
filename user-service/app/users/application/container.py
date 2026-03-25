@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 
-from app.auth.application.services import AuthValidationService, PasswordService, TokenService
+from app.auth.application.services import (
+    AuthValidationService,
+    PasswordService,
+    TokenProvider,
+)
 from app.users.domain import UserRepository
 
 from .use_cases import (
@@ -29,7 +33,7 @@ def build_users_use_cases(
     repository: UserRepository,
     password_service: PasswordService,
     validation_service: AuthValidationService,
-    token_service: TokenService,
+    token_service: TokenProvider,
 ) -> UsersUseCasesContainer:
     return UsersUseCasesContainer(
         list_users=ListUsersUseCase(repository),

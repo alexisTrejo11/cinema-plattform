@@ -3,32 +3,50 @@ from typing import Optional
 from sqlalchemy import Integer, String, Date, DateTime, Enum as SqlEnum, BOOLEAN
 from sqlalchemy.orm import mapped_column, Mapped
 from app.users.domain import UserRole, Gender, Status, User
-from config.postgres_config import Base
+from app.config.postgres_config import Base
+
 
 class UserModel(Base):
     __tablename__ = "users"
-    
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, index=True, nullable=False
+    )
     date_of_birth: Mapped[date] = mapped_column(Date)
     password: Mapped[str] = mapped_column(String(255))
     first_name: Mapped[str] = mapped_column(String(255))
     totp_secret: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    is_2fa_enabled: Mapped[bool] = mapped_column(BOOLEAN, default=False) 
+    is_2fa_enabled: Mapped[bool] = mapped_column(BOOLEAN, default=False)
     last_name: Mapped[Optional[str]] = mapped_column(String(255))
     phone_number: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    role: Mapped[UserRole] = mapped_column(SqlEnum(UserRole, name='role_enum', create_type=False), default=UserRole.CUSTOMER, nullable=False)
-    gender: Mapped[Gender] = mapped_column(SqlEnum(Gender, name='gender_enum', create_type=False), default=Gender.OTHER,  nullable=False)
-    status: Mapped[Status] = mapped_column(SqlEnum(Status, name='user_status_enum', create_type=False), default=Status.PENDING,  nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now(), nullable=False)
-    
-        
+    role: Mapped[UserRole] = mapped_column(
+        SqlEnum(UserRole, name="role_enum", create_type=False),
+        default=UserRole.CUSTOMER,
+        nullable=False,
+    )
+    gender: Mapped[Gender] = mapped_column(
+        SqlEnum(Gender, name="gender_enum", create_type=False),
+        default=Gender.OTHER,
+        nullable=False,
+    )
+    status: Mapped[Status] = mapped_column(
+        SqlEnum(Status, name="user_status_enum", create_type=False),
+        default=Status.PENDING,
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now(), nullable=False
+    )
+
     def to_domain(self) -> User:
         """Convert SQLAlchemy model to domain entity"""
         created_at = self.created_at
         updated_at = self.updated_at
-        
+
         return User(
             id=self.id,
             email=self.email,
@@ -45,9 +63,9 @@ class UserModel(Base):
             created_at=created_at,
             updated_at=updated_at,
         )
-        
+
     @classmethod
-    def from_domain(cls, user: User) -> 'UserModel':
+    def from_domain(cls, user: User) -> "UserModel":
         """Create SQLAlchemy model from domain entity"""
         return cls(
             id=user.id if user.id != 0 else None,
@@ -63,9 +81,9 @@ class UserModel(Base):
             role=user.role,
             status=user.status,
             created_at=user.created_at,
-            updated_at=user.updated_at
+            updated_at=user.updated_at,
         )
-        
+
     def update_from_domain(self, user: User):
         """Update SQLAlchemy model from domain entity"""
         self.email = user.email
@@ -74,6 +92,6 @@ class UserModel(Base):
         self.role = user.role
         self.status = user.status
         self.is_2fa_enabled = user.is_2fa_enabled
-        self.totp_secret=user.totp_secret
+        self.totp_secret = user.totp_secret
         self.created_at = user.created_at
         self.updated_at = user.updated_at

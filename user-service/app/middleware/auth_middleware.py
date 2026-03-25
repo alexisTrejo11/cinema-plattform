@@ -5,8 +5,8 @@ from fastapi import Request
 from fastapi.responses import Response
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
-from config.app_config import settings
-from config.security import AuthUserContext, _unauthorized, decode_jwt_token
+from app.config.app_config import settings
+from app.config.security import AuthUserContext, _unauthorized, decode_jwt_token
 
 
 logger = logging.getLogger("app")

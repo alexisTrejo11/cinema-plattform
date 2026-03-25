@@ -6,7 +6,7 @@ from app.users.application.dtos import UserResponse, UserCreate, UserUpdate
 from app.users.domain import User
 from .dependencies import UsersUseCasesContainer, get_user_use_cases
 
-router = APIRouter(prefix="/api/v1/users/admin", tags=["User Administration"])
+router = APIRouter(prefix="/api/v2/users", tags=["Users Management"])
 
 
 @router.get(

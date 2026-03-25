@@ -10,7 +10,7 @@ from app.auth.application.dtos import (
 from app.auth.application.usecases import AuthUseCasesContainer
 from .dependencies import get_logged_user, get_auth_use_cases
 
-router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+router = APIRouter(prefix="/api/v2/auth", tags=["auth"])
 
 
 @router.post(
@@ -58,7 +58,6 @@ async def login(
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
-    response_model=dict[str, str],
     summary="Log out a user from a specific session",
     description="Invalidates a specific refresh token, effectively logging out the user from that session.",
 )
@@ -80,7 +79,6 @@ def logout(
 @router.post(
     "/logout-all",
     status_code=status.HTTP_204_NO_CONTENT,
-    response_model=dict[str, str],
     summary="Log out user from all sessions",
     description="Invalidates all refresh tokens for the current user, logging them out from all active sessions.",
 )
@@ -120,7 +118,6 @@ def resend_verification_token(user: User):
 @router.post(
     "/activate-account",
     status_code=status.HTTP_204_NO_CONTENT,
-    response_model=dict[str, str],
     summary="Activate a user by their ID",
     description="Activates a user by their ID.",
 )

@@ -1,7 +1,6 @@
 import logging
 
-from app.token.application.service import TokenService
-from app.token.domain.token import TokenType
+from app.shared.token.core import TokenProvider, TokenType
 from app.users.domain import (
     InvalidTokenError,
     TwoFaAlreadyConfiguredError,
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class Enable2FAUseCase:
-    def __init__(self, user_repo: UserRepository, token_service: TokenService) -> None:
+    def __init__(self, user_repo: UserRepository, token_service: TokenProvider) -> None:
         self.user_repo = user_repo
         self.token_service = token_service
 
@@ -38,14 +37,16 @@ class Enable2FAUseCase:
 
 
 class Disable2FaUseCase:
-    def __init__(self, user_repo: UserRepository, token_service: TokenService) -> None:
+    def __init__(self, user_repo: UserRepository, token_service: TokenProvider) -> None:
         self.user_repo = user_repo
         self.token_service = token_service
 
     async def execute(self, user: User, token: str) -> None:
         await self._validate_user(user)
 
-        is_valid = self.token_service.revoke(str(user.id), TokenType.VERIFICATION, token)
+        is_valid = self.token_service.revoke(
+            str(user.id), TokenType.VERIFICATION, token
+        )
         if not is_valid:
             raise InvalidTokenError()
 

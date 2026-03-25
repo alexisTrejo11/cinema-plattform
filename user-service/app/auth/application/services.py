@@ -1,21 +1,30 @@
 from typing import Optional
 from datetime import datetime
 from passlib.context import CryptContext
+
 from app.shared.response import Result
 from app.users.domain import UserRepository
 from app.users.domain import User, Status
 from app.auth.domain.exceptions import TokenExpiredException
-from app.token.application.service import TokenService
-from app.token.domain.token import TokenType
+from app.shared.token.core.interfaces import TokenProvider
+from app.shared.token.core.token import TokenType
+
 from .dtos import RefreshTokenRequest, SessionResponse
 from .exceptions import UserBannedError, UserNotActivatedError, InvalidAuthToken
 
 
 class SessionService:
-    def __init__(self, token_service: TokenService) -> None:
+    """
+    Service for creating and refreshing jwt sessions for users.
+    """
+
+    def __init__(self, token_service: TokenProvider) -> None:
         self.token_service = token_service
 
     async def create_session(self, user: User) -> SessionResponse:
+        """
+        Creates a new jwt session for the user.
+        """
         access_token_data = {
             "user_id": str(user.id),
             "type": TokenType.JWT_ACCESS.value,
@@ -45,6 +54,10 @@ class SessionService:
     async def refresh_session(
         self, request: RefreshTokenRequest, user: User
     ) -> SessionResponse:
+        """
+        Refreshes the access token for the user.
+        """
+
         access_token_data = {
             "user_id": str(user.id),
             "type": TokenType.JWT_ACCESS.value,
@@ -85,7 +98,7 @@ class AuthValidationService:
         self,
         repository: UserRepository,
         password_service: "PasswordService",
-        token_service: TokenService,
+        token_service: TokenProvider,
     ) -> None:
         self.repository = repository
         self.password_service = password_service

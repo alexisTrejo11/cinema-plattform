@@ -4,8 +4,7 @@ import logging
 from app.shared.notification.domain.entities import Notification, NotificationType
 from app.shared.notification.domain.services import NotificationService
 from app.shared.response import Result
-from app.token.application.service import TokenService
-from app.token.domain.token import TokenType
+from app.shared.token.core import TokenProvider, TokenType
 from app.users.application.dtos import UserResponse
 from app.users.domain import Status as UserStatus, User, UserRepository
 
@@ -21,7 +20,7 @@ class SignUpUseCase:
         user_repository: UserRepository,
         validation_service: AuthValidationService,
         password_service: PasswordService,
-        token_service: TokenService,
+        token_service: TokenProvider,
         notification_service: NotificationService,
     ):
         self.user_repository = user_repository

@@ -4,11 +4,11 @@ from typing import List
 from app.auth.application.services import (
     AuthValidationService,
     PasswordService,
-    TokenService,
+    TokenProvider,
 )
 from app.shared.pagination import PaginationParams as PageParams
 from app.shared.response import Result
-from app.token.domain.token import TokenType
+from app.shared.token.core.token import TokenType
 from app.users.application.dtos import UserCreate, UserUpdate
 from app.users.domain import User, UserNotFoundException, UserRepository
 
@@ -113,7 +113,9 @@ class DeleteUserUseCase:
 
 
 class ActivateUser:
-    def __init__(self, repository: UserRepository, token_service: TokenService) -> None:
+    def __init__(
+        self, repository: UserRepository, token_service: TokenProvider
+    ) -> None:
         self.repository = repository
         self.token_service = token_service
 

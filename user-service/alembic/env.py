@@ -15,9 +15,9 @@ def _sync_database_url() -> str:
     """Alembic uses a synchronous driver; map async DATABASE_URL to psycopg2."""
     url = os.getenv("DATABASE_URL")
     if not url:
-        from config.app_config import settings
+        from app.config.app_config import settings
 
-        url = settings.DATABASE_URL
+        url = settings.postgres_db_url()
     if "+asyncpg" in url:
         url = url.replace("postgresql+asyncpg", "postgresql+psycopg2", 1)
     return url

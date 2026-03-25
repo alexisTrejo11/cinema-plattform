@@ -3,8 +3,7 @@ from typing import Any
 
 from app.shared.qr import generate_qr
 from app.shared.response import Result
-from app.token.application.service import TokenService
-from app.token.domain.token import TokenType
+from app.shared.token.core import TokenProvider, TokenType
 from app.users.domain import User
 
 from ..dtos import LoginRequest, RefreshTokenRequest, SessionResponse
@@ -18,7 +17,7 @@ class LoginUseCase:
         self,
         session_service: SessionService,
         validation_service: AuthValidationService,
-        token_service: TokenService,
+        token_service: TokenProvider,
     ):
         self.session_service = session_service
         self.token_service = token_service
@@ -59,7 +58,7 @@ class LoginUseCase:
 class TwoFALoginUseCase:
     def __init__(
         self,
-        token_service: TokenService,
+        token_service: TokenProvider,
         validation_service: AuthValidationService,
         session_service: SessionService,
     ) -> None:
@@ -99,7 +98,9 @@ class RefreshTokenUseCase:
     def __init__(self, session_service: SessionService):
         self.session_service = session_service
 
-    async def execute(self, request: RefreshTokenRequest, user: User) -> SessionResponse:
+    async def execute(
+        self, request: RefreshTokenRequest, user: User
+    ) -> SessionResponse:
         token_response = await self.session_service.refresh_session(request, user)
         logger.info("token refreshed user_id=%s", user.id)
         return token_response

@@ -1,6 +1,28 @@
 from typing import Optional, Dict, Any
 from http import HTTPStatus
 
+
+class AuthErrorCode:
+    """Machine-readable codes for authentication and authorization failures."""
+
+    INVALID_TOKEN = "INVALID_TOKEN"
+    MISSING_BEARER = "MISSING_BEARER"
+    AUTHENTICATION_REQUIRED = "AUTHENTICATION_REQUIRED"
+    USER_NOT_FOUND = "USER_NOT_FOUND"
+    INVALID_CREDENTIALS = "INVALID_CREDENTIALS"
+    INSUFFICIENT_PERMISSIONS = "INSUFFICIENT_PERMISSIONS"
+
+
+AUTH_ERROR_MESSAGES: dict[str, str] = {
+    AuthErrorCode.INVALID_TOKEN: "Invalid token.",
+    AuthErrorCode.MISSING_BEARER: "Not authenticated.",
+    AuthErrorCode.AUTHENTICATION_REQUIRED: "Authentication required.",
+    AuthErrorCode.USER_NOT_FOUND: "User not found.",
+    AuthErrorCode.INVALID_CREDENTIALS: "Invalid token or credentials.",
+    AuthErrorCode.INSUFFICIENT_PERMISSIONS: "Insufficient permissions.",
+}
+
+
 class DomainException(Exception):
     """Base class for all domain-specific exceptions."""
     status_code = HTTPStatus.BAD_REQUEST
@@ -52,6 +74,23 @@ class ValidationException(DomainException):
             details={"field": field, "reason": reason}
         )
 
+
+class ForbiddenException(DomainException):
+    status_code = HTTPStatus.FORBIDDEN
+
+    def __init__(
+        self,
+        message: str = "Access denied.",
+        error_code: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ):
+        super().__init__(
+            message=message,
+            error_code=error_code or "FORBIDDEN",
+            details=details,
+        )
+
+
 class DatabaseException(ApplicationException):
     status_code = HTTPStatus.SERVICE_UNAVAILABLE
     
@@ -68,5 +107,33 @@ class AuthorizationException(Exception):
     ):
         self.message = message
         self.error_code = error_code or self.__class__.__name__
-        self.details = details
+        self.details = details if details is not None else {}
         super().__init__(self.message)
+
+
+def auth_error(
+    code: str,
+    *,
+    message: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> AuthorizationException:
+    """Build a standardized auth failure (use with ``raise``)."""
+    return AuthorizationException(
+        message=message or AUTH_ERROR_MESSAGES.get(code, "Authentication failed."),
+        error_code=code,
+        details=details if details is not None else {},
+    )
+
+
+def forbidden_error(
+    code: str = AuthErrorCode.INSUFFICIENT_PERMISSIONS,
+    *,
+    message: Optional[str] = None,
+    details: Optional[Dict[str, Any]] = None,
+) -> ForbiddenException:
+    """Build a standardized forbidden response (use with ``raise``)."""
+    return ForbiddenException(
+        message=message or AUTH_ERROR_MESSAGES.get(code, "Access denied."),
+        error_code=code,
+        details=details if details is not None else {},
+    )

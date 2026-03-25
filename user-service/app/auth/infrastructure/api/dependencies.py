@@ -1,12 +1,12 @@
 from typing import Callable, List
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config.app_config import settings
-from config.postgres_config import get_db
-from config.redis_config import Redis, get_redis_client
+from app.config.app_config import settings
+from app.config.postgres_config import get_db
+from app.config.cache_config import get_redis_client
 
 from app.auth.application.services import (
     AuthValidationService,
@@ -15,23 +15,31 @@ from app.auth.application.services import (
 )
 from app.auth.application.usecases import AuthUseCasesContainer, build_auth_use_cases
 from app.auth.domain.exceptions import InvalidCredentialsException
+from app.shared.exceptions import (
+    AuthorizationException,
+    AuthErrorCode,
+    auth_error,
+    forbidden_error,
+)
 from app.shared.notification.domain.services import NotificationService
 from app.shared.notification.infrastructure.services_impl import NotificationServiceImpl
-from app.token.application.repository import TokenRepository
-from app.token.application.service import TokenService
-from app.token.infrastructure.redis_repository import RedisTokenRepository
-from app.token.infrastructure.services.token_service_impl import TokenServiceImpl
+from app.shared.token.core import TokenRepository, TokenProvider
+from app.shared.token.infrastructure import TokenProviderImpl, RedisTokenRepository
 from app.users.domain import User, UserRepository, UserRole
-from app.users.infrastructure.persistence.sqlalch_user_repo import SQLAlchemyUserRepository
+from app.users.infrastructure.persistence.sqlalch_user_repo import (
+    SQLAlchemyUserRepository,
+)
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
 def get_user_repository(session: AsyncSession = Depends(get_db)) -> UserRepository:
     return SQLAlchemyUserRepository(session)
 
 
-def get_token_repository(redis_client: Redis = Depends(get_redis_client)) -> TokenRepository:
+def get_token_repository(
+    redis_client=Depends(get_redis_client),
+) -> TokenRepository:
     return RedisTokenRepository(redis_client)
 
 
@@ -41,24 +49,24 @@ def get_password_service() -> PasswordService:
 
 def get_token_service(
     token_repo: TokenRepository = Depends(get_token_repository),
-) -> TokenService:
-    return TokenServiceImpl(
+) -> TokenProvider:
+    return TokenProviderImpl(
         token_repository=token_repo,
-        secret_key=settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM,
+        secret_key=settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
     )
 
 
 def get_auth_validation_service(
     user_repo: UserRepository = Depends(get_user_repository),
     password_service: PasswordService = Depends(get_password_service),
-    token_service: TokenService = Depends(get_token_service),
+    token_service: TokenProvider = Depends(get_token_service),
 ) -> AuthValidationService:
     return AuthValidationService(user_repo, password_service, token_service)
 
 
 def get_session_service(
-    token_service: TokenService = Depends(get_token_service),
+    token_service: TokenProvider = Depends(get_token_service),
 ) -> SessionService:
     return SessionService(token_service)
 
@@ -71,7 +79,7 @@ def get_auth_use_cases(
     user_repo: UserRepository = Depends(get_user_repository),
     password_service: PasswordService = Depends(get_password_service),
     validation_service: AuthValidationService = Depends(get_auth_validation_service),
-    token_service: TokenService = Depends(get_token_service),
+    token_service: TokenProvider = Depends(get_token_service),
     session_service: SessionService = Depends(get_session_service),
     notification_service: NotificationService = Depends(get_notification_service),
 ) -> AuthUseCasesContainer:
@@ -86,43 +94,39 @@ def get_auth_use_cases(
 
 
 async def get_logged_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
     user_repository: UserRepository = Depends(get_user_repository),
-    token_service: TokenService = Depends(get_token_service),
+    token_service: TokenProvider = Depends(get_token_service),
 ) -> User:
+    if credentials is None:
+        raise auth_error(AuthErrorCode.MISSING_BEARER)
     try:
         payload = token_service.verify_jwt_token(credentials.credentials)
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-            )
+            raise auth_error(AuthErrorCode.INVALID_TOKEN)
 
         user = await user_repository.get_by_id(int(user_id))
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
-            )
+            raise auth_error(AuthErrorCode.USER_NOT_FOUND)
 
         return user
     except InvalidCredentialsException:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token or credentials",
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication error: {e}",
-        )
+        raise auth_error(AuthErrorCode.INVALID_CREDENTIALS)
+    except AuthorizationException:
+        raise
+    except Exception:
+        raise auth_error(AuthErrorCode.INVALID_CREDENTIALS)
 
 
 def role_required(required_roles: List[UserRole]) -> Callable[[User], User]:
     def role_checker(logged_user: User = Depends(get_logged_user)) -> User:
         if logged_user.role not in required_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Not enough permissions. Required roles: {[r.value for r in required_roles]}",
+            raise forbidden_error(
+                details={
+                    "required_roles": [r.value for r in required_roles],
+                    "user_role": logged_user.role.value if logged_user.role else None,
+                },
             )
         return logged_user
 

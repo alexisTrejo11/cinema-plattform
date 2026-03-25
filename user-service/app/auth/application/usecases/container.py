@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from app.shared.notification.domain.services import NotificationService
-from app.token.application.service import TokenService
+from app.shared.token.core import TokenProvider
 from app.users.domain import UserRepository
 
 from ..services import AuthValidationService, PasswordService, SessionService
@@ -27,7 +27,7 @@ def build_auth_use_cases(
     user_repo: UserRepository,
     password_service: PasswordService,
     validation_service: AuthValidationService,
-    token_service: TokenService,
+    token_service: TokenProvider,
     session_service: SessionService,
     notification_service: NotificationService,
 ) -> AuthUseCasesContainer:
