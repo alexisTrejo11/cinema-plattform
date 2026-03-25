@@ -159,3 +159,11 @@
 {"timestamp": "2026-03-25T12:21:58.976058", "level": "INFO", "logger": "app", "message": "Invalid JWT token", "module": "auth_middleware", "function": "jwt_auth_middleware", "line": 61, "path": "/api/v2/profiles/"}
 {"timestamp": "2026-03-25T12:21:59.006993", "level": "WARNING", "logger": "app", "message": "Auth error [MISSING_BEARER] Not authenticated. | path=/api/v2/users/", "module": "global_exception_handler", "function": "handle_auth_exceptions", "line": 103}
 {"timestamp": "2026-03-25T12:21:59.022569", "level": "WARNING", "logger": "app", "message": "Domain error [USER_NOT_FOUND] User with ID 999 not found | path=/api/v2/users/999", "module": "global_exception_handler", "function": "handle_domain_exceptions", "line": 72}
+{"timestamp": "2026-03-25T12:38:00.733409", "level": "INFO", "logger": "app.config.kafka_config", "message": "Kafka event publisher disabled (noop)", "module": "kafka_config", "function": "create_event_publisher", "line": 24}
+{"timestamp": "2026-03-25T12:38:00.765269", "level": "INFO", "logger": "app", "message": "Starting User Service...", "module": "main", "function": "lifespan", "line": 32}
+{"timestamp": "2026-03-25T12:38:00.821425", "level": "INFO", "logger": "app", "message": "PostgreSQL validation passed: connectivity and 1 table(s) verified.", "module": "database_startup", "function": "validate_postgres", "line": 57}
+{"timestamp": "2026-03-25T12:38:00.828810", "level": "INFO", "logger": "app.config.cache_config", "message": "Redis cache initialized successfully (ping + read/write OK).", "module": "cache_config", "function": "init_cache", "line": 77}
+{"timestamp": "2026-03-25T12:38:00.828910", "level": "INFO", "logger": "app", "message": "Redis cache ready.", "module": "main", "function": "lifespan", "line": 35}
+{"timestamp": "2026-03-25T12:38:03.338291", "level": "INFO", "logger": "app", "message": "Shutting down User Service...", "module": "main", "function": "lifespan", "line": 37}
+{"timestamp": "2026-03-25T12:38:03.339147", "level": "INFO", "logger": "app.config.cache_config", "message": "Redis connection closed", "module": "cache_config", "function": "close_cache", "line": 97}
+{"timestamp": "2026-03-25T12:38:03.339601", "level": "INFO", "logger": "app", "message": "User Service stopped.", "module": "main", "function": "lifespan", "line": 40}
