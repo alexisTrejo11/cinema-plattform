@@ -1,6 +1,8 @@
 import logging
 from typing import Any
 
+from app.shared.events.builders import two_factor_challenge_issued
+from app.shared.events.protocols import EventPublisher
 from app.shared.qr import generate_qr
 from app.shared.response import Result
 from app.shared.token.core import TokenProvider, TokenType
@@ -18,10 +20,12 @@ class LoginUseCase:
         session_service: SessionService,
         validation_service: AuthValidationService,
         token_service: TokenProvider,
+        event_publisher: EventPublisher,
     ):
         self.session_service = session_service
         self.token_service = token_service
         self.validation_service = validation_service
+        self._event_publisher = event_publisher
 
     async def execute(self, request: LoginRequest) -> Result[Any]:
         user = await self.validation_service.authenticate_user(
@@ -52,6 +56,9 @@ class LoginUseCase:
             TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret}
         )
 
+        await self._event_publisher.publish(
+            two_factor_challenge_issued(user, reason="login_step_up")
+        )
         return generate_qr(token.code)
 
 
@@ -61,10 +68,12 @@ class TwoFALoginUseCase:
         token_service: TokenProvider,
         validation_service: AuthValidationService,
         session_service: SessionService,
+        event_publisher: EventPublisher,
     ) -> None:
         self.session_service = session_service
         self.token_service = token_service
         self.validation_service = validation_service
+        self._event_publisher = event_publisher
 
     async def execute(self, request: LoginRequest) -> Result:
         user = await self.validation_service.authenticate_user(
@@ -90,6 +99,9 @@ class TwoFALoginUseCase:
             TokenType.TWO_FA, **{"email": user.email, "totp_secret": user.totp_secret}
         )
 
+        await self._event_publisher.publish(
+            two_factor_challenge_issued(user, reason="two_fa_access_endpoint")
+        )
         qr = generate_qr(token.code)
         return Result.success(qr)
 

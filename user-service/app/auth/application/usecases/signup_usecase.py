@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+from app.shared.events.builders import user_signed_up
+from app.shared.events.protocols import EventPublisher
 from app.shared.notification.domain.entities import Notification, NotificationType
 from app.shared.notification.domain.services import NotificationService
 from app.shared.response import Result
@@ -22,12 +24,14 @@ class SignUpUseCase:
         password_service: PasswordService,
         token_service: TokenProvider,
         notification_service: NotificationService,
+        event_publisher: EventPublisher,
     ):
         self.user_repository = user_repository
         self.validation_service = validation_service
         self.password_service = password_service
         self.token_service = token_service
         self.notification_service = notification_service
+        self._event_publisher = event_publisher
 
     async def execute(self, request: SignUpRequest) -> Result[UserResponse]:
         validation_result = await self.validation_service.validate_unique_fields(
@@ -51,6 +55,9 @@ class SignUpUseCase:
 
         created_user = await self.user_repository.save(new_user)
         logger.info("signup user created id=%s", created_user.id)
+        await self._event_publisher.publish(
+            user_signed_up(created_user.id, str(created_user.email))
+        )
         return created_user
 
     async def _send_activation_notification(self, user: User) -> None:

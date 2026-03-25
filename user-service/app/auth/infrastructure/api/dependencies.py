@@ -1,6 +1,6 @@
 from typing import Callable, List
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +21,7 @@ from app.shared.exceptions import (
     auth_error,
     forbidden_error,
 )
+from app.shared.events.protocols import EventPublisher
 from app.shared.notification.domain.services import NotificationService
 from app.shared.notification.infrastructure.services_impl import NotificationServiceImpl
 from app.shared.token.core import TokenRepository, TokenProvider
@@ -71,8 +72,14 @@ def get_session_service(
     return SessionService(token_service)
 
 
-def get_notification_service() -> NotificationService:
-    return NotificationServiceImpl()
+def get_event_publisher(request: Request) -> EventPublisher:
+    return request.app.state.event_publisher
+
+
+def get_notification_service(
+    publisher: EventPublisher = Depends(get_event_publisher),
+) -> NotificationService:
+    return NotificationServiceImpl(publisher)
 
 
 def get_auth_use_cases(
@@ -82,6 +89,7 @@ def get_auth_use_cases(
     token_service: TokenProvider = Depends(get_token_service),
     session_service: SessionService = Depends(get_session_service),
     notification_service: NotificationService = Depends(get_notification_service),
+    event_publisher: EventPublisher = Depends(get_event_publisher),
 ) -> AuthUseCasesContainer:
     return build_auth_use_cases(
         user_repo=user_repo,
@@ -90,6 +98,7 @@ def get_auth_use_cases(
         token_service=token_service,
         session_service=session_service,
         notification_service=notification_service,
+        event_publisher=event_publisher,
     )
 
 

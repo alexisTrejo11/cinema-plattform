@@ -5,6 +5,7 @@ from app.auth.application.services import (
     PasswordService,
     TokenProvider,
 )
+from app.shared.events.protocols import EventPublisher
 from app.users.domain import UserRepository
 
 from .use_cases import (
@@ -34,13 +35,18 @@ def build_users_use_cases(
     password_service: PasswordService,
     validation_service: AuthValidationService,
     token_service: TokenProvider,
+    event_publisher: EventPublisher,
 ) -> UsersUseCasesContainer:
     return UsersUseCasesContainer(
         list_users=ListUsersUseCase(repository),
         get_user=GetUserUseCase(repository),
-        create_user=CreateUserUseCase(repository, password_service, validation_service),
-        update_user=UpdateUserUseCase(repository, validation_service, password_service),
-        delete_user=DeleteUserUseCase(repository),
-        activate_user=ActivateUser(repository, token_service),
-        ban_user=BanUserUseCase(repository),
+        create_user=CreateUserUseCase(
+            repository, password_service, validation_service, event_publisher
+        ),
+        update_user=UpdateUserUseCase(
+            repository, validation_service, password_service, event_publisher
+        ),
+        delete_user=DeleteUserUseCase(repository, event_publisher),
+        activate_user=ActivateUser(repository, token_service, event_publisher),
+        ban_user=BanUserUseCase(repository, event_publisher),
     )

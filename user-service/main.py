@@ -17,6 +17,7 @@ from app.users.infrastructure.controller import user_controllers
 from app.shared.logging import setup_logging
 from app.config import exception_handlers
 from app.config.app_config import settings
+from app.config.kafka_config import create_event_publisher, shutdown_event_publisher
 from app.config.cache_config import close_cache, init_cache
 from app.config.database_startup import run_postgres_startup_check
 from app.config.postgres_config import engine
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
     logger.info("Redis cache ready.")
     yield
     logger.info("Shutting down User Service...")
+    shutdown_event_publisher()
     await close_cache()
     logger.info("User Service stopped.")
 
@@ -45,6 +47,7 @@ app = FastAPI(
     exception_handlers=exception_handlers,
 )
 app.state.limiter = limiter
+app.state.event_publisher = create_event_publisher()
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(
     CORSMiddleware,

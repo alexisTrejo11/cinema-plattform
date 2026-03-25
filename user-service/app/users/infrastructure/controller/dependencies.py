@@ -1,4 +1,4 @@
-from fastapi import Depends
+from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.app_config import settings
@@ -6,6 +6,7 @@ from app.config.postgres_config import get_db
 from app.config.cache_config import get_redis_client
 
 from app.auth.application.services import PasswordService, AuthValidationService
+from app.shared.events.protocols import EventPublisher
 from app.shared.token.core import TokenRepository, TokenProvider
 from app.shared.token.infrastructure import TokenProviderImpl, RedisTokenRepository
 from app.users.application.container import (
@@ -37,6 +38,10 @@ def get_password_service() -> PasswordService:
     return PasswordService()
 
 
+def get_event_publisher(request: Request) -> EventPublisher:
+    return request.app.state.event_publisher
+
+
 def get_user_validation_service(
     repository: SQLAlchemyUserRepository = Depends(get_user_repository),
     password_service: PasswordService = Depends(get_password_service),
@@ -50,10 +55,12 @@ def get_user_use_cases(
     password_service: PasswordService = Depends(get_password_service),
     validation_service: AuthValidationService = Depends(get_user_validation_service),
     token_service: TokenProvider = Depends(get_token_service),
+    event_publisher: EventPublisher = Depends(get_event_publisher),
 ) -> UsersUseCasesContainer:
     return build_users_use_cases(
         repository=repository,
         password_service=password_service,
         validation_service=validation_service,
         token_service=token_service,
+        event_publisher=event_publisher,
     )

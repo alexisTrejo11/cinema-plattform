@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from app.shared.events.protocols import EventPublisher
 from app.shared.notification.domain.services import NotificationService
 from app.shared.token.core import TokenProvider
 from app.users.domain import UserRepository
@@ -30,6 +31,7 @@ def build_auth_use_cases(
     token_service: TokenProvider,
     session_service: SessionService,
     notification_service: NotificationService,
+    event_publisher: EventPublisher,
 ) -> AuthUseCasesContainer:
     return AuthUseCasesContainer(
         signup=SignUpUseCase(
@@ -38,16 +40,23 @@ def build_auth_use_cases(
             password_service=password_service,
             token_service=token_service,
             notification_service=notification_service,
+            event_publisher=event_publisher,
         ),
-        login=LoginUseCase(session_service, validation_service, token_service),
+        login=LoginUseCase(
+            session_service,
+            validation_service,
+            token_service,
+            event_publisher,
+        ),
         logout=LogoutUseCase(session_service),
         logout_all=LogoutAllUseCase(session_service),
         refresh_token=RefreshTokenUseCase(session_service),
-        enable_2fa=Enable2FAUseCase(user_repo, token_service),
-        disable_2fa=Disable2FaUseCase(user_repo, token_service),
+        enable_2fa=Enable2FAUseCase(user_repo, token_service, event_publisher),
+        disable_2fa=Disable2FaUseCase(user_repo, token_service, event_publisher),
         two_fa_login=TwoFALoginUseCase(
             token_service,
             validation_service,
             session_service,
+            event_publisher,
         ),
     )

@@ -6,6 +6,14 @@ from app.auth.application.services import (
     PasswordService,
     TokenProvider,
 )
+from app.shared.events.builders import (
+    user_activated as emit_user_activated,
+    user_banned as emit_user_banned,
+    user_created as emit_user_created,
+    user_deleted as emit_user_deleted,
+    user_updated as emit_user_updated,
+)
+from app.shared.events.protocols import EventPublisher
 from app.shared.pagination import PaginationParams as PageParams
 from app.shared.response import Result
 from app.shared.token.core.token import TokenType
@@ -40,10 +48,12 @@ class CreateUserUseCase:
         repository: UserRepository,
         password_service: PasswordService,
         validation_service: AuthValidationService,
+        event_publisher: EventPublisher,
     ) -> None:
         self.repository = repository
         self.password_service = password_service
         self.validation_service = validation_service
+        self._event_publisher = event_publisher
 
     async def execute(self, user_data: UserCreate) -> Result[User]:
         result = await self.validation_service.validate_unique_fields(
@@ -58,9 +68,12 @@ class CreateUserUseCase:
         hashed_password = self.password_service.hash_password(user_data.password)
         user.password = hashed_password
 
-        user_created = await self.repository.save(user)
-        logger.info("user created id=%s", user_created.id)
-        return Result.success(user_created)
+        created = await self.repository.save(user)
+        logger.info("user created id=%s", created.id)
+        await self._event_publisher.publish(
+            emit_user_created(created.id, str(created.email), created.role.value)
+        )
+        return Result.success(created)
 
 
 class UpdateUserUseCase:
@@ -69,10 +82,12 @@ class UpdateUserUseCase:
         repository: UserRepository,
         validation_service: AuthValidationService,
         password_service: PasswordService,
+        event_publisher: EventPublisher,
     ) -> None:
         self.repository = repository
         self.password_service = password_service
         self.validation_service = validation_service
+        self._event_publisher = event_publisher
 
     async def execute(self, user_id: int, update_data: UserUpdate) -> Result[User]:
         user = await self.repository.get_by_id(user_id)
@@ -94,12 +109,17 @@ class UpdateUserUseCase:
 
         user = await self.repository.save(user_updated)
         logger.info("user updated id=%s", user_id)
+        changed = list(update_data.model_dump(exclude_unset=True).keys())
+        await self._event_publisher.publish(emit_user_updated(user_id, changed))
         return Result.success(user)
 
 
 class DeleteUserUseCase:
-    def __init__(self, repository: UserRepository) -> None:
+    def __init__(
+        self, repository: UserRepository, event_publisher: EventPublisher
+    ) -> None:
         self.repository = repository
+        self._event_publisher = event_publisher
 
     async def execute(self, user_id: int) -> bool:
         user = await self.repository.get_by_id(user_id)
@@ -109,15 +129,20 @@ class DeleteUserUseCase:
         deleted = await self.repository.delete(user_id)
         if deleted:
             logger.info("user deleted id=%s", user_id)
+            await self._event_publisher.publish(emit_user_deleted(user_id))
         return deleted
 
 
 class ActivateUser:
     def __init__(
-        self, repository: UserRepository, token_service: TokenProvider
+        self,
+        repository: UserRepository,
+        token_service: TokenProvider,
+        event_publisher: EventPublisher,
     ) -> None:
         self.repository = repository
         self.token_service = token_service
+        self._event_publisher = event_publisher
 
     async def execute(self, user_id: int, activation_token: str) -> None:
         user = await self.repository.get_by_id(user_id)
@@ -133,11 +158,15 @@ class ActivateUser:
         user.activate()
         await self.repository.save(user)
         logger.info("user activated id=%s", user_id)
+        await self._event_publisher.publish(
+            emit_user_activated(user_id, str(user.email))
+        )
 
 
 class BanUserUseCase:
-    def __init__(self, repository: UserRepository) -> None:
+    def __init__(self, repository: UserRepository, event_publisher: EventPublisher) -> None:
         self.repository = repository
+        self._event_publisher = event_publisher
 
     async def execute(self, user_id: int) -> None:
         user = await self.repository.get_by_id(user_id)
@@ -147,3 +176,4 @@ class BanUserUseCase:
         user.ban()
         await self.repository.save(user)
         logger.info("user banned id=%s", user_id)
+        await self._event_publisher.publish(emit_user_banned(user_id, str(user.email)))

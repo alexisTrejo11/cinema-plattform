@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     # Fail-fast startup check for Redis (ping + short read/write probe).
     REDIS_VALIDATE_ON_STARTUP: bool = True
 
+    # Kafka — outbound domain events (notifications, monitoring). No-op when disabled.
+    KAFKA_ENABLED: bool = False
+    KAFKA_BOOTSTRAP_SERVERS: str = ""
+    KAFKA_CLIENT_ID: str = "user-service"
+    KAFKA_USER_EVENTS_TOPIC: str = "cinema.user-service.events"
+
     model_config = SettingsConfigDict(
         env_file="./.env", env_file_encoding="utf-8", extra="ignore"
     )
