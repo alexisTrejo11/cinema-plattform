@@ -1,79 +1,38 @@
-from typing import Optional, Dict, Any
+from __future__ import annotations
+
 from http import HTTPStatus
+from typing import Any
+from uuid import UUID
 
-
-class DomainException(Exception):
-    """Base class for all domain-specific exceptions."""
-
-    status_code = HTTPStatus.BAD_REQUEST
-
-    def __init__(
-        self,
-        message: str = "A domain-specific error occurred.",
-        error_code: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
-        self.message = message
-        self.error_code = error_code or self.__class__.__name__
-        self.details = details
-        super().__init__(self.message)
-
-
-class ApplicationException(Exception):
-    """Base class for all application-specific exceptions."""
-
-    status_code = HTTPStatus.CONFLICT
-
-    def __init__(
-        self,
-        message: str = "An application error occurred.",
-        error_code: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
-        self.message = message
-        self.error_code = error_code or self.__class__.__name__
-        self.details = details
-        super().__init__(self.message)
+from app.shared.kernel.exceptions import DomainException
 
 
 class NotFoundException(DomainException):
-    status_code = HTTPStatus.NOT_FOUND
-
-    def __init__(self, entity: str, entity_id: Any):
+    def __init__(self, entity_name: str, entity_id: Any):
+        sid = str(entity_id)
         super().__init__(
-            message=f"{entity} with ID {entity_id} not found",
-            error_code=f"{entity.upper()}_NOT_FOUND",
-            details={"entity": entity, "id": entity_id},
+            f"{entity_name} with id {sid} was not found.",
+            error_code=f"{entity_name.upper()}_NOT_FOUND",
+            status_code=HTTPStatus.NOT_FOUND,
+            details={"entity": entity_name, "id": sid},
         )
 
 
 class ValidationException(DomainException):
-    status_code = HTTPStatus.UNPROCESSABLE_ENTITY
-
     def __init__(self, field: str, reason: str):
         super().__init__(
-            message=f"Validation failed for field '{field}'",
+            f"Validation failed for field '{field}': {reason}",
             error_code="VALIDATION_ERROR",
+            status_code=HTTPStatus.BAD_REQUEST,
             details={"field": field, "reason": reason},
         )
 
 
-class DatabaseException(ApplicationException):
-    status_code = HTTPStatus.SERVICE_UNAVAILABLE
-
-
-class AuthorizationException(Exception):
-    """Base class for all auth-specific exceptions."""
-
-    status_code = HTTPStatus.UNAUTHORIZED
-
-    def __init__(
-        self,
-        message: str = "A auth-specific error occurred.",
-        error_code: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
-    ):
-        self.message = message
-        self.error_code = error_code or self.__class__.__name__
-        self.details = details
-        super().__init__(self.message)
+class ConflictException(DomainException):
+    def __init__(self, message: str, *, details: dict | None = None):
+        super().__init__(
+            message,
+            error_code="CONFLICT",
+            status_code=HTTPStatus.CONFLICT,
+            details=details or {},
+        )

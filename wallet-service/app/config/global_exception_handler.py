@@ -1,139 +1,182 @@
+import logging
+from typing import Any
+
 from http import HTTPStatus
-from fastapi import FastAPI, Request
+from fastapi import Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-import logging
-from app.shared.base_exceptions import * 
-from app.shared.response import ApiResponse, ErrorResponse
+from sqlalchemy.exc import SQLAlchemyError
 
-from fastapi import FastAPI
+from app.shared.kernel.exceptions import (
+    ApplicationException,
+    AuthorizationException,
+    DomainException,
+)
 
 logger = logging.getLogger("app")
 
-app = FastAPI()
 
-@app.exception_handler(DomainException)
+def _error_response(
+    status_code: int, code: str, message: str, details: list | None = None
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={"error": {"code": code, "message": message, "details": details or []}},
+    )
+
+
+def _normalize_details(details) -> list:
+    """Coerce exception details (dict, list, or None) into a list for the response."""
+    if not details:
+        return []
+    if isinstance(details, list):
+        return details
+    if isinstance(details, dict):
+        return [details]
+    return [{"info": str(details)}]
+
+
+def _flatten_validation_errors(errors: list[dict]) -> list[dict]:
+    """Turn Pydantic / FastAPI error dicts into flat {field, message} items."""
+    return [
+        {
+            "field": ".".join(str(loc) for loc in err.get("loc", ["unknown"])),
+            "message": err.get("msg", "Validation error"),
+        }
+        for err in errors
+    ]
+
+
+# ─── Domain (4xx — safe to expose to clients) ────────────────────────
+
+
 async def handle_domain_exceptions(request: Request, exc: DomainException):
-    error_response = ErrorResponse(
-        code=exc.error_code,
-        type=exc.__class__.__name__,
-        message=exc.message,
-        details=exc.details
+    logger.warning(
+        "Domain error [%s] %s | path=%s",
+        exc.error_code,
+        exc.message,
+        request.url.path,
     )
-    api_response = ApiResponse.failure(
-        error=error_response,
-        message=exc.message
-    )
-    return JSONResponse(
+    return _error_response(
         status_code=exc.status_code,
-        content=api_response.model_dump()
+        code=exc.error_code,
+        message=exc.message,
+        details=_normalize_details(exc.details),
     )
 
-@app.exception_handler(ApplicationException)
+
+# ─── Application (5xx — internal details hidden) ─────────────────────
+
+
 async def handle_application_exceptions(request: Request, exc: ApplicationException):
-    logger.error(f"Application error: {exc}", exc_info=exc)
-    error_response = ErrorResponse(
-        code=exc.error_code,
-        type=exc.__class__.__name__,
-        message=exc.message,
-        details=exc.details
+    logger.error(
+        "Application error [%s] %s | path=%s",
+        exc.error_code,
+        exc.message,
+        request.url.path,
+        exc_info=exc,
     )
-    api_response = ApiResponse.failure(
-        error=error_response,
-        message=f"An application error occurred: {exc.message}" # Un mensaje más general
-    )
-    return JSONResponse(
+    return _error_response(
         status_code=exc.status_code,
-        content=api_response.model_dump()
+        code=exc.error_code,
+        message="An internal server error occurred.",
     )
 
-@app.exception_handler(AuthorizationException)
-async def handle_auth_exceptions(request: Request, exc: AuthorizationException): # Cambiado a AuthorizationException
-    logger.error(f"Auth error: {exc}", exc_info=exc)
-    error_response = ErrorResponse(
-        code=exc.error_code,
-        type=exc.__class__.__name__,
-        message=exc.message,
-        details=exc.details
+
+# ─── Authorization ───────────────────────────────────────────────────
+
+
+async def handle_auth_exceptions(request: Request, exc: AuthorizationException):
+    logger.warning(
+        "Auth error [%s] %s | path=%s",
+        exc.error_code,
+        exc.message,
+        request.url.path,
     )
-    api_response = ApiResponse.failure(
-        error=error_response,
-        message=f"Authorization failed: {exc.message}"
-    )
-    return JSONResponse(
+    return _error_response(
         status_code=exc.status_code,
-        content=api_response.model_dump()
+        code=exc.error_code,
+        message=exc.message,
+        details=_normalize_details(exc.details),
     )
 
-@app.exception_handler(ValidationError)
+
+# ─── Validation (Pydantic + FastAPI path/query) ──────────────────────
+
+
 async def handle_pydantic_validation_errors(request: Request, exc: ValidationError):
-    logger.warning(f"Pydantic validation error: {exc}", exc_info=exc)
-
-    errors_details = []
-    for error in exc.errors():
-        field = ".".join(map(str, error.get('loc', ['unknown_field'])))
-        message = error.get('msg', 'Validation error')
-        errors_details.append({"field": field, "message": message})
-
-    error_response = ErrorResponse(
-        code="VALIDATION_ERROR",
-        type="InputValidationError", # Un tipo más específico para Pydantic
-        message="One or more validation errors occurred in the request data.",
-        details=errors_details
+    details = _flatten_validation_errors(exc.errors())
+    logger.warning(
+        "Pydantic validation error | path=%s | fields=%s",
+        request.url.path,
+        [d["field"] for d in details],
     )
-    api_response = ApiResponse.failure(
-        error=error_response,
-        message="Request data validation failed."
-    )
-    return JSONResponse(
+    return _error_response(
         status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
-        content=api_response.model_dump()
+        code="VALIDATION_ERROR",
+        message="One or more fields failed validation.",
+        details=details,
     )
 
-@app.exception_handler(ValueError)
-async def handle_value_errors(request: Request, exc: ValueError):
-    logger.warning(f"ValueError: {exc}", exc_info=exc)
 
-    error_response = ErrorResponse(
-        code="INVALID_INPUT",
-        type="ValueError",
-        message=str(exc),
-        details=[]
+async def handle_path_validation_errors(request: Request, exc: RequestValidationError):
+    details = _flatten_validation_errors(exc.errors())
+    logger.warning(
+        "Request validation error | path=%s | fields=%s",
+        request.url.path,
+        [d["field"] for d in details],
     )
-    api_response = ApiResponse.failure(
-        error=error_response,
-        message="Invalid input provided."
-    )
-    return JSONResponse(
-        status_code=HTTPStatus.BAD_REQUEST,
-        content=api_response.model_dump()
+    return _error_response(
+        status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+        code="VALIDATION_ERROR",
+        message="One or more fields failed validation.",
+        details=details,
     )
 
-@app.exception_handler(Exception)
+
+# ─── Database (SQLAlchemy — details hidden, logged in full) ──────────
+
+
+async def handle_db_exceptions(request: Request, exc: SQLAlchemyError):
+    logger.error(
+        "Database error [%s] | path=%s",
+        type(exc).__name__,
+        request.url.path,
+        exc_info=exc,
+    )
+    return _error_response(
+        status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+        code="DATABASE_ERROR",
+        message="A database connection issue occurred. Please try again later.",
+    )
+
+
+# ─── Catch-all ────────────────────────────────────────────────────────
+
+
 async def handle_generic_exceptions(request: Request, exc: Exception):
-    logger.error(f"Unexpected error: {exc}", exc_info=exc)
-
-    error_response = ErrorResponse(
-        code="INTERNAL_SERVER_ERROR",
-        type="UnhandledException",
-        message="An unexpected error occurred on the server.",
-        details=None
+    logger.error(
+        "Unhandled exception [%s] | path=%s",
+        type(exc).__name__,
+        request.url.path,
+        exc_info=exc,
     )
-    api_response = ApiResponse.failure(
-        error=error_response,
-        message="An internal server error occurred."
-    )
-    return JSONResponse(
+    return _error_response(
         status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-        content=api_response.model_dump()
+        code="INTERNAL_SERVER_ERROR",
+        message="An unexpected error occurred.",
     )
 
 
-GLOBAL_EXCEPTION_HANDLERS = {
+exception_handlers: Any = {
     DomainException: handle_domain_exceptions,
     ApplicationException: handle_application_exceptions,
     AuthorizationException: handle_auth_exceptions,
     ValidationError: handle_pydantic_validation_errors,
-    ValueError: handle_value_errors,
-    Exception: handle_generic_exceptions
+    RequestValidationError: handle_path_validation_errors,
+    SQLAlchemyError: handle_db_exceptions,
+    Exception: handle_generic_exceptions,
 }
+
+GLOBAL_EXCEPTION_HANDLERS = exception_handlers

@@ -1,7 +1,5 @@
-from app.wallet.domain.repositories.transaction_repository import (
-    WalletTransactionRepository as TransactioRepository,
-    SearchTransactionQuery,
-)
+from app.wallet.application.queries import SearchTransactionQuery
+from app.wallet.domain.interfaces import WalletTransactionRepository as TransactioRepository
 from app.wallet.presentation.dtos.response import (
     WalletTransactionResponse as TransactionResponse,
 )

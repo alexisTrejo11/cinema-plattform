@@ -1,11 +1,11 @@
-from uuid import UUID
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.wallet.domain.repositories.wallet_repository import WalletRepository
-from app.wallet.domain.entities.wallet import Wallet, WalletId
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.wallet.domain.interfaces import WalletRepository
+from app.wallet.domain.entities.wallet import Wallet
+from app.wallet.domain.value_objects import WalletId, UserId
+from app.wallet.domain.exceptions import WalletNotFoundError
 from .sqlalchemy_models import WalletSQLModel
-from app.wallet.application.exceptions import WalletNotFoundError
-from app.user.domain.value_objects import UserId
 
 
 class SqlAlchemyWalletRepository(WalletRepository):
@@ -18,31 +18,31 @@ class SqlAlchemyWalletRepository(WalletRepository):
         self,
         wallet_id: WalletId,
         raise_exception: bool = False,
-    ) -> Wallet:
+    ) -> Wallet | None:
         query = select(WalletSQLModel).where(WalletSQLModel.id == wallet_id.value)
 
         result = await self.session.execute(query)
-        wallet_model = result.unique().scalars().one_or_none()
+        wallet_model = result.scalars().one_or_none()
 
         if not wallet_model and raise_exception:
             raise WalletNotFoundError(wallet_id.to_string())
 
-        return WalletSQLModel.to_domain_wallet(wallet_model) if wallet_model else None
+        return wallet_model.to_domain_wallet() if wallet_model else None
 
     async def get_by_user_id(
         self,
         user_id: UserId,
         raise_exception: bool = False,
-    ) -> Wallet:
+    ) -> Wallet | None:
         query = select(WalletSQLModel).where(WalletSQLModel.user_id == user_id.value)
 
         result = await self.session.execute(query)
-        wallet_model = result.unique().scalars().one_or_none()
+        wallet_model = result.scalars().one_or_none()
 
         if not wallet_model and raise_exception:
             raise WalletNotFoundError(user_id.to_string())
 
-        return WalletSQLModel.to_domain_wallet(wallet_model) if wallet_model else None
+        return wallet_model.to_domain_wallet() if wallet_model else None
 
     async def create(self, wallet: Wallet) -> Wallet:
         wallet_model = WalletSQLModel.from_domain(wallet)
@@ -51,7 +51,7 @@ class SqlAlchemyWalletRepository(WalletRepository):
         await self.session.commit()
         await self.session.refresh(wallet_model)
 
-        return WalletSQLModel.to_domain_wallet(wallet_model)
+        return wallet_model.to_domain_wallet()
 
     async def update(self, wallet: Wallet) -> Wallet:
         result = await self.session.execute(
@@ -67,7 +67,7 @@ class SqlAlchemyWalletRepository(WalletRepository):
         await self.session.commit()
         await self.session.refresh(wallet_model)
 
-        return WalletSQLModel.to_domain_wallet(wallet_model)
+        return wallet_model.to_domain_wallet()
 
     async def delete(self, wallet_id: WalletId) -> bool:
         result = await self.session.execute(

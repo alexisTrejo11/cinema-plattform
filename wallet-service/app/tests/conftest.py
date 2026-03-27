@@ -3,7 +3,6 @@ import pytest_asyncio
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from app.config.postgres_config import Base
-from app.user.infrastructure.model import UserSQLModel
 from app.wallet.infrastructure.persistence.sql.sqlalchemy_models import WalletSQLModel
 
 

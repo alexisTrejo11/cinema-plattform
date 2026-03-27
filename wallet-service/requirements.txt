@@ -1,6 +1,7 @@
 # ---- Web -------
 fastapi[standard]
 uvicorn
+aiohttp
 
 # ---- gRPC -------
 protobuf
@@ -34,6 +35,7 @@ slowapi
 
 # ---- Messaging -------
 kafka-python
+httpx
 
 # ---- Logging -------
 colorlog

@@ -3,7 +3,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
 from decimal import Decimal
 from datetime import datetime
-from app.wallet.domain.value_objects import Money, PaymentDetails, Currency
+from app.wallet.domain.value_objects import Money, PaymentDetails
+from app.wallet.domain.enums import Currency
 from app.wallet.domain.entities.wallet import Wallet, WalletTransaction
 
 class WalletOperationRequest(BaseModel):

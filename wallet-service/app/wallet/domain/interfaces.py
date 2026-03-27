@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 from enum import Enum
 from uuid import UUID
 
-from app.wallet.domain.entities import Wallet, WalletTransaction
+from app.wallet.domain.entities import User, Wallet, WalletTransaction
 from app.wallet.domain.value_objects import WalletId, UserId
 from app.wallet.application.queries import (
     TransactionByWalletQuery,
@@ -128,12 +128,8 @@ class UserInternalService(ABC):
     """Abstract service for user internal operations. Will call to user service to get user details."""
 
     @abstractmethod
-    async def get_user_details(self, user_id: UserId) -> User:
-        """Get user details from user service.
-
-        Args:
-            user_id: The UUID of the user to get details for.
-        """
+    async def get_user_details(self, user_id: UserId) -> Optional[User]:
+        """Resolve a user from the local `users` table or upstream user service."""
         raise NotImplementedError
 
 

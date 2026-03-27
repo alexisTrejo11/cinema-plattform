@@ -1,23 +1,22 @@
+import logging
 from contextlib import asynccontextmanager
 from typing import Optional
+
 from fastapi import FastAPI
-import logging
-from app.wallet.presentation.controllers import wallet_controller
-from app.user.presentation import user_admin_controller
-from app.config.app_config import settings
-import asyncio
-from app.config.global_exception_handler import GLOBAL_EXCEPTION_HANDLERS
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+
+from app.config.app_config import settings
+from app.config.global_exception_handler import GLOBAL_EXCEPTION_HANDLERS
 from app.config.logging import setup_logging
-from app.config.queue.rabbit_consumer import RabbitMQConsumer
+from app.config.postgres_config import engine, run_postgres_startup_check
+from app.config.register_service import RegistryMicroservice
+from app.wallet.presentation.controllers import wallet_controller
 from middleware.logging_middleware import LoggingMiddleware
-from app.config.register_server import RegistryMicroservice
 
 logger = logging.getLogger("app")
 limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
-registry_client: Optional[RegistryMicroservice] = None
 
 setup_logging()
 
@@ -25,57 +24,37 @@ setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up Wallet Service...")
+    await run_postgres_startup_check(engine)
 
-    # Registry Microservice registration
-    registry_client = RegistryMicroservice()
-    registered, instance_id = await registry_client.perfom_registry()
+    app.state.registry_client: Optional[RegistryMicroservice] = None
 
-    if registered:
+    if settings.REGISTRY_ENABLED:
+        registry_client = RegistryMicroservice()
+        registered, instance_id = await registry_client.perfom_registry()
+        if registered:
+            logger.info(
+                "Wallet Service registered with instance ID: %s",
+                instance_id,
+            )
+            await registry_client.start_heartbeat_loop()
+            app.state.registry_client = registry_client
+        else:
+            logger.error("Registry registration failed.")
+
+    if settings.KAFKA_ENABLED:
         logger.info(
-            f"Wallet Service successfully registered with instance ID: {instance_id}"
+            "Kafka publishing enabled (bootstrap=%s, topic=%s)",
+            settings.KAFKA_BOOTSTRAP_SERVERS,
+            settings.KAFKA_WALLET_EVENTS_TOPIC,
         )
-        await registry_client.start_heartbeat_loop()
-    else:
-        logger.error("Failed to register Wallet Service. Heartbeats will not be sent.")
 
-    # Initialize RabbitMQ Consumer
-    logger.info(f"Connecting to RabbitMQ....")
-    rabbitmq_consumer = RabbitMQConsumer(
-        settings.RABBITMQ_URL,
-        settings.USER_EVENTS_EXCHANGE,
-        settings.CONSUMER_QUEUE_NAME,
-    )
-    await rabbitmq_consumer.connect()
-    # app.state.rabbitmq_consumer = rabbitmq_consumer
-    consumer_task = asyncio.create_task(rabbitmq_consumer.start_consuming())
-    logger.info("RabbitMQ consumer background task started.")
-
-    # Start Server
     yield
 
-    # Shutdown process
     logger.info("Shutting down Wallet Service...")
-    if registry_client:
-        registry_client.stop_heartbeat_loop()
-        logger.info("Heartbeat loop stopped.")
-
-    logger.info(
-        "Application shutdown: Closing RabbitMQ consumer and database connections..."
-    )
-
-    # if app.state.consumer_task:
-    if consumer_task:
-        consumer_task.cancel()
-        try:
-            await asyncio.wait_for(consumer_task, timeout=5.0)
-        except asyncio.CancelledError:
-            logger.info("RabbitMQ consumer task cancelled successfully.")
-        except Exception as e:
-            logger.error(f"Error during consumer task cancellation: {e}")
-
-    if rabbitmq_consumer:
-        await rabbitmq_consumer.close()
-        logger.info("RabbitMQ connection closed.")
+    rc = getattr(app.state, "registry_client", None)
+    if rc is not None and settings.REGISTRY_ENABLED:
+        rc.stop_heartbeat_loop()
+        await rc.aclose()
 
 
 app = FastAPI(
@@ -93,7 +72,7 @@ app.add_middleware(SlowAPIMiddleware)
 
 @app.get("/")
 async def read_root():
-    return {"message": "Wallet Service is running and listening for user events!"}
+    return {"message": "Wallet Service is running."}
 
 
 @app.get("/health")
@@ -102,4 +81,14 @@ async def read_health():
 
 
 app.include_router(wallet_controller.router)
-app.include_router(user_admin_controller.router)
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "main:app",
+        host=settings.API_HOST,
+        port=settings.API_PORT,
+        reload=settings.DEBUG_MODE,
+    )

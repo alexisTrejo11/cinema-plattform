@@ -92,9 +92,7 @@ class SqlAlchemyWalletTransactionRepository(WalletTransactionRepository):
 
         result = await self.session.execute(stmt)
         sql_transactions = result.scalars().all()
-        return [
-            WalletTransactionSQLModel.to_domain_transaction(t) for t in sql_transactions
-        ]
+        return [t.to_domain() for t in sql_transactions]
 
     async def list_by_wallet_id(self, query: TransactionByWalletQuery):
         stmt = select(WalletTransactionSQLModel).where(
@@ -118,9 +116,7 @@ class SqlAlchemyWalletTransactionRepository(WalletTransactionRepository):
 
         result = await self.session.execute(stmt)
         sql_transactions = result.scalars().all()
-        return [
-            WalletTransactionSQLModel.to_domain_transaction(t) for t in sql_transactions
-        ]
+        return [t.to_domain() for t in sql_transactions]
 
     async def create(self, transaction: WalletTransaction) -> WalletTransaction:
         """
@@ -132,7 +128,7 @@ class SqlAlchemyWalletTransactionRepository(WalletTransactionRepository):
         await self.session.flush()
         await self.session.commit()
 
-        return transaction_sql_model.to_domain_transaction()
+        return transaction_sql_model.to_domain()
 
     async def delete(self, transaction_id: UUID) -> bool:
         """

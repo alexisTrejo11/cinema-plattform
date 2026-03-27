@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 from pydantic import BaseModel
-from app.config.app_config import settings
+from app.config import settings
 import aiohttp
 import asyncio
 
@@ -29,7 +29,7 @@ class RegistryMicroservice:
         self.heartbeat_interval_seconds = 30
         self._heartbeat_task: Optional[asyncio.Task] = None
 
-    async def perfom_registry(self):
+    async def perform_registry(self):
         registration_url = f"{self.registry_base_url}/register-service"
         payload = self.service_data.model_dump()
 

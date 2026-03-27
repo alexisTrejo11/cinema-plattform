@@ -68,7 +68,7 @@ async def get_wallet(
 
 @router.get(
     "/user/{user_id}",
-    response_model=[WalletResponse],
+    response_model=WalletResponse,
     summary=walleyByUserIdDoc["summary"],
     description=walleyByUserIdDoc["description"],
     status_code=status.HTTP_200_OK,
@@ -105,7 +105,7 @@ async def get_user_wallet(
 
 @router.post(
     "/user/{user_id}",
-    response_model=[WalletResponse],
+    response_model=WalletResponse,
     summary="Create a New Wallet for a User",
     description="""
     Creates a new wallet for a specified user ID.
@@ -131,7 +131,7 @@ async def create_wallet(
 
 @router.post(
     "/add-credit",
-    response_model=[WalletBuyResponse],
+    response_model=WalletBuyResponse,
     status_code=status.HTTP_200_OK,
     summary=addCreditDoc["summary"],
     description=addCreditDoc["description"],
@@ -155,7 +155,7 @@ async def recharge_credit(
 @router.post(
     "/pay",
     status_code=status.HTTP_200_OK,
-    response_model=[WalletBuyResponse],
+    response_model=WalletBuyResponse,
     summary=payCartDoc["summary"],
     description=payCartDoc["description"],
     responses=payCartDoc["responses"],

@@ -51,7 +51,6 @@ def _load_metadata() -> MetaData:
     try:
         # These imports have side-effects: they register ORM classes with Base.
         from app.config.postgres_config import Base  # noqa: F401
-        import app.user.infrastructure.model  # noqa: F401
         import app.wallet.infrastructure.persistence.sql.sqlalchemy_models  # noqa: F401
 
         return Base.metadata
@@ -84,7 +83,7 @@ def _get_async_url() -> str:
         try:
             from app.config.app_config import settings
 
-            url = settings.DATABASE_URL
+            url = settings.get_database_url()
         except Exception:
             url = alembic_cfg.get_main_option("sqlalchemy.url", "")
 

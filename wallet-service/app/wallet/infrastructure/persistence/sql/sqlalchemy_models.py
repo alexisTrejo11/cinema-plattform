@@ -10,7 +10,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.config.postgres_config import Base
 
 from app.wallet.domain.enums import Currency, TransactionType
-from app.wallet.domain.value_objects import Money, PaymentDetails, WalletId, UserId
+from app.wallet.domain.value_objects import (
+    Money,
+    PaymentDetails,
+    WalletId,
+    UserId,
+    WalletTransactionId,
+)
 from app.wallet.domain.entities import WalletTransaction, Wallet
 
 
@@ -36,7 +42,7 @@ class WalletTransactionSQLModel(Base):
     payment_method: Mapped[str] = mapped_column(String, nullable=False)
     payment_reference: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime, nullable=False, default=datetime.now()
+        DateTime, nullable=False, default=datetime.now
     )
 
     wallet: Mapped["WalletSQLModel"] = relationship(
@@ -52,25 +58,32 @@ class WalletTransactionSQLModel(Base):
         )
 
     def to_domain(self) -> WalletTransaction:
-        # All Pydantic domain models require keyword arguments
+        ref = self.payment_reference
+        if not ref:
+            raise ValueError("payment_reference is required to map transaction")
+        pid = uuid.UUID(ref) if isinstance(ref, str) else ref
         return WalletTransaction(
-            transaction_id=self.transaction_id,
+            transaction_id=WalletTransactionId(value=self.transaction_id),
             wallet_id=WalletId(value=self.wallet_id),
             amount=Money(amount=self.amount_value, currency=self.amount_currency),
             transaction_type=self.transaction_type,
             payment_details=PaymentDetails(
                 payment_method=self.payment_method,
-                payment_id=uuid.UUID(self.payment_reference),
+                payment_id=pid,
             ),
             timestamp=self.timestamp,
         )
+
+    def to_domain_transaction(self) -> WalletTransaction:
+        return self.to_domain()
 
     @classmethod
     def from_domain(
         cls, domain_transaction: WalletTransaction
     ) -> "WalletTransactionSQLModel":
+        tid = domain_transaction.transaction_id.value
         return cls(
-            transaction_id=domain_transaction.transaction_id,
+            transaction_id=tid,
             wallet_id=domain_transaction.wallet_id.value,
             amount_value=domain_transaction.amount.amount,
             amount_currency=domain_transaction.amount.currency,
@@ -78,7 +91,7 @@ class WalletTransactionSQLModel(Base):
             payment_method=(
                 domain_transaction.payment_details.payment_method
                 if domain_transaction.payment_details
-                else None
+                else ""
             ),
             payment_reference=(
                 str(domain_transaction.payment_details.payment_id)
@@ -120,17 +133,13 @@ class WalletSQLModel(Base):
         )
 
     def to_domain_wallet(self) -> Wallet:
-        # Wallet is a mutable Pydantic model — direct field assignment works (no frozen)
         domain_wallet = Wallet(
             id=WalletId(value=self.id),
             user_id=UserId(self.user_id),
             balance=Money(amount=self.balance_amount, currency=self.balance_currency),
         )
-
-        if "transactions" in self.__dict__:
-            domain_wallet.transactions = [
-                tx.to_domain_transaction() for tx in self.transactions
-            ]
+        if self.transactions:
+            domain_wallet.set_transactions([tx.to_domain() for tx in self.transactions])
         return domain_wallet
 
     @classmethod

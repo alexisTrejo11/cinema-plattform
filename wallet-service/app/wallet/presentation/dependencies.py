@@ -1,9 +1,24 @@
-from app.config.postgres_config import get_db
+from __future__ import annotations
+
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.wallet.domain.repositories.wallet_repository import WalletRepository
-from app.wallet.domain.repositories.transaction_repository import (
+
+from app.config.app_config import settings
+from app.config.postgres_config import get_db
+from app.wallet.application.use_cases.container import (
+    WalletUseCases,
+)  # noqa: F401 — re-export for controllers
+from app.wallet.domain.interfaces import (
+    UserInternalService,
+    WalletEventPublisher,
+    WalletRepository,
     WalletTransactionRepository,
+)
+from app.wallet.infrastructure.message.noop_wallet_event_publisher import (
+    NoOpWalletEventPublisher,
+)
+from app.wallet.infrastructure.message.wallet_producer import (
+    build_wallet_event_producer,
 )
 from app.wallet.infrastructure.persistence.sql.transaction_repository import (
     SqlAlchemyWalletTransactionRepository,
@@ -11,8 +26,6 @@ from app.wallet.infrastructure.persistence.sql.transaction_repository import (
 from app.wallet.infrastructure.persistence.sql.wallet_repository import (
     SqlAlchemyWalletRepository,
 )
-from app.wallet.application.use_cases.container import WalletUseCases
-from app.user.presentation.dependencies import get_user_repository, UserRepository
 
 
 def get_wallet_repository(
@@ -27,11 +40,24 @@ def get_wallet_transaction_repository(
     return SqlAlchemyWalletTransactionRepository(session)
 
 
+def get_wallet_event_publisher() -> WalletEventPublisher:
+    if not settings.KAFKA_ENABLED:
+        return NoOpWalletEventPublisher()
+    return build_wallet_event_producer()
+
+
 def get_wallet_uc(
-    wallet_repo: SqlAlchemyWalletRepository = Depends(get_wallet_repository),
+    wallet_repo: WalletRepository = Depends(get_wallet_repository),
     transaction_repo: WalletTransactionRepository = Depends(
         get_wallet_transaction_repository
     ),
-    user_repo: UserRepository = Depends(get_user_repository),
+    # TODO: Implement user service
+    user_service: UserInternalService = Depends(),
+    event_publisher: WalletEventPublisher = Depends(get_wallet_event_publisher),
 ) -> WalletUseCases:
-    return WalletUseCases(wallet_repo, transaction_repo, user_repo)
+    return WalletUseCases(
+        wallet_repo,
+        transaction_repo,
+        user_service,
+        event_publisher,
+    )

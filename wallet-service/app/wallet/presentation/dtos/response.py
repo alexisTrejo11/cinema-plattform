@@ -101,7 +101,7 @@ class WalletTransactionResponse(BaseModel):
         )
 
         return cls(
-            transaction_id=transaction.transaction_id,
+            transaction_id=transaction.transaction_id.value,
             wallet_id=transaction.wallet_id.value,
             amount=money_dto,
             transaction_type=transaction.transaction_type.value,
