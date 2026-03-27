@@ -49,5 +49,25 @@ class WalletOperationRequest(BaseModel):
             "payment_method": "card"
         }
     }
-    
-    
+
+
+class UserWalletOperationRequest(BaseModel):
+    """Credit or debit body for the authenticated customer; wallet is resolved from the token."""
+
+    amount: Decimal = Field(
+        ...,
+        gt=0,
+        description="Amount for the operation.",
+    )
+    currency: Currency = Field(..., description="Currency of the amount.")
+    payment_id: UUID = Field(
+        ...,
+        description="External payment or idempotency reference.",
+    )
+    payment_method: str = Field(
+        ...,
+        description="Payment rail (e.g. card, bank_transfer).",
+    )
+
+    model_config = ConfigDict(from_attributes=True)
+

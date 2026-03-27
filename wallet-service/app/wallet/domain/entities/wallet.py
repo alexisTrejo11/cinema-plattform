@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
@@ -9,6 +10,8 @@ from ..enums import Currency, TransactionType
 from ..value_objects import Charge, Money, WalletId, UserId
 from .wallet_transaction import WalletTransaction
 from ..validators import WalletDomainValidator
+
+logger = logging.getLogger(__name__)
 
 
 class Wallet(BaseModel):
@@ -88,6 +91,13 @@ class Wallet(BaseModel):
         )
         self._add_transaction(new_transaction)
         self.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        logger.info(
+            "Wallet %s recorded %s amount=%s %s",
+            self.id.value,
+            transaction_type.value,
+            amount.amount,
+            amount.currency.value,
+        )
         return new_transaction
 
     def set_transactions(self, transactions: List[WalletTransaction]) -> None:
@@ -98,6 +108,9 @@ class Wallet(BaseModel):
     # ── Identity ─────────────────────────────────────────────────────────────
     # Wallets are equal if they share the same id, regardless of other fields.
     # Pydantic's default __eq__ would compare all fields, so we override.
+
+    def display_balance(self) -> str:
+        return str(self.balance.amount) + " " + self.balance.currency.value
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Wallet):

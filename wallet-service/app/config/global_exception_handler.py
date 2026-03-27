@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.shared.kernel.exceptions import (
+from app.shared.core.exceptions import (
     ApplicationException,
     AuthorizationException,
     DomainException,

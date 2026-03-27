@@ -1,11 +1,16 @@
+import logging
+from typing import Optional
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import exists
 
 from app.wallet.domain.interfaces import WalletRepository
 from app.wallet.domain.entities.wallet import Wallet
 from app.wallet.domain.value_objects import WalletId, UserId
-from app.wallet.domain.exceptions import WalletNotFoundError
 from .sqlalchemy_models import WalletSQLModel
+
+logger = logging.getLogger("app")
 
 
 class SqlAlchemyWalletRepository(WalletRepository):
@@ -14,35 +19,37 @@ class SqlAlchemyWalletRepository(WalletRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_by_id(
+    async def find_by_id(
         self,
         wallet_id: WalletId,
-        raise_exception: bool = False,
-    ) -> Wallet | None:
-        query = select(WalletSQLModel).where(WalletSQLModel.id == wallet_id.value)
+        include_deleted: bool = False,
+    ) -> Optional[Wallet]:
+        query = select(WalletSQLModel).where(
+            WalletSQLModel.id == wallet_id.value,
+            WalletSQLModel.deleted_at is None if not include_deleted else True,
+        )
 
         result = await self.session.execute(query)
-        wallet_model = result.scalars().one_or_none()
+        wallet_model = result.scalars().first()
 
-        if not wallet_model and raise_exception:
-            raise WalletNotFoundError(wallet_id.to_string())
+        return wallet_model.to_domain() if wallet_model else None
 
-        return wallet_model.to_domain_wallet() if wallet_model else None
-
-    async def get_by_user_id(
+    async def find_by_user_id(
         self,
         user_id: UserId,
-        raise_exception: bool = False,
-    ) -> Wallet | None:
-        query = select(WalletSQLModel).where(WalletSQLModel.user_id == user_id.value)
+        include_deleted: bool = False,
+    ) -> Optional[Wallet]:
+
+        logger.info(f"Finding wallet for user {user_id.value}")
+        query = select(WalletSQLModel).where(
+            WalletSQLModel.user_id == user_id.value,
+            WalletSQLModel.deleted_at is None if include_deleted else True,
+        )
 
         result = await self.session.execute(query)
         wallet_model = result.scalars().one_or_none()
 
-        if not wallet_model and raise_exception:
-            raise WalletNotFoundError(user_id.to_string())
-
-        return wallet_model.to_domain_wallet() if wallet_model else None
+        return wallet_model.to_domain() if wallet_model else None
 
     async def create(self, wallet: Wallet) -> Wallet:
         wallet_model = WalletSQLModel.from_domain(wallet)
@@ -51,7 +58,7 @@ class SqlAlchemyWalletRepository(WalletRepository):
         await self.session.commit()
         await self.session.refresh(wallet_model)
 
-        return wallet_model.to_domain_wallet()
+        return wallet_model.to_domain()
 
     async def update(self, wallet: Wallet) -> Wallet:
         result = await self.session.execute(
@@ -67,7 +74,7 @@ class SqlAlchemyWalletRepository(WalletRepository):
         await self.session.commit()
         await self.session.refresh(wallet_model)
 
-        return wallet_model.to_domain_wallet()
+        return wallet_model.to_domain()
 
     async def delete(self, wallet_id: WalletId) -> bool:
         result = await self.session.execute(
@@ -80,3 +87,8 @@ class SqlAlchemyWalletRepository(WalletRepository):
             await self.session.commit()
             return True
         return False
+
+    async def exists_by_user_id(self, user_id: UserId) -> bool:
+        query = select(exists().where(WalletSQLModel.user_id == user_id.value))
+        result = await self.session.execute(query)
+        return result.scalar() or False

@@ -1,16 +1,16 @@
+from typing import List
+
 from app.wallet.application.queries import SearchTransactionQuery
-from app.wallet.domain.interfaces import WalletTransactionRepository as TransactioRepository
-from app.wallet.presentation.dtos.response import (
-    WalletTransactionResponse as TransactionResponse,
-)
+from app.wallet.domain.entities import WalletTransaction
+from app.wallet.domain.interfaces import WalletTransactionRepository as TransactionRepository
 
 
 class SearchTransactionUseCase:
-    def __init__(self, repository: TransactioRepository) -> None:
+    def __init__(self, repository: TransactionRepository) -> None:
         self.repository = repository
 
     # TODO: Return page metadata
-    async def execute(self, query: SearchTransactionQuery):
-        transactions = await self.repository.search(query)
-
-        return [TransactionResponse.from_domain(t) for t in transactions]
+    async def execute(
+        self, query: SearchTransactionQuery
+    ) -> List[WalletTransaction]:
+        return await self.repository.search(query)

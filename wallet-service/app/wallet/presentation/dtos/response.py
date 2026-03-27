@@ -3,27 +3,9 @@ from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
+from app.wallet.application.results import WalletSummaryResult
 from app.wallet.domain.value_objects import Money, PaymentDetails
 from app.wallet.domain.entities.wallet import Wallet, WalletTransaction
-
-
-class MoneyResponse(BaseModel):
-    amount: Decimal = Field(
-        ...,
-        description="The amount of the transaction.",
-        json_schema_extra={"example": 100.50},
-    )
-    currency: str = Field(
-        ...,
-        description="The currency of the transaction (e.g., USD, MXN).",
-        json_schema_extra={"example": "USD"},
-    )
-
-    model_config = ConfigDict(from_attributes=True)
-
-    @classmethod
-    def from_domain(cls, money: "Money") -> "MoneyResponse":
-        return cls(amount=money.amount, currency=money.currency.value)
 
 
 class PaymentDetailsResponse(BaseModel):
@@ -59,7 +41,7 @@ class WalletTransactionResponse(BaseModel):
         description="The identifier of the associated wallet.",
         json_schema_extra={"example": "b1c2d3e4-f5a6-7890-1234-567890abcdef"},
     )
-    amount: MoneyResponse = Field(
+    amount: str = Field(
         ...,
         description="The amount and currency of the transaction.",
         json_schema_extra={"example": {"amount": 50.00, "currency": "MXN"}},
@@ -88,12 +70,7 @@ class WalletTransactionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     @classmethod
-    def from_domain(
-        cls, transaction: "WalletTransaction"
-    ) -> "WalletTransactionResponse":
-
-        money_dto = MoneyResponse.from_domain(transaction.amount)
-
+    def generate(cls, transaction: "WalletTransaction") -> "WalletTransactionResponse":
         payment_details_dto = (
             PaymentDetailsResponse.from_domain(transaction.payment_details)
             if transaction.payment_details
@@ -103,10 +80,49 @@ class WalletTransactionResponse(BaseModel):
         return cls(
             transaction_id=transaction.transaction_id.value,
             wallet_id=transaction.wallet_id.value,
-            amount=money_dto,
+            amount=transaction.amount.display(),
             transaction_type=transaction.transaction_type.value,
             payment_details=payment_details_dto,
             timestamp=transaction.timestamp,
+        )
+
+    @classmethod
+    def from_domain(cls, transaction: "WalletTransaction") -> "WalletTransactionResponse":
+        return cls.generate(transaction)
+
+
+class TransactionTypeSummaryRow(BaseModel):
+    transaction_type: str
+    count: int
+    total_amount: str
+
+
+class WalletSummaryResponse(BaseModel):
+    wallet_id: UUID
+    user_id: UUID
+    balance: str
+    currency: str
+    total_transactions: int
+    by_transaction_type: List[TransactionTypeSummaryRow]
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_result(cls, result: WalletSummaryResult) -> "WalletSummaryResponse":
+        return cls(
+            wallet_id=result.wallet_id,
+            user_id=result.user_id,
+            balance=result.balance_display,
+            currency=result.currency,
+            total_transactions=result.total_transactions,
+            by_transaction_type=[
+                TransactionTypeSummaryRow(
+                    transaction_type=row.transaction_type.value,
+                    count=row.count,
+                    total_amount=f"{row.total_amount} {result.currency}",
+                )
+                for row in result.by_transaction_type
+            ],
         )
 
 
@@ -121,11 +137,12 @@ class WalletResponse(BaseModel):
         description="The ID of the user to whom this wallet belongs.",
         json_schema_extra={"example": "1a2b3c4d-5e6f-7890-1234-567890abcdef"},
     )
-    balance: MoneyResponse = Field(
+    balance: str = Field(
         ...,
         description="The current balance of the wallet, including amount and currency.",
-        json_schema_extra={"example": {"amount": 1250.75, "currency": "USD"}},
+        json_schema_extra={"example": "1250.75 USD"},
     )
+
     transactions: List[WalletTransactionResponse] = Field(
         ...,
         description="A list of recent transactions associated with this wallet. Can be empty.",
@@ -161,13 +178,11 @@ class WalletResponse(BaseModel):
             id=wallet.id.value,
             user_id=wallet.user_id.value,
             transactions=transactions,
-            balance=MoneyResponse(
-                amount=wallet.balance.amount, currency=wallet.balance.currency.value
-            ),
+            balance=wallet.display_balance(),
         )
 
 
-class BuyCreditResponse(BaseModel):
+class BuyCreditDetails(BaseModel):
     """
     Response DTO for buying credit and adding it to a wallet.
     Provides an overview of the updated wallet balance and the specific credit transaction.
@@ -184,7 +199,7 @@ class BuyCreditResponse(BaseModel):
         json_schema_extra={"example": "1a2b3c4d-5e6f-7890-1234-567890abcdef"},
     )
     balance: Decimal = (
-        Field(  # Note: This is Decimal, while WalletResponse.balance is MoneyResponse. Be consistent.
+        Field(  # Note: This is Decimal, while WalletResponse.balance is str. Be consistent.
             ...,
             description="The new balance of the wallet after the credit purchase.",
             json_schema_extra={"example": 1500.00},
@@ -215,12 +230,12 @@ class BuyCreditResponse(BaseModel):
         return cls(
             id=wallet.id.value,
             user_id=wallet.user_id.value,
-            balance=wallet.balance.amount,  # Assuming wallet.balance.amount is Decimal
+            balance=wallet.balance.amount + " " + transaction.amount.currency,
             transaction=WalletTransactionResponse.from_domain(transaction),
         )
 
 
-class WalletBuyResponse(BaseModel):
+class WalletBuyDetails(BaseModel):
     """
     Response DTO for a purchase operation from a wallet.
     Provides an overview of the updated wallet balance and the specific debit transaction.
@@ -237,7 +252,7 @@ class WalletBuyResponse(BaseModel):
         json_schema_extra={"example": "1a2b3c4d-5e6f-7890-1234-567890abcdef"},
     )
     balance: Decimal = (
-        Field(  # Note: This is Decimal, while WalletResponse.balance is MoneyResponse. Be consistent.
+        Field(  # Note: This is Decimal, while WalletResponse.balance is str. Be consistent.
             ...,
             description="The new balance of the wallet after the purchase.",
             json_schema_extra={"example": 900.00},
@@ -264,11 +279,11 @@ class WalletBuyResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     @classmethod
-    def from_domain(cls, wallet: Wallet, transaction: WalletTransaction):
+    def generate(cls, wallet: Wallet, transaction: WalletTransaction):
         return cls(
             id=wallet.id.value,
             user_id=wallet.user_id.value,
-            balance=wallet.balance.amount,  # Assuming wallet.balance.amount is Decimal
+            balance=wallet.balance.amount + " " + wallet.balance.currency.value,
             transaction=WalletTransactionResponse.from_domain(transaction),
         )
 

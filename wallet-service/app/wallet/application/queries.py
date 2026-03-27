@@ -25,39 +25,21 @@ class TransactionByWalletQuery(QueryBase):
 class GetWalletByIdQuery(TransactionByWalletQuery):
     include_transactions: bool = False
 
-    @staticmethod
-    def from_request(
-        wallet_uuid: UUID,
-        include_transactions: bool,
-        limit: int,
-        offset: int,
-    ) -> "GetWalletByIdQuery":
-        # WalletId is now a Pydantic model — must use keyword argument
-        return GetWalletByIdQuery(
-            walletId=WalletId(value=wallet_uuid),
-            include_transactions=include_transactions,
-            limit=limit,
-            offset=offset,
-        )
-
 
 class GetWalletByUserIdQuery(QueryBase):
     userId: UserId
     include_transactions: bool = False
 
-    @staticmethod
-    def from_request(
-        user_uuid: UUID,
-        include_transactions: bool,
-        limit: int,
-        offset: int,
-    ) -> "GetWalletByUserIdQuery":
-        return GetWalletByUserIdQuery(
-            userId=UserId(user_uuid),
-            include_transactions=include_transactions,
-            limit=limit,
-            offset=offset,
-        )
+
+class WalletSummaryQuery(BaseModel):
+    """Resolve a wallet by user or wallet id, then aggregate transactions (optional date window)."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    userId: Optional[UserId] = None
+    walletId: Optional[WalletId] = None
+    created_after: Optional[datetime] = None
+    created_before: Optional[datetime] = None
 
 
 class SearchTransactionQuery(QueryBase):

@@ -1,4 +1,4 @@
-from app.shared.kernel.exceptions import (
+from app.shared.core.exceptions import (
     ApplicationException,
     AuthorizationException,
     DomainException,

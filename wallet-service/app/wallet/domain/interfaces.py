@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from datetime import datetime
+from typing import List, Optional, Tuple
 from enum import Enum
 from uuid import UUID
 
 from app.wallet.domain.entities import User, Wallet, WalletTransaction
+from app.wallet.domain.summary import TransactionTypeAggregateRow
 from app.wallet.domain.value_objects import WalletId, UserId
 from app.wallet.application.queries import (
     TransactionByWalletQuery,
@@ -15,10 +17,10 @@ class WalletRepository(ABC):
     """Abstract repository for wallet data access."""
 
     @abstractmethod
-    async def get_by_id(
+    async def find_by_id(
         self,
         wallet_id: WalletId,
-        raise_exception: bool = False,
+        inclue_deleted: bool = False,
     ) -> Wallet:
         """Get all wallets for a specific user asynchronously.
 
@@ -28,16 +30,16 @@ class WalletRepository(ABC):
         Returns:
             List of Wallet objects
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
-    async def get_by_user_id(
+    async def find_by_user_id(
         self,
         user_id: UserId,
-        raise_exception: bool = False,
+        include_deleted: bool = False,
     ) -> Wallet:
         """Retrieves all wallets for a given user."""
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     async def create(self, wallet: Wallet) -> Wallet:
@@ -49,20 +51,16 @@ class WalletRepository(ABC):
         Returns:
             The created Wallet
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     async def update(self, wallet: Wallet) -> Wallet:
-        """
-        Update an existing wallet asynchronously.
+        """Update a wallet asynchronously.
 
-            Args:
-                wallet: The Wallet object with updated values
-
-            Returns:
-                The updated Wallet if found, None otherwise
+        Args:
+            wallet: The Wallet object to update
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     async def delete(self, wallet_id: WalletId) -> bool:
@@ -74,7 +72,20 @@ class WalletRepository(ABC):
         Returns:
             True if deletion was successful, False otherwise
         """
-        raise NotImplementedError
+        pass
+
+    @abstractmethod
+    async def exists_by_user_id(self, user_id: UserId) -> bool:
+        """
+        Checks if a wallet exists for a given user ID.
+
+        Args:
+            user_id: The UUID of the user to check
+
+        Returns:
+            True if a wallet exists for the user, False otherwise
+        """
+        pass
 
 
 class WalletTransactionRepository(ABC):
@@ -89,13 +100,24 @@ class WalletTransactionRepository(ABC):
                       pagination, and sorting parameters.
         :return: A list of Transaction domain objects matching the criteria.
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
-    async def list_by_wallet_id(
+    async def find_by_wallet_id(
         self, query: TransactionByWalletQuery
     ) -> List[WalletTransaction]:
-        raise NotImplementedError
+        pass
+
+    @abstractmethod
+    async def aggregate_by_wallet_id(
+        self,
+        wallet_id: WalletId,
+        *,
+        created_after: Optional[datetime] = None,
+        created_before: Optional[datetime] = None,
+    ) -> Tuple[int, List[TransactionTypeAggregateRow]]:
+        """Total transaction count and per-type counts/sums for a wallet (optional date window)."""
+        pass
 
     @abstractmethod
     async def create(self, transaction: WalletTransaction) -> WalletTransaction:
@@ -108,7 +130,7 @@ class WalletTransactionRepository(ABC):
         Returns:
             The created WalletTransaction domain object, possibly with updated properties (e.g., ID if not set).
         """
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     async def delete(self, transaction_id: UUID) -> bool:
@@ -121,7 +143,7 @@ class WalletTransactionRepository(ABC):
         Returns:
             True if the transaction was deleted successfully, False otherwise.
         """
-        raise NotImplementedError
+        pass
 
 
 class UserInternalService(ABC):
@@ -130,7 +152,7 @@ class UserInternalService(ABC):
     @abstractmethod
     async def get_user_details(self, user_id: UserId) -> Optional[User]:
         """Resolve a user from the local `users` table or upstream user service."""
-        raise NotImplementedError
+        pass
 
 
 class TransactionEvents(Enum):

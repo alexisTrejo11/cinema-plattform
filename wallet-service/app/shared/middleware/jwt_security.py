@@ -6,7 +6,7 @@ from fastapi.responses import Response
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
 from app.config.app_config import settings
-from app.shared.kernel.jwt_security import (
+from app.shared.core.jwt_security import (
     _unauthorized,
     decode_jwt_token,
     AuthUserContext,

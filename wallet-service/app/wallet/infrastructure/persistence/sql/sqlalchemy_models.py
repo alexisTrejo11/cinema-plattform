@@ -5,6 +5,7 @@ from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String, DECIMAL
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.config.postgres_config import Base
@@ -48,6 +49,14 @@ class WalletTransactionSQLModel(Base):
     wallet: Mapped["WalletSQLModel"] = relationship(
         "WalletSQLModel", back_populates="transactions"
     )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.now
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     def __repr__(self) -> str:
         return (
@@ -126,20 +135,33 @@ class WalletSQLModel(Base):
         cascade="all, delete-orphan",
     )
 
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.now
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
     def __repr__(self) -> str:
         return (
             f"<WalletSQLModel(id={self.id}, user_id={self.user_id}, "
             f"balance={self.balance_amount} {self.balance_currency.value})>"
         )
 
-    def to_domain_wallet(self) -> Wallet:
+    def to_domain(self) -> Wallet:
         domain_wallet = Wallet(
             id=WalletId(value=self.id),
-            user_id=UserId(self.user_id),
+            user_id=UserId(value=self.user_id),
             balance=Money(amount=self.balance_amount, currency=self.balance_currency),
         )
-        if self.transactions:
-            domain_wallet.set_transactions([tx.to_domain() for tx in self.transactions])
+        # Avoid async lazy-load while mapping inside sync code paths.
+        # Transactions are attached only when the relationship was preloaded.
+        state = inspect(self)
+        if "transactions" not in state.unloaded:
+            tx_models = self.transactions or []
+            if tx_models:
+                domain_wallet.set_transactions([tx.to_domain() for tx in tx_models])
         return domain_wallet
 
     @classmethod

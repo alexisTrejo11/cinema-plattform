@@ -1,29 +1,23 @@
-from typing import Optional
-import logging
 from uuid import UUID
-from fastapi import APIRouter, Depends, Query, status
+
+from fastapi import APIRouter, Depends, status
 
 from app.shared.auth import get_current_user, AuthUserContext
 from ..docs.walley_docs import *
-from app.wallet.application.commands import (
-    PayWithWalletCommand,
-    AddCreditCommand,
-    CreateWalletCommand,
-)
-from app.wallet.application.queries import (
-    GetWalletByIdQuery,
-    GetWalletByUserIdQuery,
-)
-
-from ..dtos.response import WalletResponse, WalletBuyResponse
+from app.wallet.application.commands import CreateWalletCommand
+from ..dtos.response import BuyCreditDetails, WalletResponse, WalletBuyDetails
 from ..dtos.request import WalletOperationRequest
+from ..dtos.query_params import WalletPagedQueryParams
 from ..dependencies import get_wallet_uc, WalletUseCases
+from ..mappers import (
+    map_wallet_operation_to_add_credit_command,
+    map_wallet_operation_to_pay_command,
+)
 from app.shared.documentation import (
     common_wallet_error_responses as common_error_responses,
 )
 
-logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v2/wallets", tags=["Wallets"])
+router = APIRouter(prefix="/api/v2/wallets", tags=["Wallets Staff Management"])
 
 
 @router.get(
@@ -36,34 +30,17 @@ router = APIRouter(prefix="/api/v2/wallets", tags=["Wallets"])
 )
 async def get_wallet(
     wallet_id: UUID,
-    include_transactions: bool = Query(
-        default=False,
-        description="If true, includes the latest transactions for the wallet. Default is false.",
-    ),
-    offset: Optional[int] = Query(
-        default=0,
-        ge=0,
-        description="Offset for paginating transactions, used with `include_transactions=true`.",
-    ),
-    limit: Optional[int] = Query(
-        default=10,
-        gt=0,
-        le=100,
-        description="Limit for the number of transactions to return, used with `include_transactions=true`.",
-    ),
+    params: WalletPagedQueryParams = Depends(),
     user: AuthUserContext = Depends(get_current_user),
     wallet_use_cases: WalletUseCases = Depends(get_wallet_uc),
 ):
     """
     Retrieves a wallet by its ID.
     """
-    query = GetWalletByIdQuery.from_request(
-        wallet_id, include_transactions, limit, offset
-    )
+    query = params.to_get_wallet_by_id_query(wallet_id)
 
-    wallet_response = await wallet_use_cases.get_wallet_by_id(query)
-
-    return wallet_response
+    wallet = await wallet_use_cases.get_wallet_by_id(query)
+    return WalletResponse.from_domain(wallet)
 
 
 @router.get(
@@ -76,37 +53,22 @@ async def get_wallet(
 )
 async def get_user_wallet(
     user_id: UUID,
-    include_transactions: bool = Query(
-        default=False,
-        description="If true, includes the latest transactions for the wallet. Default is false.",
-    ),
-    offset: Optional[int] = Query(
-        default=0,
-        ge=0,
-        description="Offset for paginating transactions, used with `include_transactions=true`.",
-    ),
-    limit: Optional[int] = Query(
-        default=10,
-        gt=0,
-        le=100,
-        description="Limit for the number of transactions to return, used with `include_transactions=true`.",
-    ),
-    user: AuthUserContext = Depends(get_current_user),
+    params: WalletPagedQueryParams = Depends(),
     wallet_use_cases: WalletUseCases = Depends(get_wallet_uc),
+    user: AuthUserContext = Depends(get_current_user),
 ):
     """
     Retrieves a wallet by its associated user ID.
     """
-    query = GetWalletByUserIdQuery.from_request(
-        user_id, include_transactions, limit, offset
-    )
-    return await wallet_use_cases.get_wallets_by_user_id(query)
+    query = params.to_get_wallet_by_user_id_query(user_id)
+    wallet = await wallet_use_cases.get_wallets_by_user_id(query)
+    return WalletResponse.from_domain(wallet)
 
 
 @router.post(
     "/user/{user_id}",
     response_model=WalletResponse,
-    summary="Create a New Wallet for a User",
+    summary="Create a New Wallet for a User manually. This proccess is doing by a queue worker",
     description="""
     Creates a new wallet for a specified user ID.
 
@@ -126,12 +88,13 @@ async def create_wallet(
     Creates a new wallet for a user.
     """
     command = CreateWalletCommand.from_uuid(user_id)
-    return await wallet_use_cases.create_wallet(command)
+    wallet = await wallet_use_cases.create_wallet(command)
+    return WalletResponse.from_domain(wallet)
 
 
 @router.post(
     "/add-credit",
-    response_model=WalletBuyResponse,
+    response_model=BuyCreditDetails,
     status_code=status.HTTP_200_OK,
     summary=addCreditDoc["summary"],
     description=addCreditDoc["description"],
@@ -144,18 +107,18 @@ async def recharge_credit(
 ):
     """
     Adds credit to a wallet based on the provided operation details.
+    Acts an orchestrator for the payment process.
     """
 
-    command = AddCreditCommand.from_request(request_dto)
-    operation_response = await wallet_use_cases.add_credit(command)
-
-    return operation_response
+    command = map_wallet_operation_to_add_credit_command(request_dto)
+    outcome = await wallet_use_cases.add_credit(command)
+    return BuyCreditDetails.from_domain(outcome.wallet, outcome.transaction)
 
 
 @router.post(
     "/pay",
     status_code=status.HTTP_200_OK,
-    response_model=WalletBuyResponse,
+    response_model=WalletBuyDetails,
     summary=payCartDoc["summary"],
     description=payCartDoc["description"],
     responses=payCartDoc["responses"],
@@ -168,6 +131,6 @@ async def pay(
     """
     Makes a payment from a wallet.
     """
-    command = PayWithWalletCommand.from_request(request_dto)
-    pay_response = await wallet_use_cases.pay(command)
-    return pay_response
+    command = map_wallet_operation_to_pay_command(request_dto)
+    outcome = await wallet_use_cases.pay(command)
+    return WalletBuyDetails.generate(outcome.wallet, outcome.transaction)

@@ -12,7 +12,11 @@ from app.config.global_exception_handler import GLOBAL_EXCEPTION_HANDLERS
 from app.config.logging import setup_logging
 from app.config.postgres_config import engine, run_postgres_startup_check
 from app.config.register_service import RegistryMicroservice
-from app.wallet.presentation.controllers import wallet_controller
+from app.wallet.presentation.controllers import (
+    manager_wallet_controller,
+    user_wallet_controller,
+    wallet_controller,
+)
 from middleware.logging_middleware import LoggingMiddleware
 
 logger = logging.getLogger("app")
@@ -81,6 +85,8 @@ async def read_health():
 
 
 app.include_router(wallet_controller.router)
+app.include_router(user_wallet_controller.router)
+app.include_router(manager_wallet_controller.router)
 
 
 if __name__ == "__main__":

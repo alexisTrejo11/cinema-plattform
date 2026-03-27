@@ -33,19 +33,28 @@ depends_on: Union[str, Sequence[str], None] = None
 # referenced inside op.create_table(); we create them explicitly with op.execute().
 
 user_role_enum = postgresql.ENUM(
-    "ADMIN", "MANAGER", "EMPLOYEE", "CUSTOMER",
+    "ADMIN",
+    "MANAGER",
+    "EMPLOYEE",
+    "CUSTOMER",
     name="user_role_enum",
     create_type=False,
 )
 
 currency_enum = postgresql.ENUM(
-    "MXN", "USD", "EUR",
+    "MXN",
+    "USD",
+    "EUR",
     name="currency_enum",
     create_type=False,
 )
 
 transaction_type_enum = postgresql.ENUM(
-    "add_credit", "buy_product", "refund", "transfer_in", "transfer_out",
+    "add_credit",
+    "buy_product",
+    "refund",
+    "transfer_in",
+    "transfer_out",
     name="transaction_type_enum",
     create_type=False,
 )
@@ -54,6 +63,7 @@ transaction_type_enum = postgresql.ENUM(
 # ─────────────────────────────────────────────────────────────────────────────
 # UPGRADE
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def upgrade() -> None:
     # ── 1. Custom ENUM types ─────────────────────────────────────────────────
@@ -106,7 +116,9 @@ def upgrade() -> None:
             postgresql.ARRAY(user_role_enum),
             nullable=False,
         ),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(),
@@ -118,14 +130,17 @@ def upgrade() -> None:
         sa.Column("deleted_at", sa.DateTime(), nullable=True),
     )
 
-    op.create_index("idx_users_email",           "users", ["email"],      unique=True)
-    op.create_index("idx_users_is_active",        "users", ["is_active"])
+    op.create_index("idx_users_email", "users", ["email"], unique=True)
+    op.create_index("idx_users_is_active", "users", ["is_active"])
     op.create_index(
-        "idx_users_roles", "users", ["roles"],
+        "idx_users_roles",
+        "users",
+        ["roles"],
         postgresql_using="gin",
     )
     op.create_index(
-        "idx_users_active_created_at", "users",
+        "idx_users_active_created_at",
+        "users",
         ["is_active", sa.text("created_at DESC")],
     )
     op.create_index("idx_users_deleted_at", "users", ["deleted_at"])
@@ -173,6 +188,7 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("(NOW() AT TIME ZONE 'UTC')"),
         ),
+        sa.Column("deleted_at", sa.DateTime(), nullable=True),
     )
 
     op.create_index("idx_cinema_wallets_user_id", "cinema_wallets", ["user_id"])
@@ -193,10 +209,10 @@ def upgrade() -> None:
             nullable=False,
             # index created explicitly below as idx_wallet_transactions_wallet_id
         ),
-        sa.Column("amount_value",    sa.Numeric(10, 2), nullable=False),
-        sa.Column("amount_currency", currency_enum,     nullable=False),
+        sa.Column("amount_value", sa.Numeric(10, 2), nullable=False),
+        sa.Column("amount_currency", currency_enum, nullable=False),
         sa.Column("transaction_type", transaction_type_enum, nullable=False),
-        sa.Column("payment_method",   sa.String(255),  nullable=False),
+        sa.Column("payment_method", sa.String(255), nullable=False),
         sa.Column("payment_reference", sa.String(255), nullable=True),
         sa.Column(
             "timestamp",
@@ -208,29 +224,35 @@ def upgrade() -> None:
 
     op.create_index(
         "idx_wallet_transactions_wallet_id",
-        "wallet_transactions", ["wallet_id"],
+        "wallet_transactions",
+        ["wallet_id"],
     )
     op.create_index(
         "idx_wallet_transactions_type",
-        "wallet_transactions", ["transaction_type"],
+        "wallet_transactions",
+        ["transaction_type"],
     )
     op.create_index(
         "idx_wallet_transactions_timestamp",
-        "wallet_transactions", [sa.text("timestamp DESC")],
+        "wallet_transactions",
+        [sa.text("timestamp DESC")],
     )
     op.create_index(
         "idx_wallet_transactions_wallet_id_timestamp",
-        "wallet_transactions", ["wallet_id", sa.text("timestamp DESC")],
+        "wallet_transactions",
+        ["wallet_id", sa.text("timestamp DESC")],
     )
     op.create_index(
         "idx_wallet_transactions_currency",
-        "wallet_transactions", ["amount_currency"],
+        "wallet_transactions",
+        ["amount_currency"],
     )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DOWNGRADE  (full rollback — drops tables then types in dependency order)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def downgrade() -> None:
     # ── 1. Drop tables (child → parent to respect FK constraints) ────────────

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from app.shared.base_exceptions import ConflictException, NotFoundException
+from app.shared.core.exceptions import DomainException
 
-from app.shared.kernel.exceptions import DomainException
+if TYPE_CHECKING:
+    from app.wallet.domain.value_objects import WalletId, UserId
 
 
 class WalletError(DomainException):
@@ -50,10 +52,19 @@ class WalletNotFoundError(NotFoundException):
     def __init__(self, entity_id: Any):
         super().__init__("Wallet", entity_id)
 
+    def __init__(self, wallet_id: WalletId):
+        super().__init__("Wallet", wallet_id.value, "wallet_id")
+
+    def __init__(self, user_id: UserId):
+        super().__init__("Wallet", user_id.value, "user_id")
+
 
 class UserNotFoundError(NotFoundException):
     def __init__(self, entity_id: Any):
         super().__init__("User", entity_id)
+
+    def __init__(self, user_id: UserId):
+        super().__init__("User", user_id.value, "user_id")
 
 
 class UserWalletConflict(ConflictException):

@@ -6,7 +6,7 @@ from uuid import UUID
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, computed_field
 
 from app.config.app_config import settings
 
@@ -21,6 +21,20 @@ class AuthUserContext(BaseModel):
     sub: UUID
     email: str | None = None
     roles: List[str] = []
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def id(self) -> UUID:
+        """Alias for `sub` (resource owner / user id)."""
+        return self.sub
+
+
+# Roles that may access staff/management wallet endpoints (lowercase for comparison).
+STAFF_ROLE_NAMES = frozenset({"admin", "manager", "employee"})
+
+
+def is_staff_user(user: AuthUserContext) -> bool:
+    return any(r.strip().lower() in STAFF_ROLE_NAMES for r in user.roles)
 
 
 def _decode_token(token: str) -> dict:
@@ -72,3 +86,14 @@ async def get_current_user(
         email=payload.get("email"),
         roles=[str(r) for r in roles],
     )
+
+
+async def require_staff_user(
+    user: AuthUserContext = Depends(get_current_user),
+) -> AuthUserContext:
+    if not is_staff_user(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This action requires a staff role (admin, manager, or employee).",
+        )
+    return user
