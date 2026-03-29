@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from app.wallet.application.use_cases.wallet_command_use_cases import (
     AddCreditUseCase,
     InitWalletForUserUseCase,
@@ -8,7 +6,7 @@ from app.wallet.application.use_cases.wallet_command_use_cases import (
 from app.wallet.application.use_cases.wallet_query_use_cases import (
     GetWalletByIdUseCase,
     GetWalletsByUserIdUseCase,
-    ListWalletTransactionsUseCase,
+    GetWalletTransactionsUseCase,
 )
 from app.wallet.application.use_cases.wallet_summary_use_cases import (
     GetWalletSummaryUseCase,
@@ -44,7 +42,7 @@ class WalletUseCases:
         self._get_wallets_by_user_id = GetWalletsByUserIdUseCase(
             wallet_repo, transaction_repository
         )
-        self._list_wallet_transactions = ListWalletTransactionsUseCase(
+        self._list_wallet_transactions = GetWalletTransactionsUseCase(
             transaction_repository
         )
         self._get_wallet_summary = GetWalletSummaryUseCase(

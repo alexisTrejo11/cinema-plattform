@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from typing import Any, TYPE_CHECKING
 
-from app.shared.base_exceptions import ConflictException, NotFoundException
+from app.shared.base_exceptions import (
+    ConflictException,
+    NotFoundException,
+    ValidationException,
+)
 from app.shared.core.exceptions import DomainException
 
 if TYPE_CHECKING:
@@ -74,3 +78,12 @@ class UserWalletConflict(ConflictException):
             details={"reason": reason},
         )
         self.error_code = "USER_WALLET_CONFLICT"
+
+
+class PaymentFailedError(ValidationException):
+    """Raised when a payment fails."""
+
+    def __init__(self, message: str = "Payment failed.") -> None:
+        super().__init__(message)
+        self.error_code = "PAYMENT_FAILED"
+        self.status_code = 400

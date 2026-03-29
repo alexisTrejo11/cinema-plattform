@@ -6,17 +6,21 @@ from app.wallet.application.commands import (
     PayWithWalletCommand,
 )
 from app.wallet.domain.entities import Wallet
-from app.wallet.domain.entities.wallet_transaction import WalletTransaction
 from app.wallet.domain.interfaces import (
     TransactionEvents,
     UserInternalService,
     WalletEventPublisher,
     WalletRepository,
     WalletTransactionRepository,
+    PaymentInternalService,
 )
-from app.wallet.domain.exceptions import UserNotFoundError, UserWalletConflict
+from app.wallet.domain.exceptions import (
+    UserNotFoundError,
+    UserWalletConflict,
+    WalletNotFoundError,
+    PaymentFailedError,
+)
 from app.wallet.application.results import WalletOperationOutcome
-from app.wallet.domain.exceptions import WalletNotFoundError
 from app.wallet.domain.value_objects import UserId, WalletId
 
 logger = logging.getLogger(__name__)
@@ -26,14 +30,6 @@ class InitWalletForUserUseCase:
     """
     Use case for initializing a wallet for a user.
     Normally this use case will be occur when a new user is created.
-
-    Args:
-        wallet_repo: The repository for the wallet.
-        user_service: The service for the user.
-
-    Raises:
-        UserNotFoundError: If the user is not found.
-        UserWalletConflict: If the user already has a wallet.
     """
 
     def __init__(
@@ -47,12 +43,6 @@ class InitWalletForUserUseCase:
     async def execute(self, command: CreateWalletCommand) -> Wallet:
         """
         Creates a wallet for a user.
-
-        Flow:
-        1. Validate the user and uniqueness of the wallet.
-        2. Create a new wallet.
-        3. Persist the wallet.
-        4. Return the wallet.
 
         Args:
             command: The command for the wallet.
@@ -104,14 +94,6 @@ class AddCreditUseCase:
         """
         Performs a credit transaction on a wallet.
 
-        Flow:
-        1. Validate the wallet.
-        2. Buy credit from the wallet.
-        3. Update the wallet.
-        4. Create the transaction.
-        5. Publish the event for the transaction.
-        6. Return wallet + transaction for callers to map to their response DTOs.
-
         Args:
             command: The command for the credit.
         Returns:
@@ -126,7 +108,12 @@ class AddCreditUseCase:
 
         transaction = wallet.buy_credit(command.payment_details, command.amount)
 
-        # TODO: Implement the payment process
+        # TODO: Add output data of payment to the transaction. Validate input data of payment.
+        payment_result = await self._payment_service.create_payment(
+            command.payment_details
+        )
+        if not payment_result.is_success():
+            raise PaymentFailedError(payment_result.error())
 
         wallet_updated = await self._wallet_repo.update(wallet)
         transaction_created = await self._transaction_repo.create(transaction)
@@ -155,6 +142,7 @@ class PayWithWalletUseCase:
 
     def __init__(
         self,
+        payment_service: PaymentInternalService,
         wallet_repo: WalletRepository,
         transaction_repo: WalletTransactionRepository,
         event_publisher: WalletEventPublisher,
@@ -162,27 +150,32 @@ class PayWithWalletUseCase:
         self._wallet_repo = wallet_repo
         self._transaction_repo = transaction_repo
         self._event_publisher = event_publisher
+        self._payment_service = payment_service
 
-    async def execute(self, command: PayWithWalletCommand) -> WalletOperationOutcome:
+    async def execute(self, cmd: PayWithWalletCommand) -> WalletOperationOutcome:
         """
         Pay with a wallet.
+
         Args:
-            command: The command for the payment.
+            cmd: The cmd for the payment.
         Returns:
             Updated wallet and persisted transaction.
         Raises:
             WalletNotFoundError: If the wallet is not found.
         """
-        wallet = await self._wallet_repo.find_by_id(command.wallet_id)
+        wallet = await self._wallet_repo.find_by_id(cmd.wallet_id)
         if not wallet:
-            raise WalletNotFoundError(command.wallet_id)
+            raise WalletNotFoundError(cmd.wallet_id)
 
-        transaction = wallet.buy_product(command.payment_details, command.charge)
+        # TODO: Add output data of payment to the transaction
+        payment_result = await self._payment_service.create_payment(cmd.payment_details)
+        if not payment_result.is_success():
+            raise PaymentFailedError(payment_result.error())
 
-        # TODO: Implement the payment process
+        transaction = wallet.buy_product(cmd.payment_details, cmd.charge)
 
-        wallet_updated = await self._wallet_repo.update(wallet)
         transaction_created = await self._transaction_repo.create(transaction)
+        wallet_updated = await self._wallet_repo.update(wallet)
 
         await self._event_publisher.publish_event(
             wallet_updated,
@@ -192,7 +185,7 @@ class PayWithWalletUseCase:
 
         logger.info(
             "Pay flow completed wallet_id=%s",
-            command.wallet_id.value,
+            cmd.wallet_id.value,
         )
 
         return WalletOperationOutcome(
@@ -210,11 +203,9 @@ class DeleteWalletUseCase:
         self,
         wallet_repo: WalletRepository,
         transaction_repo: WalletTransactionRepository,
-        event_publisher: WalletEventPublisher,
     ) -> None:
         self._wallet_repo = wallet_repo
         self._transaction_repo = transaction_repo
-        self._event_publisher = event_publisher
 
     async def execute(self, wallet_id: WalletId) -> Wallet:
         wallet = await self._wallet_repo.find_by_id(wallet_id)
@@ -230,11 +221,9 @@ class RestoreWalletUseCase:
         self,
         wallet_repo: WalletRepository,
         transaction_repo: WalletTransactionRepository,
-        event_publisher: WalletEventPublisher,
     ) -> None:
         self._wallet_repo = wallet_repo
         self._transaction_repo = transaction_repo
-        self._event_publisher = event_publisher
 
     async def execute(self, wallet_id) -> Wallet:
         wallet = await self._wallet_repo.find_by_id(

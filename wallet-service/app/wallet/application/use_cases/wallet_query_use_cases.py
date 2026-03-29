@@ -48,15 +48,11 @@ class GetWalletByIdUseCase:
         return wallet
 
 
-class ListWalletTransactionsUseCase:
-    """Lists transactions for a wallet (pagination/sort via TransactionByWalletQuery)."""
-
+class GetWalletTransactionsUseCase:
     def __init__(self, transaction_repository: WalletTransactionRepository) -> None:
         self._transaction_repository = transaction_repository
 
-    async def execute(
-        self, query: TransactionByWalletQuery
-    ) -> List[WalletTransaction]:
+    async def execute(self, query: TransactionByWalletQuery) -> List[WalletTransaction]:
         logger.info(
             "Listing transactions for wallet_id=%s offset=%s limit=%s",
             query.walletId.value,

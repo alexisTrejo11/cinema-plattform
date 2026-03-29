@@ -1,9 +1,13 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 from enum import Enum
 from uuid import UUID
 
+from pydantic import BaseModel
+
+from app.shared.core.pagination import Page
+from app.shared.core.response import Result
 from app.wallet.domain.entities import User, Wallet, WalletTransaction
 from app.wallet.domain.summary import TransactionTypeAggregateRow
 from app.wallet.domain.value_objects import WalletId, UserId
@@ -92,7 +96,7 @@ class WalletTransactionRepository(ABC):
     """Abstract base class for Wallet Transaction Repository."""
 
     @abstractmethod
-    async def search(self, query: SearchTransactionQuery) -> List[WalletTransaction]:
+    async def search(self, query: SearchTransactionQuery) -> Page[WalletTransaction]:
         """
         Searches for transactions based on various criteria, with pagination and sorting.
 
@@ -150,9 +154,30 @@ class UserInternalService(ABC):
     """Abstract service for user internal operations. Will call to user service to get user details."""
 
     @abstractmethod
-    async def get_user_details(self, user_id: UserId) -> Optional[User]:
+    async def get_user_details(self, user_id: UserId) -> Result[User]:
         """Resolve a user from the local `users` table or upstream user service."""
         pass
+
+
+class PaymentInternalService(ABC):
+    """Abstract service for payment internal operations. Will call to payment service to get payment details."""
+
+    @abstractmethod
+    async def create_payment(
+        self, payment_details: dict[str, Any]
+    ) -> Result[dict[str, Any]]:
+        """Create a and validate new payment. Return the payment details if successful."""
+        pass
+
+
+class PaymentDetails(BaseModel):
+    """Payment details."""
+
+    id: str
+    amount: float
+    currency: str
+    status: str
+    created_at: datetime
 
 
 class TransactionEvents(Enum):
