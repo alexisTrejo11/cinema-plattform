@@ -27,8 +27,12 @@ class TestSQLAlchemyTicketRepository:
 
     async def test_save_existing_ticket(self, ticket_repository, sample_ticket_model, async_session):
         # Create an entity from the existing model
-        price_details = PriceDetails(Decimal("10.50"), "USD")
-        customer_details = CustomerDetails("updated@example.com", 1, "0.0.0.0")
+        price_details = PriceDetails(price=Decimal("10.50"), currency="USD")
+        customer_details = CustomerDetails(
+            user_email="updated@example.com",
+            id=1,
+            customer_ip_address="0.0.0.0",
+        )
         payment_details = PaymentDetails(id=1, transaction_id=123, type="digital", method="card", currency="USD")
         
         existing_ticket = Ticket(
@@ -55,8 +59,12 @@ class TestSQLAlchemyTicketRepository:
         assert db_ticket.customer_email == "updated@example.com"
 
     async def test_save_non_existing_ticket(self, ticket_repository):
-        price_details = PriceDetails(Decimal("10.50"), "USD")
-        customer_details = CustomerDetails("modelcustomer_email@mail.com", 1, "0.0.0.0")
+        price_details = PriceDetails(price=Decimal("10.50"), currency="USD")
+        customer_details = CustomerDetails(
+            user_email="modelcustomer_email@mail.com",
+            id=1,
+            customer_ip_address="0.0.0.0",
+        )
         payment_details = PaymentDetails(id=1, transaction_id=123, type="digital", method="card", currency="USD")
 
         non_existing_ticket = Ticket(
@@ -83,7 +91,7 @@ class TestSQLAlchemyTicketRepository:
             assert ticket.showtime_id == sample_ticket_model.showtime_id
             assert ticket.customer_details.id == sample_ticket_model.user_id
             assert ticket.customer_details.user_email == sample_ticket_model.customer_email
-            assert ticket.price_details.price == float(sample_ticket_model.price)
+            assert float(ticket.price_details.price) == float(sample_ticket_model.price)
             assert ticket.price_details.currency  == sample_ticket_model.price_currency
             assert ticket.status.value == sample_ticket_model.status
             assert ticket.ticket_type.value == sample_ticket_model.ticket_type

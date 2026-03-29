@@ -1,17 +1,46 @@
+# ---- Web -------
 fastapi[standard]
+uvicorn
+aiohttp
+
+# ---- gRPC -------
+protobuf
+grpcio>=1.78.0
+grpcio-tools>=1.78.0
+
+# ---- Validation -------
 pydantic
+pydantic-settings
+email-validator
+
+# ---- Database -------
 SQLAlchemy
 asyncpg
+psycopg2-binary
 greenlet
-
-pytest
-pytest-asyncio
 aiosqlite
-colorlog
+alembic
+
+# ---- Caching -------
+fastapi-cache[redis]
+redis>=5.0.0
+
+# ---- Security -------
+PyJWT
+passlib[bcrypt]
+python-multipart
+
+# ---- Rate limiting -------
 slowapi
 
-pydantic-settings
-motor==3.3.2
-pymongo==4.6.0
-python-multipart==0.0.6
-qrcode
+# ---- Messaging -------
+kafka-python
+httpx
+
+# ---- Logging -------
+colorlog
+
+
+# ---- Testing -------
+pytest
+pytest-asyncio
