@@ -17,7 +17,7 @@ from app.wallet.presentation.controllers import (
     user_wallet_controller,
     wallet_controller,
 )
-from middleware.logging_middleware import LoggingMiddleware
+from app.shared.middleware.logging_middleware import LoggingMiddleware
 
 logger = logging.getLogger("app")
 limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
