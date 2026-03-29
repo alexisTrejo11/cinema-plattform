@@ -1,0 +1,4 @@
+-- Fix logging
+-- Add registry service
+-- Test All
+-- Sync correctly to grpc and kafka
