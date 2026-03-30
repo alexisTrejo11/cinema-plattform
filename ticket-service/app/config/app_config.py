@@ -5,9 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    API_VERSION: str = "1.0"
+    API_VERSION: str = "2.0.0"
     DEBUG_MODE: bool = False
-    SERVICE_NAME: str = "wallet-service"
+    SERVICE_NAME: str = "ticket-service"
 
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # ── Service registry (optional) ───────────────────────────────────────────
     REGISTRY_ENABLED: bool = False
     REGISTRY_ADMIN_URL: str = "http://localhost:8080"
+
+    MONGO_URI: str
+    MONGO_DB_NAME: str
 
     model_config = SettingsConfigDict(
         env_file="./.env",

@@ -13,7 +13,7 @@ from .exceptions import AuthErrorCode, auth_error, forbidden_error
 from .response import error_json_response
 
 
-logger = logging.getLogger("app")
+logger = logging.getLogger(__name__)
 
 
 def build_jwt_decode_options(

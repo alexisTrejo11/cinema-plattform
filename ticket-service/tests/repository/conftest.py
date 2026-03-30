@@ -11,15 +11,15 @@ from sqlalchemy.orm import sessionmaker
 from app.internal.seats.domain.showtime_seat import ShowtimeSeat
 from app.internal.seats.infra.model import ShowtimeSeatModel
 from app.internal.seats.infra.sql_alch_repository import SqlAlchemySeatRepository
-from app.internal.ticket.domain.entities.ticket import Ticket
-from app.internal.ticket.domain.valueobjects.enums import TicketStatus, TicketType
-from app.internal.ticket.domain.valueobjects.helping_classes import (
+from app.ticket.domain.entities.ticket import Ticket
+from app.ticket.domain.valueobjects.enums import TicketStatus, TicketType
+from app.ticket.domain.valueobjects.helping_classes import (
     CustomerDetails,
     PaymentDetails,
     PriceDetails,
 )
-from app.internal.ticket.infrastructure.models.ticket_model import TicketModel
-from app.internal.ticket.infrastructure.repository.sql_alch_ticket_repository import (
+from app.ticket.infrastructure.models.ticket_model import TicketModel
+from app.ticket.infrastructure.repository.sql_alch_ticket_repository import (
     SQLAlchemyTicketRepository,
 )
 
