@@ -1,15 +1,17 @@
+import logging
 from typing import List
 
-from app.external.billboard_data.application.repositories.theater_repository import (
-    TheaterRepository,
-)
-from app.external.billboard_data.domain.entities.showtime import Showtime
+from app.external.billboard.core.entities.showtime import Showtime
 from app.ticket.domain.interfaces import SeatRepository
 from app.ticket.domain.entities import ShowtimeSeat
+from app.external.billboard.core.interfaces import TheaterRepository
 from app.ticket.domain.exceptions import (
     TheaterNotFound,
     SeatInvalidIdListError,
 )
+
+
+_log = logging.getLogger("app.ticket.application")
 
 
 class ShowtimeSeatUseCase:
@@ -23,7 +25,7 @@ class ShowtimeSeatUseCase:
 
     async def create_seats_from_showtime(self, showtime: Showtime):
         """
-        Create seats for a showtime from a theater and save them to the database.
+        Create seats reservations for a showtime from a theater and save them to the database.
 
         Args:
             showtime: The showtime to create seats for.
@@ -51,7 +53,15 @@ class ShowtimeSeatUseCase:
 
         await self.seat_repository.bulk_create(showtime_seats)
 
-        print(f"Successfully create {len(showtime_seats)} seats for showtime")
+        _log.info(
+            "showtime_seats_created",
+            extra={
+                "props": {
+                    "showtime_id": showtime.get_id(),
+                    "count": len(showtime_seats),
+                }
+            },
+        )
 
     async def get_by_showtime_id_and_seat_id_list(
         self, showtime_id: int, seat_id_list: List[int]

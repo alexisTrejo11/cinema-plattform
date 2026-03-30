@@ -1,0 +1,44 @@
+# Example overlay: attach ticket-service apps to the standalone Kafka stack.
+#
+# Prerequisites:
+#   1. Start kafka-infra first: cd ../kafka-infra && docker compose up -d
+#   2. Network kafka_infra_shared must exist (created by kafka-infra).
+#
+# Usage from this directory:
+#   docker compose -f docker-compose.yml -f docker-compose.kafka-bridge.example.yml up -d
+#
+# Apps will use KAFKA_BOOTSTRAP_SERVERS=kafka:9092 (broker hostname on shared network).
+
+services:
+  app-1:
+    networks:
+      - ticket_network
+      - kafka_infra_shared
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  app-2:
+    networks:
+      - ticket_network
+      - kafka_infra_shared
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  app-3:
+    networks:
+      - ticket_network
+      - kafka_infra_shared
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  app-grpc:
+    networks:
+      - ticket_network
+      - kafka_infra_shared
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+networks:
+  kafka_infra_shared:
+    external: true
+    name: kafka_infra_shared

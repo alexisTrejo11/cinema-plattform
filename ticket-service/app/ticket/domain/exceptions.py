@@ -30,3 +30,15 @@ class SeatNotFoundError(NotFoundException):
 class SeatInvalidIdListError(ValidationException):
     def __init__(self, field: str, reason: str):
         super().__init__(field, reason)
+
+
+class SeatUnavailableError(ValidationException):
+    """Raised when a seat cannot be taken (already sold or blocked)."""
+
+    def __init__(self, seat_id: int, reason: str = "seat not available"):
+        super().__init__(str(seat_id), reason)
+
+
+class PaymentAuthorizationFailedError(ValidationException):
+    def __init__(self, reason: str):
+        super().__init__("payment", reason)

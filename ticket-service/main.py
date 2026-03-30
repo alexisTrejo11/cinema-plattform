@@ -1,17 +1,18 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import FastAPI
-from slowapi import Limiter
 from slowapi.middleware import SlowAPIMiddleware
-from slowapi.util import get_remote_address
 
 from app.config.app_config import settings
+from app.config.rate_limit import limiter
 from app.config.global_exception_handler import GLOBAL_EXCEPTION_HANDLERS
 from app.config.logging import setup_logging
 from app.config.postgres_config import engine, run_postgres_startup_check
 from app.config.register_service import RegistryMicroservice
+from app.config.kafka_config import start_kafka_consumer_tasks
 from app.config.mongo_config import connect_to_mongo, close_mongo_connection
 
 from app.shared.middleware.logging_middleware import LoggingMiddleware
@@ -25,7 +26,6 @@ from app.ticket.infrastructure.api.ticket_query_controller import (
 
 
 logger = logging.getLogger("app")
-limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 
 setup_logging()
 
@@ -52,16 +52,40 @@ async def lifespan(app: FastAPI):
 
     if settings.KAFKA_ENABLED:
         logger.info(
-            "Kafka publishing enabled (bootstrap=%s, topic=%s)",
+            "Kafka publishing enabled (bootstrap=%s, client_id=%s)",
             settings.KAFKA_BOOTSTRAP_SERVERS,
+            settings.KAFKA_CLIENT_ID,
+        )
+    if settings.KAFKA_CONSUMER_ENABLED:
+        logger.info(
+            "Kafka consumer enabled (billboard_topic=%s, wallet_topic=%s)",
+            settings.KAFKA_TOPIC_BILLBOARD_EVENTS,
             settings.KAFKA_WALLET_EVENTS_TOPIC,
         )
 
     await connect_to_mongo()
 
+    app.state.kafka_consumer_stop: Optional[asyncio.Event] = None
+    app.state.kafka_consumer_tasks: List[asyncio.Task[None]] = []
+    if settings.KAFKA_CONSUMER_ENABLED:
+        stop_ev = asyncio.Event()
+        app.state.kafka_consumer_stop = stop_ev
+        app.state.kafka_consumer_tasks = start_kafka_consumer_tasks(stop_ev)
+
     yield
 
     logger.info("Shutting down Ticket Service...")
+    tasks = getattr(app.state, "kafka_consumer_tasks", []) or []
+    stop_ev = getattr(app.state, "kafka_consumer_stop", None)
+    if stop_ev is not None:
+        stop_ev.set()
+    for t in tasks:
+        t.cancel()
+    for t in tasks:
+        try:
+            await t
+        except asyncio.CancelledError:
+            pass
     rc = getattr(app.state, "registry_client", None)
     if rc is not None and settings.REGISTRY_ENABLED:
         rc.stop_heartbeat_loop()
@@ -72,8 +96,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Ticket Service API",
-    description="API for managing wallets and users.",
-    version="1.0.0",
+    description=(
+        "Cinema ticket APIs: search and retrieve tickets, purchase flow, and "
+        "showtime/seat reads backed by replicated billboard data (Mongo)."
+    ),
+    version=settings.API_VERSION,
     exception_handlers=GLOBAL_EXCEPTION_HANDLERS,
     lifespan=lifespan,
 )

@@ -1,5 +1,5 @@
 from decimal import Decimal
-from pydantic import BaseModel, Field, EmailStr, field_validator, ConfigDict
+from pydantic import AliasChoices, BaseModel, Field, EmailStr, field_validator, ConfigDict
 from datetime import datetime
 from typing import List, Optional
 from app.ticket.domain.valueobjects.enums import TicketStatus, TicketType
@@ -275,7 +275,7 @@ class TicketResponse(BaseModel):
     )
 
 
-class TicketPurchasedResponse(BaseModel):
+class TicketPurchasedDetails(BaseModel):
     """Response DTO returned after successful ticket purchase."""
 
     ticket_id: int = Field(
@@ -298,10 +298,12 @@ class TicketPurchasedResponse(BaseModel):
         description="Name of the cinema venue",
         json_schema_extra={"example": "Cineplex Downtown"},
     )
-    theather_name: str = Field(
+    theater_name: str = Field(
         ...,
-        description="Name of the movie booked",
-        json_schema_extra={"example": "The Matrix Resurrections"},
+        validation_alias=AliasChoices("theater_name", "theather_name"),
+        serialization_alias="theater_name",
+        description="Theater / auditorium name",
+        json_schema_extra={"example": "Screen 4"},
     )
     showtime_date: datetime = Field(
         ...,
@@ -352,8 +354,21 @@ class TicketPurchasedResponse(BaseModel):
         },
     )
 
+    @staticmethod
+    def of(ticket, showtime, seat_info, qr, txn) -> "TicketPurchasedDetails":
+        return TicketPurchasedDetails(
+            ticket_id=ticket.id,
+            seats=seat_info,
+            movie_name=showtime.get_movie().get_title(),
+            cinema_name=showtime.get_cinema().name,
+            theater_name=showtime.get_theater().get_name(),
+            showtime_date=showtime.get_start_time(),
+            ticket_qr=qr,
+            transaction_id=txn,
+        )
 
-class RefundResponse(BaseModel):
+
+class RefundDetails(BaseModel):
     """Response DTO for ticket refund operations."""
 
     ticket_id: int = Field(
@@ -395,4 +410,57 @@ class RefundResponse(BaseModel):
     )
 
 
-TicketBuyedResponse = TicketPurchasedResponse
+TicketBuyedDetails = TicketPurchasedDetails
+
+
+class TicketBuyedResponse(TicketPurchasedDetails):
+    """OpenAPI schema name for successful purchase responses (same shape as TicketPurchasedDetails)."""
+
+    model_config = ConfigDict(title="TicketBuyedResponse")
+
+
+class TicketSummaryResponse(BaseModel):
+    """Aggregated ticket stats for dashboards and account pages."""
+
+    user_id: int = Field(..., description="User identifier", json_schema_extra={"example": 42})
+    total_tickets: int = Field(
+        ..., ge=0, description="All tickets linked to the user", json_schema_extra={"example": 12}
+    )
+    active_tickets: int = Field(
+        ...,
+        ge=0,
+        description="Tickets not used or cancelled (available for entry)",
+        json_schema_extra={"example": 5},
+    )
+    used_tickets: int = Field(
+        ..., ge=0, description="Tickets already scanned at entry", json_schema_extra={"example": 4}
+    )
+    cancelled_tickets: int = Field(
+        ..., ge=0, description="Cancelled or refunded tickets", json_schema_extra={"example": 3}
+    )
+
+
+class PurchaseQuoteResponse(BaseModel):
+    """Price preview from replicated showtime data (no reservation)."""
+
+    showtime_id: int = Field(..., description="Showtime identifier", json_schema_extra={"example": 101})
+    seat_count: int = Field(
+        ..., ge=1, description="Seats included in the quote", json_schema_extra={"example": 2}
+    )
+    unit_price: Decimal = Field(
+        ..., description="Price per seat before totals", json_schema_extra={"example": "12.50"}
+    )
+    currency: str = Field(
+        ..., min_length=3, max_length=3, description="ISO 4217 code", json_schema_extra={"example": "USD"}
+    )
+    total: Decimal = Field(
+        ..., description="seat_count × unit_price", json_schema_extra={"example": "25.00"}
+    )
+    movie_title: str = Field(
+        ..., description="Movie title from replicated billboard data", json_schema_extra={"example": "Dune"}
+    )
+    showtime_starts_at: datetime = Field(
+        ...,
+        description="Scheduled start in venue timezone (ISO 8601)",
+        json_schema_extra={"example": "2025-06-01T20:00:00Z"},
+    )

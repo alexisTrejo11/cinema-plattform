@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.ticket.domain.exceptions import SeatUnavailableError
+
 
 class ShowtimeSeat(BaseModel):
     """
@@ -59,9 +61,34 @@ class ShowtimeSeat(BaseModel):
             "type": "Standard",
         }
 
+    def get_id(self) -> Optional[int]:
+        return self.id
+
+    def get_showtime_id(self) -> int:
+        return self.showtime_id
+
+    def get_seat_id(self) -> int:
+        return self.seat_id
+
+    def get_seat_name(self) -> str:
+        return self.seat_name
+
+    def get_is_available(self) -> bool:
+        return self.is_available
+
+    def get_created_at(self) -> datetime:
+        return self.created_at
+
+    def get_taken_at(self) -> Optional[datetime]:
+        return self.taken_at
+
+    def get_ticket_id(self) -> Optional[int]:
+        return self.ticket_id
+
     def ocuppy(self) -> None:
         if not self.is_available:
-            raise ValueError(f"Seat {self.id} already taken")
+            sid = self.id if self.id is not None else 0
+            raise SeatUnavailableError(sid, "already taken")
         self.taken_at = datetime.now(timezone.utc)
         self.is_available = False
 

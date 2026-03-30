@@ -1,0 +1,220 @@
+name: ticket-service
+
+# Injected into app services so containers use the compose Mongo hostname (overrides .env localhost).
+x-mongo-environment: &mongo_environment
+  MONGO_URI: mongodb://mongo:27017
+  MONGO_DB_NAME: ${MONGO_DB_NAME:-cinema_tickets}
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    networks:
+      - ticket_network
+    ports:
+      - "6378:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks:
+      - ticket_network
+    environment:
+      POSTGRES_DB: ${DB_NAME:-cinema_ticket}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5431:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-cinema_ticket}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    networks:
+      - ticket_network
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-cinema_tickets}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  app-1:
+    build:
+      context: ..
+      dockerfile: docker/dockerfile
+    image: ticket-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *mongo_environment
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - ticket_network
+
+  app-2:
+    image: ticket-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *mongo_environment
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      app-1:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - ticket_network
+
+  app-3:
+    image: ticket-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *mongo_environment
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      app-1:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - ticket_network
+
+  app-grpc:
+    image: ticket-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *mongo_environment
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: 50051
+    command: ["/app/docker/docker-entrypoint.sh", "serve-grpc"]
+    depends_on:
+      app-1:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    ports:
+      - "50051:50051"
+    networks:
+      - ticket_network
+
+  migrate:
+    image: ticket-service:local
+    env_file:
+      - ../.env
+    environment:
+      <<: *mongo_environment
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_ticket}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    networks:
+      - ticket_network
+    profiles:
+      - tools
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    depends_on:
+      - app-1
+      - app-2
+      - app-3
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - ticket_network
+    volumes:
+      - ./nginx/logs:/var/log/nginx
+
+networks:
+  ticket_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongo_data:

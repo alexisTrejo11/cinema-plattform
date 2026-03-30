@@ -1,8 +1,11 @@
+import logging
 from typing import List
 
 from app.ticket.application.dtos import SearchTicketParams, TicketResponse
 
 from app.ticket.domain.services import TicketService
+
+_log = logging.getLogger("app.ticket.application")
 
 
 class GetTicketByIdUseCase:
@@ -11,21 +14,8 @@ class GetTicketByIdUseCase:
 
     async def execute(self, ticket_id: int) -> TicketResponse:
         ticket = await self.ticket_service.get_ticket_by_id(ticket_id)
+        _log.info("ticket_get_by_id", extra={"props": {"ticket_id": ticket_id}})
         return TicketResponse(**ticket.to_dict())
-
-
-class GetTicketsByCriteriaUseCsase:
-    """
-    -Retrieves tickets based on dynamic filters.
-    -Used by admins for manual monitoring
-    """
-
-    def __init__(self, ticket_service: TicketService) -> None:
-        self.ticket_service = ticket_service
-
-    async def execute(self, search_params: SearchTicketParams) -> List[TicketResponse]:
-        tickets = await self.ticket_service.search_tickets(search_params)
-        return [TicketResponse(**ticket.to_dict()) for ticket in tickets]
 
 
 class GetTicketsByUserIdUseCase:
@@ -66,4 +56,8 @@ class GetTicketsByCriteriaUseCase:
 
     async def execute(self, search_params: SearchTicketParams) -> List[TicketResponse]:
         tickets = await self.ticket_service.search_tickets(search_params)
+        _log.info(
+            "tickets_search",
+            extra={"props": {"count": len(tickets)}},
+        )
         return [TicketResponse(**ticket.to_dict()) for ticket in tickets]

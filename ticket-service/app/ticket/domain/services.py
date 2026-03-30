@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from typing import List
 
@@ -15,14 +16,14 @@ from .exceptions import (
     TheaterNotFound,
     SeatInvalidIdListError,
 )
-from abc import ABC, abstractmethod
-from typing import Any, Dict
 from app.ticket.domain.entities import ShowtimeSeat
 from app.ticket.domain.interfaces import SeatRepository
-from app.external.billboard_data.application.repositories.theater_repository import (
+from app.external.billboard.application.repositories.theater_repository import (
     TheaterRepository,
 )
-from app.external.billboard_data.domain.entities.showtime import Showtime
+from app.external.billboard.core.entities.showtime import Showtime
+
+_log = logging.getLogger("app.ticket.domain")
 
 
 class TicketService:
@@ -35,6 +36,16 @@ class TicketService:
 
     async def create_ticket(self, showtime, dto: BuyTicketsRequest) -> Ticket:
         total = showtime.get_price() * len(dto.seat_list_id)
+        _log.info(
+            "ticket_create_persist",
+            extra={
+                "props": {
+                    "showtime_id": showtime.get_id(),
+                    "customer_id": dto.customer_id,
+                    "seat_count": len(dto.seat_list_id),
+                }
+            },
+        )
         showtime_price = PriceDetails(price=Decimal(str(total)), currency="MXN")
         customer_details = CustomerDetails(
             user_email=str(dto.user_email),
@@ -76,21 +87,23 @@ class TicketService:
         if not ticket.is_cancelable():
             raise TicketInvalidOperationError("ticket status", "not cancelable")
 
+        _log.info(
+            "ticket_cancel_domain",
+            extra={"props": {"ticket_id": ticket.id}},
+        )
         ticket.cancel_ticket()
         await self.ticket_repository.save(ticket)
 
     async def use_ticket(self, ticket: Ticket) -> None:
+        _log.info(
+            "ticket_use_domain",
+            extra={"props": {"ticket_id": ticket.id}},
+        )
         ticket.use_ticket()
         await self.ticket_repository.save(ticket)
 
     async def get_showtime_tickets(self, showtime_id: int) -> List[Ticket]:
         return await self.ticket_repository.list_by_showtime_id(showtime_id)
-
-
-class PaymentService(ABC):
-    @abstractmethod
-    async def request_payment(self, payment) -> Dict[str, Any]:
-        pass
 
 
 class ShowtimeSeatService:
@@ -121,7 +134,15 @@ class ShowtimeSeatService:
 
         await self.repository.bulk_create(showtime_seats)
 
-        print(f"Successfully create {len(showtime_seats)} seats for showtime")
+        _log.info(
+            "showtime_seats_materialized",
+            extra={
+                "props": {
+                    "showtime_id": showtime.get_id(),
+                    "count": len(showtime_seats),
+                }
+            },
+        )
 
     async def list_by_showtime_id_and_seat_id_list(
         self, showtime_id: int, seat_id_list: List[int]
@@ -141,6 +162,10 @@ class ShowtimeSeatService:
         for seat in seats:
             seat.ocuppy()
 
+        _log.info(
+            "seats_taken",
+            extra={"props": {"showtime_seat_ids": seats_id_list}},
+        )
         return await self.repository.bulk_update(seats)
 
     async def release_seats(self, seats_id_list: List[int]):

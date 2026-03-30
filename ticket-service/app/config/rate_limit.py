@@ -3,4 +3,5 @@
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["30/minute"])
+# Default cap for routes that do not set an explicit @limiter.limit (matches previous main.py).
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])

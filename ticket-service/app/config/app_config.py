@@ -32,11 +32,25 @@ class Settings(BaseSettings):
     POSTGRES_VALIDATE_ON_STARTUP: bool = True
     REDIS_VALIDATE_ON_STARTUP: bool = True
 
-    # ── Kafka (optional; publish wallet transaction events) ─────────────────
+    # ── Kafka (optional producers; inbound consumers gated separately) ───────
     KAFKA_ENABLED: bool = False
     KAFKA_BOOTSTRAP_SERVERS: str = "localhost:9092"
-    KAFKA_CLIENT_ID: str = "wallet-service"
+    KAFKA_CLIENT_ID: str = "ticket-service"
+
+    # Topics (see docs/kafka-topics.md)
+    KAFKA_TOPIC_BILLBOARD_EVENTS: str = "billboard.events"
     KAFKA_WALLET_EVENTS_TOPIC: str = "wallet.events"
+    KAFKA_TOPIC_BILLBOARD_DLQ: str = "billboard.events.dlq"
+    KAFKA_TOPIC_WALLET_DLQ: str = "wallet.events.dlq"
+
+    # Consumers (ticket-service read-model sync; implement handlers separately)
+    KAFKA_CONSUMER_ENABLED: bool = False
+    KAFKA_CONSUMER_GROUP_BILLBOARD: str = "ticket-service-billboard"
+    KAFKA_CONSUMER_GROUP_WALLET: str = "ticket-service-wallet"
+    KAFKA_CONSUMER_AUTO_OFFSET_RESET: str = "latest"
+    KAFKA_CONSUMER_POLL_TIMEOUT_MS: int = 1000
+    KAFKA_CONSUMER_BILLBOARD_ENABLED: bool = True
+    KAFKA_CONSUMER_WALLET_ENABLED: bool = True
 
     # ── Service registry (optional) ───────────────────────────────────────────
     REGISTRY_ENABLED: bool = False

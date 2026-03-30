@@ -1,9 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-
-
-from abc import ABC, abstractmethod
-from typing import List, Optional
 from app.ticket.application.dtos import SearchTicketParams
 from app.ticket.domain.entities import Ticket, ShowtimeSeat
 
@@ -116,6 +112,8 @@ class TicketRepository(ABC):
 
 
 class SeatRepository(ABC):
+    """Persistence for per-showtime seat rows (local replica; gRPC asserts authority)."""
+
     @abstractmethod
     async def get_by_id_and_showtime(
         self, showtime_id: int, id: int
@@ -123,18 +121,30 @@ class SeatRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_id_in(self, id_list: List[int]) -> List[ShowtimeSeat]:
+    async def list_by_id_in(self, id_list: List[int]) -> List[ShowtimeSeat]:
         pass
 
+    async def get_by_id_in(self, id_list: List[int]) -> List[ShowtimeSeat]:
+        return await self.list_by_id_in(id_list)
+
     @abstractmethod
+    async def list_by_showtime(self, showtime_id: int) -> List[ShowtimeSeat]:
+        pass
+
+    async def get_by_showtime(self, showtime_id: int) -> List[ShowtimeSeat]:
+        return await self.list_by_showtime(showtime_id)
+
+    @abstractmethod
+    async def list_by_showtime_and_id_in(
+        self, showtime_id: int, showtime_seat_ids: List[int]
+    ) -> List[ShowtimeSeat]:
+        """IDs are `showtime_seats.id` values for the given showtime."""
+        pass
+
     async def get_by_showtime_and_id_in(
         self, showtime_id: int, seat_id_in: List[int]
     ) -> List[ShowtimeSeat]:
-        pass
-
-    @abstractmethod
-    async def get_by_showtime(self, showtime_id: int) -> List[ShowtimeSeat]:
-        pass
+        return await self.list_by_showtime_and_id_in(showtime_id, seat_id_in)
 
     @abstractmethod
     async def save(self, seat: ShowtimeSeat) -> ShowtimeSeat:
