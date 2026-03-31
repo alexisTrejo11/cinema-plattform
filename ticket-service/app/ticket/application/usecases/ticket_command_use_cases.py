@@ -30,8 +30,17 @@ _log = logging.getLogger("app.ticket.application")
 
 class DigitalBuyTicketsUseCase:
     """
-    Digital purchase: validate local replica, optionally assert via billboard gRPC,
-    authorize payment, then take seats and persist the ticket.
+    **Orchestrator** for the digital purchase flow across services and local data:
+
+    1. Load showtime + seat rows from the local replica (Mongo/Postgres).
+    2. Validate seat list locally (existence + availability flags).
+    3. If a :class:`~app.ticket.domain.ports.ShowtimeSeatAssertionPort` is configured,
+       call billboard (gRPC) for a **source-of-truth** concurrency check.
+    4. If a :class:`~app.ticket.domain.ports.PaymentGatewayPort` is configured,
+       call payment (gRPC) to **authorize** funds before mutating inventory.
+    5. Take seats, persist ticket, build confirmation (QR, etc.).
+
+    Ports are optional so dev/tests can run without remote services.
     """
 
     def __init__(

@@ -114,12 +114,19 @@ def buy_ticket_uc(
     seat_service: ShowtimeSeatService = Depends(get_showtime_seat_service),
     showtime_repo: MongoShowtimeRepository = Depends(get_show_time_repository),
 ) -> DigitalBuyTicketsUseCase:
+    from app.ticket.infrastructure.grpc.billboard_seat_client import (
+        get_shared_billboard_seat_client,
+    )
+    from app.ticket.infrastructure.grpc.payment_gateway_client import (
+        get_shared_payment_gateway_client,
+    )
+
     return DigitalBuyTicketsUseCase(
         ticket_service,
         seat_service,
         showtime_repo,
-        payment_gateway=None,
-        seat_assertion=None,
+        payment_gateway=get_shared_payment_gateway_client(),
+        seat_assertion=get_shared_billboard_seat_client(),
     )
 
 

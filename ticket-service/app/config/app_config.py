@@ -28,6 +28,10 @@ class Settings(BaseSettings):
 
     GRPC_HOST: str = "0.0.0.0"
     GRPC_PORT: int = 50055
+    # Outbound gRPC targets (host:port), e.g. ``payment-service:50051``. Empty = skip remote calls.
+    GRPC_PAYMENT_TARGET: str = ""
+    GRPC_BILLBOARD_TARGET: str = ""
+    GRPC_TIMEOUT_SECONDS: float = 10.0
 
     POSTGRES_VALIDATE_ON_STARTUP: bool = True
     REDIS_VALIDATE_ON_STARTUP: bool = True

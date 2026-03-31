@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package cinema.payment.v1;
+
+// Payment / wallet service — authorize charges before tickets are committed.
+service PaymentService {
+  rpc AuthorizePayment(AuthorizePaymentRequest) returns (AuthorizePaymentResponse);
+  rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
+}
+
+message AuthorizePaymentRequest {
+  string amount = 1;           // decimal string, e.g. "99.50"
+  string currency = 2;         // ISO 4217
+  int64 customer_id = 3;
+  string idempotency_key = 4;
+  string payment_method = 5;
+  string payment_token = 6;
+  string customer_ip = 7;
+}
+
+message AuthorizePaymentResponse {
+  bool authorized = 1;
+  string transaction_id = 2;
+}
+
+message RefundPaymentRequest {
+  int64 ticket_id = 1;
+  string transaction_id = 2;
+  string amount = 3;
+  string currency = 4;
+  string reason = 5;
+}
+
+message RefundPaymentResponse {
+  string refund_id = 1;
+  string status = 2;
+}

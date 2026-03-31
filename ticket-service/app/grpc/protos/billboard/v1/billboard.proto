@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package cinema.billboard.v1;
+
+// Billboard / showtime service — authoritative concurrent seat checks.
+service SeatAvailabilityService {
+  rpc AssertSeatsAvailable(AssertSeatsRequest) returns (AssertSeatsResponse);
+}
+
+message AssertSeatsRequest {
+  int64 showtime_id = 1;
+  repeated int64 showtime_seat_ids = 2;
+}
+
+message AssertSeatsResponse {
+  bool ok = 1;
+  string message = 2;
+}

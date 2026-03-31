@@ -1,7 +1,11 @@
 """Outbound ports (interfaces) for cross-service integrations.
 
-Authoritative seat checks and payment capture should go through gRPC (or HTTP)
-adapters in infrastructure; local Mongo/Postgres replicas back read-heavy paths.
+Application use cases (e.g. digital purchase) **orchestrate** local persistence with
+these ports: they call billboard for **authoritative seat availability** and the
+payment service for **authorization** before committing seats/tickets.
+
+Implementations live in ``app.ticket.infrastructure.grpc`` (gRPC stubs) or future HTTP
+adapters. Local Mongo/Postgres replicas still back read-heavy paths.
 """
 
 from abc import ABC, abstractmethod

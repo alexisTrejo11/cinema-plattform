@@ -34,3 +34,12 @@ docker compose -f docker-compose.yml -f docker-compose.kafka-bridge.example.yml 
 ```
 
 Bootstrap from inside Docker: `kafka:9092`. From your laptop (kafka-infra only): `localhost:9094`.
+
+## gRPC (optional)
+
+Set in `.env` / compose when payment and billboard services expose gRPC:
+
+- `GRPC_PAYMENT_TARGET` — e.g. `payment-service:50051`
+- `GRPC_BILLBOARD_TARGET` — e.g. `billboard-service:50052`
+
+Leave empty to skip remote calls (local validation only). See [`app/grpc/README.md`](../app/grpc/README.md).

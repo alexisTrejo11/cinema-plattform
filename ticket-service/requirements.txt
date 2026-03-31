@@ -5,8 +5,8 @@ aiohttp
 
 # ---- gRPC -------
 protobuf
-grpcio>=1.78.0
-grpcio-tools>=1.78.0
+grpcio>=1.80.0
+grpcio-tools>=1.80.0
 
 # ---- Validation -------
 pydantic
