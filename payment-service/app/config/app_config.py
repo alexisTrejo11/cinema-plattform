@@ -64,9 +64,6 @@ class Settings(BaseSettings):
     REGISTRY_ENABLED: bool = False
     REGISTRY_ADMIN_URL: str = "http://localhost:8080"
 
-    MONGO_URI: str
-    MONGO_DB_NAME: str
-
     model_config = SettingsConfigDict(
         env_file="./.env",
         env_file_encoding="utf-8",
