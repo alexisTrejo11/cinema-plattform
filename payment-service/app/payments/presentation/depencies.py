@@ -14,10 +14,12 @@ from app.payments.domain.interfaces import (
     PaymentMethodRepository,
     PaymentRepository,
     PurchaseAssertionClient,
+    StoredPaymentMethodRepository,
 )
 from app.payments.infrastructure.persistence.sql_alchemy_repository import (
     SqlAlchemyPaymentMethodRepository,
     SqlAlchemyPaymentRepository,
+    SqlAlchemyStoredPaymentMethodRepository,
 )
 from app.payments.infrastructure.grpc.purchase_assertion_grpc_client import (
     PurchaseAssertionGrpcClient,
@@ -94,6 +96,12 @@ def get_payment_method_repository(
     return SqlAlchemyPaymentMethodRepository(db)
 
 
+def get_stored_payment_method_repository(
+    db: AsyncSession = Depends(get_db),
+) -> StoredPaymentMethodRepository:
+    return SqlAlchemyStoredPaymentMethodRepository(db)
+
+
 def get_purchase_assertion_client() -> PurchaseAssertionClient:
     if settings.GRPC_BILLBOARD_TARGET.strip() or settings.GRPC_PAYMENT_TARGET.strip():
         return PurchaseAssertionGrpcClient()
@@ -118,11 +126,15 @@ def get_customer_payment_use_cases(
         get_purchase_assertion_client
     ),
     events_publisher: PaymentEventsPublisher = Depends(get_payment_events_publisher),
+    stored_payment_method_repository: StoredPaymentMethodRepository = Depends(
+        get_stored_payment_method_repository
+    ),
 ) -> CustomerPaymentUseCases:
     return CustomerPaymentUseCases(
         payment_repository=payment_repository,
         purchase_assertion_client=purchase_assertion_client,
         events_publisher=events_publisher,
+        stored_payment_method_repository=stored_payment_method_repository,
     )
 
 

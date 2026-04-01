@@ -1,17 +1,23 @@
-from datetime import datetime, timezone
 from typing import Any
 
 from app.payments.application.commands import (
     CreateStoredPaymentMethodCommand,
     ProcessPayCommand,
+    SoftDeleteStoredPaymentMethodCommand,
 )
-from app.payments.domain.entities import Payment
+from app.payments.domain.entities import Payment, StoredPaymentMethod
 from app.payments.domain.events import DomainEvent
 from app.payments.domain.exceptions import PaymentNotRefundableException
 from app.payments.domain.interfaces import (
     PaymentEventsPublisher,
     PaymentRepository,
     PurchaseAssertionClient,
+    StoredPaymentMethodRepository,
+)
+from app.payments.application.usecases.customer_store_method_usecases import (
+    CreateStoredPaymentMethodUseCase,
+    ListStoredPaymentMethodsQuery,
+    SoftDeleteStoredPaymentMethodUseCase,
 )
 from app.payments.domain.payment_list_criteria import PaymentListCriteria
 from app.payments.domain.value_objects import (
@@ -27,16 +33,36 @@ from app.payments.domain.value_objects import (
 from app.shared.base_exceptions import NotFoundException
 
 
+def _stored_payment_method_to_api_row(spm: StoredPaymentMethod) -> dict[str, Any]:
+    last4 = spm.card.card_number[-4:] if spm.card and len(spm.card.card_number) >= 4 else ""
+    return {
+        "id": spm.id,
+        "user_id": spm.user_id,
+        "last4": last4,
+        "brand": "card",
+        "is_default": spm.is_default,
+        "created_at": spm.created_at,
+    }
+
+
 class CustomerPaymentUseCases:
     def __init__(
         self,
         payment_repository: PaymentRepository,
         purchase_assertion_client: PurchaseAssertionClient,
         events_publisher: PaymentEventsPublisher,
+        stored_payment_method_repository: StoredPaymentMethodRepository,
     ) -> None:
         self.payment_repository = payment_repository
         self.purchase_assertion_client = purchase_assertion_client
         self.events_publisher = events_publisher
+        self._create_stored_pm = CreateStoredPaymentMethodUseCase(
+            stored_payment_method_repository, events_publisher
+        )
+        self._list_stored_pm = ListStoredPaymentMethodsQuery(stored_payment_method_repository)
+        self._delete_stored_pm = SoftDeleteStoredPaymentMethodUseCase(
+            stored_payment_method_repository, events_publisher
+        )
 
     async def get_payment_history(
         self, user_id: str, limit: int = 20, offset: int = 0
@@ -168,27 +194,18 @@ class CustomerPaymentUseCases:
     async def create_customer_stored_payment_method(
         self, command: CreateStoredPaymentMethodCommand
     ) -> dict[str, Any]:
-        # Placeholder until stored-payment-method repository is implemented.
-        return {
-            "id": f"spm_{command.user_id[:8]}_{command.card_number[-4:]}",
-            "user_id": command.user_id,
-            "last4": command.card_number[-4:],
-            "brand": "visa",
-            "is_default": command.is_default,
-            "created_at": datetime.now(timezone.utc),
-        }
+        created = await self._create_stored_pm.execute(command)
+        return _stored_payment_method_to_api_row(created)
 
     async def list_customer_stored_payment_methods(self, user_id: str) -> list[dict[str, Any]]:
-        # Placeholder response for now.
-        return []
+        rows = await self._list_stored_pm.execute(user_id)
+        return [_stored_payment_method_to_api_row(r) for r in rows]
 
     async def delete_customer_stored_payment_method(
         self, user_id: str, payment_method_id: str
     ) -> None:
-        await self.events_publisher.publish(
-            event_name="payment_method.removed.requested",
-            key=user_id,
-            payload={"user_id": user_id, "payment_method_id": payment_method_id},
+        await self._delete_stored_pm.execute(
+            user_id, SoftDeleteStoredPaymentMethodCommand(id=payment_method_id)
         )
 
     async def _create_purchase_intent(

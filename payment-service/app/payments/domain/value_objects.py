@@ -17,19 +17,6 @@ from pydantic import BaseModel, ConfigDict, model_validator
 from .exceptions import InvalidPaymentAmountException
 
 
-class ID(BaseModel):
-    model_config = ConfigDict(frozen=True)
-
-    value: uuid.UUID
-
-    def __str__(self):
-        return str(self.value)
-
-    @staticmethod
-    def generate():
-        return ID(value=uuid.uuid4())
-
-
 class Currency(str, Enum):
     """Supported currencies for payments."""
 

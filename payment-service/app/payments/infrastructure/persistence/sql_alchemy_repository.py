@@ -4,12 +4,16 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.payments.domain.entities import Payment, PaymentMethod
-from app.payments.domain.value_objects import PaymentId
+from app.payments.domain.entities import Payment, PaymentMethod, StoredPaymentMethod
+from app.payments.domain.value_objects import Card, PaymentId
 from app.payments.domain.payment_list_criteria import PaymentListCriteria
-from app.payments.domain.interfaces import PaymentRepository, PaymentMethodRepository
+from app.payments.domain.interfaces import (
+    PaymentRepository,
+    PaymentMethodRepository,
+    StoredPaymentMethodRepository,
+)
 
-from .models import PaymentModel, PaymentMethodModel
+from .models import PaymentModel, PaymentMethodModel, StoredPaymentMethodModel
 from .model_mapper import ModelMapper
 
 
@@ -145,3 +149,71 @@ class SqlAlchemyPaymentMethodRepository(PaymentMethodRepository):
         await self.session.commit()
 
         return True
+
+
+def _stored_to_model(entity: StoredPaymentMethod) -> StoredPaymentMethodModel:
+    return StoredPaymentMethodModel(
+        id=entity.id,
+        user_id=entity.user_id,
+        payment_method_id=entity.payment_method_id,
+        provider_token=entity.provider_token,
+        card=entity.card.model_dump(mode="json") if entity.card else None,
+        is_default=entity.is_default,
+        created_at=entity.created_at,
+        updated_at=entity.updated_at,
+        deleted_at=entity.deleted_at,
+    )
+
+
+def _model_to_stored(row: StoredPaymentMethodModel) -> StoredPaymentMethod:
+    card = Card.model_validate(row.card) if row.card else None
+    return StoredPaymentMethod(
+        id=row.id,
+        user_id=row.user_id,
+        payment_method_id=row.payment_method_id,
+        provider_token=row.provider_token or "",
+        card=card,
+        is_default=row.is_default,
+        created_at=row.created_at,
+        updated_at=row.updated_at,
+        deleted_at=row.deleted_at,
+    )
+
+
+class SqlAlchemyStoredPaymentMethodRepository(StoredPaymentMethodRepository):
+    def __init__(self, session: AsyncSession) -> None:
+        self.session = session
+
+    async def save(self, stored: StoredPaymentMethod) -> StoredPaymentMethod:
+        row = _stored_to_model(stored)
+        existing = await self.session.get(StoredPaymentMethodModel, stored.id)
+        if existing is None:
+            self.session.add(row)
+            await self.session.flush()
+        else:
+            row = await self.session.merge(row)
+        await self.session.commit()
+        await self.session.refresh(row)
+        return _model_to_stored(row)
+
+    async def get_for_user(self, stored_id: str, user_id: str) -> Optional[StoredPaymentMethod]:
+        stmt = select(StoredPaymentMethodModel).where(
+            StoredPaymentMethodModel.id == stored_id,
+            StoredPaymentMethodModel.user_id == user_id,
+            StoredPaymentMethodModel.deleted_at.is_(None),
+        )
+        result = await self.session.execute(stmt)
+        m = result.scalar_one_or_none()
+        return _model_to_stored(m) if m else None
+
+    async def list_for_user(self, user_id: str) -> List[StoredPaymentMethod]:
+        stmt = (
+            select(StoredPaymentMethodModel)
+            .where(
+                StoredPaymentMethodModel.user_id == user_id,
+                StoredPaymentMethodModel.deleted_at.is_(None),
+            )
+            .order_by(StoredPaymentMethodModel.created_at.desc())
+        )
+        result = await self.session.execute(stmt)
+        return [_model_to_stored(r) for r in result.scalars().all()]

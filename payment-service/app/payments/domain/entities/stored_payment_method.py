@@ -6,14 +6,13 @@ Distinct from the ``PaymentMethod`` enum in ``value_objects`` (payment rail type
 
 from datetime import datetime, timezone
 from typing import Optional
+from uuid import UUID, uuid4
 
 from pydantic import ConfigDict
 
+from app.payments.domain.value_objects import Card, UserId
 from ..aggregate_root import AggregateRoot
 from ..events import DomainEvent, PaymentMethodAdded, PaymentMethodRemoved
-from ..value_objects import ID, Card, UserId
-
-from enum import Enum
 
 
 class StoredPaymentMethod(AggregateRoot):
@@ -25,10 +24,9 @@ class StoredPaymentMethod(AggregateRoot):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    id: ID
-    user_id: UserId
+    id: str
+    user_id: str
     payment_method_id: str
-
     provider_token: str
     card: Optional[Card]
     is_default: bool = False
@@ -37,24 +35,28 @@ class StoredPaymentMethod(AggregateRoot):
     deleted_at: Optional[datetime] = None
 
     def _add_event(self, event: DomainEvent) -> None:
-        if event.aggregate_id != self.id.value:
-            event = event.model_copy(update={"aggregate_id": self.id.value})
+        agg = UUID(self.id)
+        if event.aggregate_id != agg:
+            event = event.model_copy(update={"aggregate_id": agg})
         self._events.append(event)
 
     @classmethod
     def create(
         cls,
-        user_id: UserId,
+        user_id: str,
         card: Card,
         *,
         is_default: bool = False,
-    ) -> StoredPaymentMethod:
+    ) -> "StoredPaymentMethod":
         """Create a new saved payment method and emit ``PaymentMethodAdded``."""
         now = datetime.now(timezone.utc)
-        pm_id = ID.generate()
+        sid = str(uuid4())
+        token = card.stripe_payment_method_id or ""
         entity = cls(
-            id=pm_id,
+            id=sid,
             user_id=user_id,
+            payment_method_id=token or "card",
+            provider_token=token,
             card=card,
             is_default=is_default,
             created_at=now,
@@ -63,8 +65,8 @@ class StoredPaymentMethod(AggregateRoot):
         )
         entity._add_event(
             PaymentMethodAdded(
-                payment_method_id=str(pm_id.value),
-                user_id=user_id,
+                payment_method_id=sid,
+                user_id=UserId.from_string(user_id),
             )
         )
         return entity
@@ -82,7 +84,7 @@ class StoredPaymentMethod(AggregateRoot):
         self.updated_at = now
         self._add_event(
             PaymentMethodRemoved(
-                payment_method_id=str(self.id.value),
-                user_id=self.user_id,
+                payment_method_id=self.id,
+                user_id=UserId.from_string(self.user_id),
             )
         )

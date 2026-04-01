@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 
-from app.payments.domain.entities import Payment, Transaction, PaymentMethod
+from app.payments.domain.entities import Payment, StoredPaymentMethod, Transaction, PaymentMethod
 from app.payments.domain.payment_list_criteria import PaymentListCriteria
 from app.payments.domain.value_objects import PaymentId, WalletId, TransactionId, UserId
 
@@ -163,4 +163,20 @@ class PaymentMethodRepository(ABC):
     @abstractmethod
     async def delete(self, payment_method_id: str) -> bool:
         """Delete a payment method."""
+        pass
+
+
+class StoredPaymentMethodRepository(ABC):
+    """User-saved payment instruments (not the catalog ``PaymentMethod``)."""
+
+    @abstractmethod
+    async def save(self, stored: StoredPaymentMethod) -> StoredPaymentMethod:
+        pass
+
+    @abstractmethod
+    async def get_for_user(self, stored_id: str, user_id: str) -> Optional[StoredPaymentMethod]:
+        pass
+
+    @abstractmethod
+    async def list_for_user(self, user_id: str) -> List[StoredPaymentMethod]:
         pass

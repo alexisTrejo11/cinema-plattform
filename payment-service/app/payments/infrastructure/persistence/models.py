@@ -70,3 +70,25 @@ class PaymentMethodModel(Base):
         onupdate=datetime.now(timezone.utc),
     )
     deleted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+
+
+class StoredPaymentMethodModel(Base):
+    """User-saved instrument (token + card JSON); not the catalog ``payment_methods`` table."""
+
+    __tablename__ = "stored_payment_methods"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    payment_method_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    provider_token: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    card: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+    )
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
