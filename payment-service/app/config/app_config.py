@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     GRPC_BILLBOARD_TARGET: str = ""
     GRPC_TIMEOUT_SECONDS: float = 10.0
 
+    # Optional full sync URL for Alembic (psycopg2). If unset, built from POSTGRES_*.
+    ALEMBIC_DATABASE_URL: str | None = None
+
     POSTGRES_VALIDATE_ON_STARTUP: bool = True
     REDIS_VALIDATE_ON_STARTUP: bool = True
 
@@ -73,6 +76,12 @@ class Settings(BaseSettings):
     def get_database_url(self) -> str:
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
+    def get_sync_database_url(self) -> str:
+        return (
+            f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 

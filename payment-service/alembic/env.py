@@ -19,11 +19,17 @@ if config.config_file_name is not None:
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
+# So pydantic-settings loads payment-service/.env when alembic is run from elsewhere.
+os.chdir(BASE_DIR)
 
 from app.config.postgres_config import Base  # noqa: E402
 from app.config import model_init  # noqa: F401, E402
+from app.config.app_config import settings  # noqa: E402
 
 target_metadata = Base.metadata
+
+_sync_url = settings.ALEMBIC_DATABASE_URL or settings.get_sync_database_url()
+config.set_main_option("sqlalchemy.url", _sync_url)
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
