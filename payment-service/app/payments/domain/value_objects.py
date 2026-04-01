@@ -6,6 +6,7 @@ Value objects encapsulate business rules and provide type safety.
 """
 
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 from uuid import UUID, uuid4
@@ -278,9 +279,16 @@ class PaymentMetadata(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     ticket_ids: Optional[list[str]] = None
+    show_id: Optional[str] = None
     showtime_id: Optional[str] = None
+    # UTC: when the screening starts; used for refund rules (e.g. no refund after show).
+    show_starts_at: Optional[datetime] = None
     seat_numbers: Optional[list[str]] = None
     food_items: Optional[list[dict]] = None
+    items: Optional[list[dict]] = None
+    order_id: Optional[str] = None
+    plan_id: Optional[str] = None
+    wallet_id: Optional[str] = None
     pickup_location: Optional[str] = None
     special_instructions: Optional[str] = None
 
@@ -294,6 +302,8 @@ class PaymentMetadata(BaseModel):
 
 
 class Card(BaseModel):
+    """Card details; ``stripe_payment_method_id`` is the Stripe ``pm_xxx`` after tokenization."""
+
     model_config = ConfigDict(frozen=True)
 
     card_holder: str
@@ -301,3 +311,22 @@ class Card(BaseModel):
     cvv: str
     expiration_month: str
     expiration_year: str
+    stripe_payment_method_id: Optional[str] = None
+
+
+class PaymentProvider(str, Enum):
+    """Supported external payment providers."""
+
+    STRIPE = "stripe"
+    PAYPAL = "paypal"
+    ADEYEN = "adyen"
+    INTERNAL = "internal"  # For internal wallet payments
+
+
+class PaymentMethodType(str, Enum):
+    """Logical category of the payment method."""
+
+    CARD = "card"  # Crédito/Débito
+    CASH = "cash"  # Oxxo, 7-Eleven, etc.
+    BANK_TRANSFER = "bank"  # SPEI, SEPA, SWIFT
+    DIGITAL_WALLET = "wallet"  # Apple Pay, Google Pay, Internal Wallet

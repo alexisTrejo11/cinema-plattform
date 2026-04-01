@@ -22,8 +22,11 @@ class PaginationParams(BaseModel):
         offset (int): The offset of the items to return.
         limit (int): The limit of the items to return.
     """
+
     page: int = Query(default=1, ge=1, description="Page number (1-indexed)")
-    page_size: int = Query(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, description="Items per page")
+    page_size: int = Query(
+        default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE, description="Items per page"
+    )
 
     @property
     def offset(self) -> int:
@@ -32,6 +35,7 @@ class PaginationParams(BaseModel):
     @property
     def limit(self) -> int:
         return self.page_size
+
 
 class PaginationMetadata(BaseModel):
     """
@@ -45,12 +49,14 @@ class PaginationMetadata(BaseModel):
         has_next (bool): Whether there is a next page.
         has_prev (bool): Whether there is a previous page.
     """
+
     total: int
     page: int
     page_size: int
     total_pages: int
     has_next: bool
     has_prev: bool
+
 
 @dataclass
 class Page(Generic[T]):
@@ -68,6 +74,7 @@ class Page(Generic[T]):
         has_next (bool): Whether there is a next page.
         has_prev (bool): Whether there is a previous page.
     """
+
     items: list[T]
     total: int
     page: int

@@ -5,13 +5,8 @@ Represents things that happened in the domain that domain experts care about.
 These events are used for event-driven architecture and inter-service communication.
 """
 
-from __future__ import annotations
-
 from typing import Dict, Any, Optional
-from uuid import UUID, uuid4
-from datetime import datetime
-
-from pydantic import BaseModel, ConfigDict, Field
+from app.shared.events.base import DomainEvent
 
 from .value_objects import (
     PaymentId,
@@ -22,33 +17,6 @@ from .value_objects import (
     PaymentType,
     TransactionType,
 )
-
-
-class DomainEvent(BaseModel):
-    """Base class for all payment domain events."""
-
-    model_config = ConfigDict(frozen=True)
-
-    event_id: UUID = Field(default_factory=uuid4)
-    occurred_at: datetime = Field(default_factory=datetime.utcnow)
-    aggregate_id: Optional[UUID] = None
-    version: int = 1
-
-    def event_type(self) -> str:
-        raise NotImplementedError
-
-    def _get_event_data(self) -> Dict[str, Any]:
-        raise NotImplementedError
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "event_id": str(self.event_id),
-            "event_type": self.event_type(),
-            "occurred_at": self.occurred_at.isoformat(),
-            "aggregate_id": str(self.aggregate_id) if self.aggregate_id else None,
-            "version": self.version,
-            "data": self._get_event_data(),
-        }
 
 
 class PaymentCreated(DomainEvent):
@@ -140,6 +108,27 @@ class PaymentFailed(DomainEvent):
             "currency": self.amount.currency.value,
             "failure_reason": self.failure_reason,
             "error_code": self.error_code,
+        }
+
+
+class PaymentCancelled(DomainEvent):
+    """Event raised when a pending payment is cancelled (distinct from failure)."""
+
+    payment_id: PaymentId
+    user_id: UserId
+    amount: Money
+    reason: str
+
+    def event_type(self) -> str:
+        return "payment.cancelled"
+
+    def _get_event_data(self) -> Dict[str, Any]:
+        return {
+            "payment_id": str(self.payment_id),
+            "user_id": str(self.user_id),
+            "amount": self.amount.to_float(),
+            "currency": self.amount.currency.value,
+            "reason": self.reason,
         }
 
 
@@ -269,4 +258,61 @@ class TransactionRecorded(DomainEvent):
             "transaction_type": self.transaction_type.value,
             "description": self.description,
             "reference_id": self.reference_id,
+        }
+
+
+class TransactionReversed(DomainEvent):
+    """Event raised when a transaction is reversed."""
+
+    transaction_id: TransactionId
+    wallet_id: WalletId
+    user_id: UserId
+    amount: Money
+    transaction_type: TransactionType
+    reversal_reason: str
+
+    def event_type(self) -> str:
+        return "transaction.reversed"
+
+    def _get_event_data(self) -> Dict[str, Any]:
+        return {
+            "transaction_id": str(self.transaction_id),
+            "wallet_id": str(self.wallet_id),
+            "user_id": str(self.user_id),
+            "amount": self.amount.to_float(),
+            "currency": self.amount.currency.value,
+            "transaction_type": self.transaction_type.value,
+            "reversal_reason": self.reversal_reason,
+        }
+
+
+class PaymentMethodAdded(DomainEvent):
+    """Event raised when a user registers a saved payment method."""
+
+    payment_method_id: str
+    user_id: UserId
+
+    def event_type(self) -> str:
+        return "payment_method.added"
+
+    def _get_event_data(self) -> Dict[str, Any]:
+        return {
+            "payment_method_id": self.payment_method_id,
+            "user_id": str(self.user_id),
+        }
+
+
+class PaymentMethodRemoved(DomainEvent):
+    """Event raised when a saved payment method is removed (soft-deleted)."""
+
+    payment_method_id: str
+    user_id: UserId
+
+    def event_type(self) -> str:
+        return "payment_method.removed"
+
+    def _get_event_data(self) -> Dict[str, Any]:
+        return {
+            "payment_method_id": self.payment_method_id,
+            "user_id": str(self.user_id),
         }

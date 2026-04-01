@@ -90,7 +90,7 @@ def _unauthorized(message: str) -> JSONResponse:
         status_code=status.HTTP_401_UNAUTHORIZED,
         code="UNAUTHORIZED",
         message=message,
-        details={},
+        details=[],
         headers={"WWW-Authenticate": "Bearer"},
     )
 

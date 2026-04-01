@@ -114,44 +114,48 @@ class Result(Generic[T]):
 
 class ErrorResponse(BaseModel):
     """
-    Represents a structured error response, typically used within an API response.
-
-    This Pydantic model provides clear fields for common error attributes,
-    making error handling consistent across an application.
+    Single JSON shape for all API errors emitted by ``global_exception_handler``
+    and :func:`error_json_response`.
     """
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "code": "VALIDATION_ERROR",
-                "message": "The provided email address is invalid.",
-                "details": {"field": "email", "reason": "Invalid email format."},
+                "message": "One or more fields failed validation.",
+                "details": [
+                    {"field": "body.email", "message": "Invalid email format."},
+                ],
             }
         }
     )
 
-    code: Optional[str] = Field(
-        None,
-        description="An optional, machine-readable error code (e.g., 'AUTH_FAILED', 'INVALID_INPUT', 'USER_NOT_FOUND').",
-        examples=["INVALID_INPUT", "USER_ALREADY_EXISTS"],
+    code: str = Field(
+        ...,
+        description="Machine-readable error code (e.g. VALIDATION_ERROR, PAYMENT_METHOD_NOT_FOUND).",
+        examples=["VALIDATION_ERROR", "UNAUTHORIZED"],
     )
-    message: Optional[str] = Field(
-        None,
-        description="A human-readable message describing the error. This message is usually displayed to the end-user.",
-        examples=[
-            "Invalid email format.",
-            "User with this email already exists.",
-            "Invalid credentials.",
-        ],
+    message: str = Field(
+        ...,
+        description="Human-readable summary for clients.",
     )
-    details: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional details about the error, providing more context or specific information.",
-        examples=[
-            {"field": "email", "reason": "Invalid email format."},
-            {"field": "password", "reason": "Password is too short."},
-        ],
+    details: list[Any] = Field(
+        default_factory=list,
+        description=(
+            "Context entries: validation uses `{field, message}`; "
+            "not-found often uses `{entity, id}`; may be empty."
+        ),
     )
+
+
+def _coerce_error_details(details: Any) -> list[Any]:
+    if details is None:
+        return []
+    if isinstance(details, list):
+        return details
+    if isinstance(details, dict):
+        return [details] if details else []
+    return [{"info": str(details)}]
 
 
 def error_json_response(
@@ -159,16 +163,14 @@ def error_json_response(
     *,
     code: Optional[str] = None,
     message: Optional[str] = None,
-    details: Optional[dict[str, Any]] = None,
+    details: Any = None,
     headers: Optional[dict[str, str]] = None,
 ) -> JSONResponse:
-    """
-    Build a JSON HTTP response whose body matches ErrorResponse (same shape everywhere).
-    """
+    """JSON body identical to :class:`ErrorResponse` (flat ``code`` / ``message`` / ``details``)."""
     body = ErrorResponse(
-        code=code,
-        message=message,
-        details=details if details is not None else {},
+        code=code or "ERROR",
+        message=message or "",
+        details=_coerce_error_details(details),
     ).model_dump(mode="json")
     return JSONResponse(status_code=status_code, content=body, headers=headers)
 

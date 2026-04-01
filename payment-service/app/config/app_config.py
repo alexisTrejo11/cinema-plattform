@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     API_VERSION: str = "2.0.0"
     DEBUG_MODE: bool = False
-    SERVICE_NAME: str = "ticket-service"
+    SERVICE_NAME: str = "payment-service"
 
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
@@ -46,15 +46,19 @@ class Settings(BaseSettings):
     KAFKA_WALLET_EVENTS_TOPIC: str = "wallet.events"
     KAFKA_TOPIC_BILLBOARD_DLQ: str = "billboard.events.dlq"
     KAFKA_TOPIC_WALLET_DLQ: str = "wallet.events.dlq"
+    KAFKA_TOPIC_PAYMENT_EVENTS: str = "payment.events"
+    KAFKA_TOPIC_PAYMENT_INCOMING: str = "payment.incoming"
 
     # Consumers (ticket-service read-model sync; implement handlers separately)
     KAFKA_CONSUMER_ENABLED: bool = False
     KAFKA_CONSUMER_GROUP_BILLBOARD: str = "ticket-service-billboard"
     KAFKA_CONSUMER_GROUP_WALLET: str = "ticket-service-wallet"
+    KAFKA_CONSUMER_GROUP_PAYMENT: str = "payment-service-consumer"
     KAFKA_CONSUMER_AUTO_OFFSET_RESET: str = "latest"
     KAFKA_CONSUMER_POLL_TIMEOUT_MS: int = 1000
     KAFKA_CONSUMER_BILLBOARD_ENABLED: bool = True
     KAFKA_CONSUMER_WALLET_ENABLED: bool = True
+    KAFKA_CONSUMER_PAYMENT_ENABLED: bool = True
 
     # ── Service registry (optional) ───────────────────────────────────────────
     REGISTRY_ENABLED: bool = False

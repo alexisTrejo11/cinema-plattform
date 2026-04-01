@@ -3,7 +3,7 @@ from typing import Optional
 from decimal import Decimal
 
 from sqlalchemy.orm import mapped_column, Mapped
-from sqlalchemy import String, Numeric, DateTime, Text, JSON
+from sqlalchemy import String, Numeric, DateTime, Text, JSON, Boolean
 
 from app.config.postgres_config import Base
 
@@ -41,11 +41,32 @@ class PaymentModel(Base):
     external_reference: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True
     )
+    stripe_payment_intent_id: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
     payment_metadata: Mapped[Optional[dict]] = mapped_column(
         "metadata", JSON, nullable=True
     )
     failure_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    refund_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    refund_reasons: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
 
-    def soft_delete(self):
-        self.deleted_at = datetime.now(timezone.utc)
+
+class PaymentMethodModel(Base):
+    __tablename__ = "payment_methods"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    provider: Mapped[str] = mapped_column(String(255), nullable=False)
+    type: Mapped[str] = mapped_column(String(255), nullable=False)
+    stripe_code: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    min_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now(timezone.utc)
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+    )
+    deleted_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)

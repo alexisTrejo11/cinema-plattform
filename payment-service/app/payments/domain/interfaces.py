@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from app.shared.events.base import BaseEvent
-from app.payments.domain.entities import Payment, Wallet, Transaction
+from app.payments.domain.entities import Payment, Transaction, PaymentMethod
+from app.payments.domain.payment_list_criteria import PaymentListCriteria
 from app.payments.domain.value_objects import PaymentId, WalletId, TransactionId, UserId
 
 
@@ -14,8 +14,8 @@ class PaymentRepository(ABC):
         pass
 
     @abstractmethod
-    async def list(self, **kwargs) -> List[Payment]:
-        """List payments with filters."""
+    async def list(self, criteria: PaymentListCriteria) -> List[Payment]:
+        """List payments with filters and pagination."""
         pass
 
     @abstractmethod
@@ -29,17 +29,52 @@ class PaymentRepository(ABC):
         pass
 
 
-class EventPublisher(ABC):
-    """Interface for publishing domain events."""
+class PurchaseAssertionClient(ABC):
+    """
+    Sync boundary for cross-service business assertions (gRPC in production).
+
+    For now this is an abstract port; infrastructure can provide a no-op adapter
+    until the real remote calls are implemented.
+    """
 
     @abstractmethod
-    async def publish(self, event: BaseEvent) -> None:
-        """Publish a single domain event."""
+    async def assert_ticket_purchase(
+        self, user_id: str, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
         pass
 
     @abstractmethod
-    async def publish_batch(self, events: List[BaseEvent]) -> None:
-        """Publish multiple domain events."""
+    async def assert_concessions_purchase(
+        self, user_id: str, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
+    async def assert_merchandise_purchase(
+        self, user_id: str, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
+    async def assert_subscription_purchase(
+        self, user_id: str, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        pass
+
+    @abstractmethod
+    async def assert_wallet_credit(
+        self, user_id: str, payload: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        pass
+
+
+class PaymentEventsPublisher(ABC):
+    """Application-level publisher for integration events (Kafka later)."""
+
+    @abstractmethod
+    async def publish(
+        self, event_name: str, payload: Dict[str, Any], key: str | None = None
+    ) -> None:
         pass
 
 
@@ -65,39 +100,21 @@ class PaymentGateway(ABC):
         pass
 
 
-class NotificationService(ABC):
-    """Interface for sending notifications."""
-
-    @abstractmethod
-    async def send_payment_confirmation(
-        self, user_id: UUID, payment_details: Dict[str, Any]
-    ) -> None:
-        """Send payment confirmation notification."""
-        pass
-
-    @abstractmethod
-    async def send_payment_failure(
-        self, user_id: UUID, failure_details: Dict[str, Any]
-    ) -> None:
-        """Send payment failure notification."""
-        pass
-
-
 class WalletRepository(ABC):
     """Repository interface for wallet operations."""
 
     @abstractmethod
-    async def get_by_id(self, wallet_id: WalletId) -> Optional[Wallet]:
+    async def get_by_id(self, wallet_id: WalletId) -> Optional[Any]:
         """Get wallet by ID."""
         pass
 
     @abstractmethod
-    async def get_by_user_id(self, user_id: UserId) -> Optional[Wallet]:
+    async def get_by_user_id(self, user_id: UserId) -> Optional[Any]:
         """Get wallet by user ID."""
         pass
 
     @abstractmethod
-    async def save(self, wallet: Wallet) -> Wallet:
+    async def save(self, wallet: Any) -> Any:
         """Save wallet."""
         pass
 
@@ -120,4 +137,30 @@ class TransactionRepository(ABC):
     @abstractmethod
     async def save(self, transaction: Transaction) -> Transaction:
         """Save transaction."""
+        pass
+
+
+class PaymentMethodRepository(ABC):
+    """Repository interface for payment methods operations."""
+
+    @abstractmethod
+    async def find_all(self) -> List[PaymentMethod]:
+        """Get all payment methods."""
+        pass
+
+    @abstractmethod
+    async def find_by_id(
+        self, payment_method_id: str, include_deleted: bool = False
+    ) -> Optional[PaymentMethod]:
+        """Get payment method by ID."""
+        pass
+
+    @abstractmethod
+    async def save(self, payment_method: PaymentMethod) -> PaymentMethod:
+        """Create or update a payment method."""
+        pass
+
+    @abstractmethod
+    async def delete(self, payment_method_id: str) -> bool:
+        """Delete a payment method."""
         pass

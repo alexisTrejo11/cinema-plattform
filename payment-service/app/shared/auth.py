@@ -31,10 +31,15 @@ class AuthUserContext(BaseModel):
 
 # Roles that may access staff/management wallet endpoints (lowercase for comparison).
 STAFF_ROLE_NAMES = frozenset({"admin", "manager", "employee"})
+ADMIN_ROLE_NAMES = frozenset({"admin", "superadmin"})
 
 
 def is_staff_user(user: AuthUserContext) -> bool:
     return any(r.strip().lower() in STAFF_ROLE_NAMES for r in user.roles)
+
+
+def is_admin_user(user: AuthUserContext) -> bool:
+    return any(r.strip().lower() in ADMIN_ROLE_NAMES for r in user.roles)
 
 
 def _decode_token(token: str) -> dict:
@@ -95,5 +100,16 @@ async def require_staff_user(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="This action requires a staff role (admin, manager, or employee).",
+        )
+    return user
+
+
+async def require_admin_user(
+    user: AuthUserContext = Depends(get_current_user),
+) -> AuthUserContext:
+    if not is_admin_user(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This action requires an admin role.",
         )
     return user

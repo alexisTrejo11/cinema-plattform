@@ -13,6 +13,7 @@ from app.shared.core.exceptions import (
     AuthorizationException,
     DomainException,
 )
+from app.shared.core.response import ErrorResponse
 
 logger = logging.getLogger("app")
 
@@ -20,10 +21,12 @@ logger = logging.getLogger("app")
 def _error_response(
     status_code: int, code: str, message: str, details: list | None = None
 ) -> JSONResponse:
-    return JSONResponse(
-        status_code=status_code,
-        content={"error": {"code": code, "message": message, "details": details or []}},
-    )
+    body = ErrorResponse(
+        code=code,
+        message=message,
+        details=details or [],
+    ).model_dump(mode="json")
+    return JSONResponse(status_code=status_code, content=body)
 
 
 def _normalize_details(details) -> list:

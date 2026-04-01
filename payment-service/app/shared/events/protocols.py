@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from .base import BaseEvent
+from .base import IntegrationEvent
 
 
 @runtime_checkable
@@ -15,6 +15,6 @@ class EventPublisher(Protocol):
     buffers internally and never blocks the caller.
     """
 
-    def publish(self, topic: str, event: BaseEvent) -> None:
+    def publish(self, topic: str, event: IntegrationEvent) -> None:
         """Publish *event* to *topic*. Must never raise."""
         ...

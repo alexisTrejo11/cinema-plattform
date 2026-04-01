@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from .entities import Payment, Wallet
+from .entities import Payment
+from .payment_settings import PAYMENT_EXPIRY_MINUTES
 from .value_objects import (
     Money,
     PaymentType,
@@ -140,7 +141,7 @@ class PaymentDomainService:
         return base_refund
 
     def validate_wallet_payment(
-        self, wallet: Wallet, amount: Money, include_fees: bool = True
+        self, wallet: Any, amount: Money, include_fees: bool = True
     ) -> bool:
         """
         Validate if wallet can be used for payment.
@@ -172,7 +173,7 @@ class PaymentDomainService:
         user_id: UserId,
         amount: Money,
         payment_type: PaymentType,
-        user_wallet: Optional[Wallet] = None,
+        user_wallet: Optional[Any] = None,
     ) -> List[PaymentMethod]:
         """
         Suggest appropriate payment methods for a user.
@@ -221,7 +222,7 @@ class PaymentDomainService:
         Returns:
             Expiry datetime
         """
-        base_expiry_minutes = 30  # Default
+        base_expiry_minutes = PAYMENT_EXPIRY_MINUTES
 
         # Adjust based on payment method
         if payment_method == PaymentMethod.BANK_TRANSFER:
@@ -234,7 +235,7 @@ class PaymentDomainService:
             # Give more time for ticket purchases
             base_expiry_minutes += 15
 
-        return datetime.utcnow() + timedelta(minutes=base_expiry_minutes)
+        return datetime.now(timezone.utc) + timedelta(minutes=base_expiry_minutes)
 
     def validate_payment_amount_limits(
         self, amount: Money, payment_type: PaymentType, user_id: UserId
@@ -287,7 +288,7 @@ class PaymentDomainService:
             return base_refund
 
         # Get time since payment completion
-        time_since_payment = datetime.utcnow() - payment.completed_at
+        time_since_payment = datetime.now(timezone.utc) - payment.completed_at
 
         # Apply time-based refund policy
         if time_since_payment > timedelta(days=7):
@@ -328,7 +329,7 @@ class PaymentDomainService:
             [
                 p
                 for p in recent_payments
-                if p.created_at > datetime.utcnow() - timedelta(hours=1)
+                if p.created_at > datetime.now(timezone.utc) - timedelta(hours=1)
             ]
         )
 
@@ -341,7 +342,7 @@ class PaymentDomainService:
                 p
                 for p in recent_payments
                 if p.status == PaymentStatus.FAILED
-                and p.created_at > datetime.utcnow() - timedelta(hours=24)
+                and p.created_at > datetime.now(timezone.utc) - timedelta(hours=24)
             ]
         )
 

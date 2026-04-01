@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package cinema.payment.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+// Placeholder sync assertions used before creating payment intents.
+// Other services can implement this contract and payment-service can call it.
+service PurchaseAssertionService {
+  rpc AssertTicketPurchase (PurchaseAssertionRequest) returns (PurchaseAssertionResponse);
+  rpc AssertConcessionsPurchase (PurchaseAssertionRequest) returns (PurchaseAssertionResponse);
+  rpc AssertMerchandisePurchase (PurchaseAssertionRequest) returns (PurchaseAssertionResponse);
+  rpc AssertSubscriptionPurchase (PurchaseAssertionRequest) returns (PurchaseAssertionResponse);
+  rpc AssertWalletCredit (PurchaseAssertionRequest) returns (PurchaseAssertionResponse);
+}
+
+// Optional query-style contract for other services that need payment state.
+service PaymentQueryService {
+  rpc GetPaymentStatus (PaymentStatusRequest) returns (PaymentStatusResponse);
+}
+
+message PurchaseAssertionRequest {
+  string user_id = 1;
+  string idempotency_key = 2;
+  google.protobuf.Struct payload = 3;
+}
+
+message PurchaseAssertionResponse {
+  bool allowed = 1;
+  string reason = 2;
+  string reference_id = 3;
+  google.protobuf.Struct normalized_payload = 4;
+}
+
+message PaymentStatusRequest {
+  string payment_id = 1;
+}
+
+message PaymentStatusResponse {
+  string payment_id = 1;
+  string status = 2;
+  double amount = 3;
+  string currency = 4;
+  string payment_type = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// Generic event envelope that can be reused by producers/consumers.
+message PaymentEventEnvelope {
+  string event_id = 1;
+  string event_type = 2;
+  string service = 3;
+  string key = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+  google.protobuf.Struct payload = 6;
+}

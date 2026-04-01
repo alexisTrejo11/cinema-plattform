@@ -36,9 +36,10 @@ def upgrade() -> None:
         sa.Column("completed_at", sa.DateTime(), nullable=True),
         sa.Column("refunded_at", sa.DateTime(), nullable=True),
         sa.Column("external_reference", sa.String(length=100), nullable=True),
+        sa.Column("stripe_payment_intent_id", sa.String(length=255), nullable=True),
         sa.Column("metadata", sa.JSON(), nullable=True),
         sa.Column("failure_reason", sa.Text(), nullable=True),
-        sa.Column("refund_reason", sa.Text(), nullable=True),
+        sa.Column("refund_reasons", sa.JSON(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_payments_user_id", "payments", ["user_id"], unique=False)
