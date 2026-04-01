@@ -1,0 +1,182 @@
+name: payment-service
+
+# Container env for the app (overrides ../.env for DB so it matches the db service).
+# Compose ${DB_*:-...} substitution reads the shell and a `.env` file next to this YAML (docker/.env).
+x-app-environment: &app-environment
+  POSTGRES_USER: ${DB_USER:-postgres}
+  POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+  POSTGRES_HOST: db
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: ${DB_NAME:-cinema_payment}
+  REDIS_URL: redis://redis:6379/0
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    networks:
+      - payment_network
+    ports:
+      - "6378:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks:
+      - payment_network
+    environment:
+      POSTGRES_DB: ${DB_NAME:-cinema_payment}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5431:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-cinema_payment}",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app-1:
+    build:
+      context: ..
+      dockerfile: docker/dockerfile
+    image: payment-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *app-environment
+      RUN_MIGRATIONS_ON_START: "1"
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - payment_network
+
+  app-2:
+    image: payment-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *app-environment
+      RUN_MIGRATIONS_ON_START: "0"
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      app-1:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - payment_network
+
+  app-3:
+    image: payment-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *app-environment
+      RUN_MIGRATIONS_ON_START: "0"
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      app-1:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - payment_network
+
+  app-grpc:
+    image: payment-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      <<: *app-environment
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: 50051
+    command: ["/app/docker/docker-entrypoint.sh", "serve-grpc"]
+    depends_on:
+      app-1:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "50051:50051"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.socket(); s.settimeout(3); s.connect(('127.0.0.1',50051)); s.close()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    networks:
+      - payment_network
+
+  migrate:
+    image: payment-service:local
+    env_file:
+      - ../.env
+    environment:
+      <<: *app-environment
+    command: ["/app/docker/docker-entrypoint.sh", "migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - payment_network
+    profiles:
+      - tools
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    depends_on:
+      app-1:
+        condition: service_healthy
+      app-2:
+        condition: service_healthy
+      app-3:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - payment_network
+    volumes:
+      - ./nginx/logs:/var/log/nginx
+
+networks:
+  payment_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

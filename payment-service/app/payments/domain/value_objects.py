@@ -5,6 +5,7 @@ Immutable objects that represent domain concepts without identity.
 Value objects encapsulate business rules and provide type safety.
 """
 
+from __future__ import annotations
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime
 from enum import Enum

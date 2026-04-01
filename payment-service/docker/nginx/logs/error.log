@@ -1,0 +1,1 @@
+2026/04/01 22:32:31 [warn] 1#1: the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/nginx.conf:19

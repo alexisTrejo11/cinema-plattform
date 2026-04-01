@@ -5,6 +5,7 @@ Core business entity representing a payment in the cinema system.
 Implements business rules and invariants for payment processing.
 """
 
+from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import ClassVar, List, Optional
 

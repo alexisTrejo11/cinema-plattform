@@ -1,20 +1,36 @@
 # Payment Service Kafka + gRPC Integration Guide
 
+**Service**: payment-service  
+**Version**: 2.0.0  
+**Last Updated**: 2026-04-01
+
 This guide explains how `payment-service` publishes and consumes Kafka events, and how to align gRPC contracts across services in this monorepo.
 
 The implementation is intentionally simple (KISS): small event envelope, explicit topics, minimal incoming handlers.
 
 ---
 
-## 1) Current integration points
+## 1) Service Overview
 
-### Outgoing Kafka events
+| Property | Value |
+|----------|-------|
+| REST API Port | 8000 |
+| gRPC Port | 50055 |
+| Kafka Topics | `payment.events`, `payment.incoming` |
+| Consumer Group | `payment-service-consumer` |
+| Database | PostgreSQL (cinema_payments) |
+
+---
+
+## 2) Current Integration Points
+
+### Outgoing Kafka Events
 
 `payment-service` publishes to:
 
 - `KAFKA_TOPIC_PAYMENT_EVENTS` (default: `payment.events`)
 
-Envelope shape:
+#### Event Envelope Structure
 
 ```json
 {
@@ -27,55 +43,62 @@ Envelope shape:
 }
 ```
 
+#### Published Event Types
+
 Published from use cases through `PaymentEventsPublisher` port:
 
-- `payment.intent.created`
-- `payment.completed`
-- `payment.failed`
-- `payment.refunded`
-- `payment.status.overridden`
-- and other operational events introduced in admin/staff flows
+| Event Type | Trigger |
+|------------|---------|
+| `payment.intent.created` | New payment created |
+| `payment.processing_started` | Payment processing begins |
+| `payment.completed` | Payment successful |
+| `payment.failed` | Payment failed |
+| `payment.cancelled` | Payment cancelled |
+| `payment.refunded` | Refund processed |
+| `payment.status.overridden` | Admin status override |
+| `payment.refund.staff_requested` | Staff refund request |
+| `stripe.webhook.*` | Stripe webhook events |
+| `transaction.reverse.requested` | Transaction reversal request |
 
-### Incoming Kafka events
+### Incoming Kafka Events
 
 `payment-service` consumes from:
 
 - `KAFKA_TOPIC_PAYMENT_INCOMING` (default: `payment.incoming`)
 
-Handled event types:
+#### Consumed Event Types
 
-- `payment.external.confirmed`
-- `stripe.payment_intent.succeeded`
-- `payment.external.failed`
-- `stripe.payment_intent.failed`
-- `show.cancelled`
+| Event Type | Action |
+|------------|--------|
+| `payment.external.confirmed` | Mark payment completed |
+| `stripe.payment_intent.succeeded` | Mark payment completed |
+| `payment.external.failed` | Mark payment failed |
+| `stripe.payment_intent.failed` | Mark payment failed |
+| `show.cancelled` | Auto-refund matching payments |
 
-Behavior:
+#### Incoming Event Handling Behavior
 
-- Confirm/fail events update local payment status.
-- `show.cancelled` auto-refunds matching show payments when refundable.
-
----
-
-## 2) Files added/updated
-
-- `app/payments/infrastructure/messaging/kafka_payment_events.py`
-  - Kafka producer adapter (`KafkaPaymentEventsPublisher`)
-  - Inbound consumer (`PaymentInboundKafkaConsumer`)
-- `app/payments/application/services/payment_incoming_events_handler.py`
-  - Incoming event orchestration logic
-- `app/config/kafka_config.py`
-  - Startup/shutdown wiring for payment consumer tasks
-- `app/payments/presentation/depencies.py`
-  - Selects Kafka publisher adapter and gRPC assertion placeholder adapter
-- `app/config/app_config.py`
-  - Payment topic/group settings
-- `proto/payment_contracts.proto`
-  - Shared gRPC contract starter
+- Confirm/fail events update local payment status
+- `show.cancelled` auto-refunds matching show payments when refundable
 
 ---
 
-## 3) Required env vars
+## 3) Implementation Files
+
+| File | Description |
+|------|-------------|
+| `app/payments/infrastructure/messaging/kafka_payment_events.py` | Kafka producer adapter, inbound consumer |
+| `app/payments/application/services/payment_incoming_events_handler.py` | Incoming event orchestration |
+| `app/config/kafka_config.py` | Startup/shutdown wiring for consumers |
+| `app/payments/presentation/depencies.py` | Adapter selection (Kafka, gRPC) |
+| `app/config/app_config.py` | Kafka topic/group settings |
+| `proto/payment_contracts.proto` | Shared gRPC contracts |
+
+---
+
+## 4) Environment Variables
+
+### Required for Kafka
 
 Add these to `payment-service/.env`:
 
@@ -94,7 +117,7 @@ KAFKA_TOPIC_PAYMENT_EVENTS=payment.events
 KAFKA_TOPIC_PAYMENT_INCOMING=payment.incoming
 ```
 
-Optional (for future real gRPC assertions):
+### Optional for gRPC
 
 ```env
 GRPC_BILLBOARD_TARGET=billboard-service:50051
@@ -103,14 +126,14 @@ GRPC_PAYMENT_TARGET=payment-service:50055
 
 ---
 
-## 4) Monorepo Kafka setup (parent folder)
+## 5) Monorepo Kafka Setup
 
 Because infrastructure lives in the same parent folder, define broker + topics in your root compose/infra stack.
 
-Minimum recommendation:
+### Minimum Requirements
 
 - `kafka` service reachable as `kafka:9092` from containers
-- topics created at startup:
+- Topics created at startup:
   - `payment.events`
   - `payment.incoming`
 
@@ -118,7 +141,7 @@ If you use a topic-init job/container, keep it idempotent (create-if-not-exists)
 
 ---
 
-## 5) How other services integrate
+## 6) How Other Services Integrate
 
 ### Consume payment events
 
@@ -147,7 +170,7 @@ Other services publish to `payment.incoming` using the same envelope:
 
 ---
 
-## 6) gRPC contract bootstrap
+## 7) gRPC Contract Bootstrap
 
 Proto file:
 
@@ -176,7 +199,7 @@ Create the output folder first if needed.
 
 ---
 
-## 7) Keep it simple (current design choices)
+## 8) Design Principles
 
 - No schema registry yet.
 - No DLQ flow yet (can be added later).
@@ -185,7 +208,7 @@ Create the output folder first if needed.
 
 ---
 
-## 8) Suggested next incremental steps
+## 9) Suggested Next Steps
 
 1. Add integration tests for:
    - publish envelope shape

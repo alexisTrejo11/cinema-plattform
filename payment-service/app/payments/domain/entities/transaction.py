@@ -5,6 +5,7 @@ Represents individual wallet transactions providing audit trail
 and transaction history for financial operations.
 """
 
+from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional
 
