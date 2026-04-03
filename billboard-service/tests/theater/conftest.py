@@ -1,11 +1,11 @@
 from tests.conftest import *
 from typing import Dict, Any
-from app.core.theater.domain.theater import Theater, TheaterType
-from app.core.theater.domain.seat import TheaterSeat, SeatType
-from app.core.theater.infrastructure.persistence.sqlalch_theater_repository import (
+from app.theater.domain.theater import Theater, TheaterType
+from app.theater.domain.seat import TheaterSeat, SeatType
+from app.theater.infrastructure.persistence.sqlalch_theater_repository import (
     SQLAlchemyTheaterRepository as TheaterRepository,
 )
-from app.core.theater.infrastructure.persistence.sqlalch_seats_repository import (
+from app.theater.infrastructure.persistence.sqlalch_seats_repository import (
     SqlAlchemyTheaterSeatRepository as TheaterSeatRepository,
 )
 

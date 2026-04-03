@@ -15,7 +15,7 @@
   - Cinema types: VIP, Traditional
   - Amenities tracking: parking, food court, coffee station, disability access
   - Social media integration (Facebook, Instagram, X/Twitter, TikTok)
-  - Geographic coordinates for location mapping
+  - Geographic coordinates for location mapp.g
   - Soft delete with restoration capabilities
 - **Tech Stack** (optional):
   - FastAPI REST controllers
@@ -81,7 +81,7 @@
 
 - **ID**: "theater-management"
 - **Title**: "Multi-Theater Screen Management"
-- **Description**: "Theater inventory management supporting multiple screen types, capacity tracking, maintenance mode, and seat mapping integration."
+- **Description**: "Theater inventory management supporting multiple screen types, capacity tracking, maintenance mode, and seat mapp.g integration."
 - **Icon**: "🎪"
 - **Category** (`FeatureCategory`): `database`
 - **Status** (`FeatureStatus`): `stable`
@@ -102,8 +102,8 @@
 ### Feature 4: Seat Inventory Management
 
 - **ID**: "seat-inventory"
-- **Title**: "Theater Seat Mapping & Inventory"
-- **Description**: "Detailed seat-level inventory management with multiple seat types, maintenance tracking, and grid-based layout (row/number) for accurate theater mapping."
+- **Title**: "Theater Seat Mapp.g & Inventory"
+- **Description**: "Detailed seat-level inventory management with multiple seat types, maintenance tracking, and grid-based layout (row/number) for accurate theater mapp.g."
 - **Icon**: "💺"
 - **Category** (`FeatureCategory`): `database`
 - **Status** (`FeatureStatus`): `stable`
@@ -158,7 +158,7 @@
                 raise InvalidStatusTransitionException()
             showtime.status = ShowtimeStatus.UPCOMING
             updated = await self.repository.update(showtime)
-            return self.mapper.to_dto(updated)
+            return self.mapp..to_dto(updated)
     ```
 
 ---
@@ -190,13 +190,13 @@
     def require_roles(*required_roles: str):
         """Decorator for role-based access control."""
         def decorator(func):
-            async def wrapper(*args, **kwargs):
+            async def wrapp.(*args, **kwargs):
                 request = kwargs.get("request")
                 user_roles = request.state.current_user.roles
                 if not any(role in user_roles for role in required_roles):
                     raise HTTPException(status_code=403)
                 return await func(*args, **kwargs)
-            return wrapper
+            return wrapp.
         return decorator
     ```
 
@@ -299,14 +299,14 @@
 
 - **ID**: "exception-handling"
 - **Title**: "Centralized Exception Management"
-- **Description**: "Unified exception handling with domain-specific errors, validation messages, and proper HTTP status code mapping."
+- **Description**: "Unified exception handling with domain-specific errors, validation messages, and proper HTTP status code mapp.g."
 - **Icon**: "🛡️"
 - **Category** (`FeatureCategory`): `api`
 - **Status** (`FeatureStatus`): `stable`
 - **Highlights**:
   - Domain-specific exceptions
   - Validation error formatting
-  - HTTP status code mapping
+  - HTTP status code mapp.g
   - Error detail structures
   - Security-conscious error messages
   - Exception logging

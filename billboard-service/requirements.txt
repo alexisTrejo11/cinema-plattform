@@ -1,30 +1,46 @@
-# FastAPI and related dependencies for building the API
+# ---- Web -------
 fastapi[standard]
+uvicorn
+aiohttp
+
+# ---- gRPC -------
+protobuf
+grpcio>=1.78.0
+grpcio-tools>=1.78.0
+
+# ---- Validation -------
 pydantic
 pydantic-settings
+email-validator
 
-# Object-relational mapping and database tools
+# ---- Database -------
 SQLAlchemy
 asyncpg
-alembic
-aiosqlite
-
-# Asynchronous programming support
+psycopg2-binary
 greenlet
+aiosqlite
+alembic
 
-# Testing and development tools
-pytest
-pytest-asyncio
-colorlog
-
-# Rate limiting library for FastAPI
-slowapi
-# JWT handling library for authentication
-pyjwt
-
-# Redis caching
+# ---- Caching -------
 fastapi-cache[redis]
 redis>=5.0.0
 
-# Production ASGI server
-gunicorn>=20.1.0
+# ---- Security -------
+PyJWT
+passlib[bcrypt]
+python-multipart
+
+# ---- Rate limiting -------
+slowapi
+
+# ---- Messaging -------
+kafka-python
+httpx
+
+# ---- Logging -------
+colorlog
+
+
+# ---- Testing -------
+pytest
+pytest-asyncio

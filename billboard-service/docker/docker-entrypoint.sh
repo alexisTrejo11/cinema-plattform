@@ -30,7 +30,7 @@ case "$mode" in
     ;;
   serve)
     run_migrations
-    exec gunicorn main:fast_api_app \
+    exec gunicorn main:fast_api_app.
       --worker-class uvicorn.workers.UvicornWorker \
       --bind 0.0.0.0:8000 \
       --workers "${GUNICORN_WORKERS:-4}"

@@ -4,9 +4,9 @@ import pytest
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.showtime.domain.entities.showtime import Showtime, Seats, Decimal
-from app.core.showtime.domain.enums import *
-from app.core.showtime.infrastructure.persistence.sqlalch_show_repository import (
+from  app.showtime.domain.entities.showtime import Showtime, Seats, Decimal
+from  app.showtime.domain.enums import *
+from  app.showtime.infrastructure.persistence.sqlalch_show_repository import (
     SQLAlchemyShowtimeRepository as ShowtimeRepository,
 )
 
@@ -30,7 +30,7 @@ def create_seats():
             row = chr(65 + (i // 10))  # A, B, C...
             number = (i % 10) + 1
             is_taken = True if i < taken_seats_count else False
-            seats.append(
+            seats.app.d(
                 Seats(
                     seat_id=i + 1, seat_row=row, seat_number=number, is_taken=is_taken
                 )
@@ -269,7 +269,7 @@ def showtime_too_far_in_future(create_seats) -> Showtime:
 
 
 @pytest.fixture
-def showtime_overlapping_with_another(create_seats) -> Showtime:
+def showtime_overlapp.g_with_another(create_seats) -> Showtime:
     """
     Fixture para un Showtime que se superpone con otro.
     Requiere que se genere otro showtime para la superposición.

@@ -34,7 +34,7 @@ services:
       timeout: 3s
       retries: 20
 
-  app-1:
+  app.:
     build:
       context: ..
       dockerfile: docker/dockerfile
@@ -47,7 +47,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       REDIS_URL: redis://redis:6379/0
-    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    command: ["/app.ocker/docker-entrypoint.sh", "serve"]
     depends_on:
       db:
         condition: service_healthy
@@ -56,7 +56,7 @@ services:
     networks:
       - billboard_network
 
-  app-2:
+  app.:
     build:
       context: ..
       dockerfile: docker/dockerfile
@@ -69,7 +69,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       REDIS_URL: redis://redis:6379/0
-    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    command: ["/app.ocker/docker-entrypoint.sh", "serve"]
     depends_on:
       db:
         condition: service_healthy
@@ -78,7 +78,7 @@ services:
     networks:
       - billboard_network
 
-  app-3:
+  app.:
     build:
       context: ..
       dockerfile: docker/dockerfile
@@ -91,7 +91,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       REDIS_URL: redis://redis:6379/0
-    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    command: ["/app.ocker/docker-entrypoint.sh", "serve"]
     depends_on:
       db:
         condition: service_healthy
@@ -112,7 +112,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       REDIS_URL: redis://redis:6379/0
-    command: ["/app/docker/docker-entrypoint.sh", "migrate"]
+    command: ["/app.ocker/docker-entrypoint.sh", "migrate"]
     depends_on:
       db:
         condition: service_healthy
@@ -126,9 +126,9 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     depends_on:
-      - app-1
-      - app-2
-      - app-3
+      - app.
+      - app.
+      - app.
     ports:
       - "80:80"
       - "443:443"

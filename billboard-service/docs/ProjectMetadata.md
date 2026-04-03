@@ -32,7 +32,7 @@ tags:
 ## 2. Overview
 
 - **File**: [ProjectOverview.md](ProjectOverview.md)
-- **Description**: Business context, problem statement, solution approach, and key metrics for the cinema billboard management platform.
+- **Description**: Business context, problem statement, solution app.ach, and key metrics for the cinema billboard management platform.
 
 ## 3. Infrastructure
 
@@ -42,7 +42,7 @@ tags:
 ## 4. Architecture
 
 - **File**: [ProjectArchitectureModel.md](ProjectArchitectureModel.md)
-- **Description**: Domain-Driven Design layers, architectural patterns (Repository, Data Mapper, Use Case), security strategies, and data flow diagrams.
+- **Description**: Domain-Driven Design layers, architectural patterns (Repository, Data Mapp., Use Case), security strategies, and data flow diagrams.
 
 ## 5. Features
 

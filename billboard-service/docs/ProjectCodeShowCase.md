@@ -20,7 +20,7 @@
 **File 1:**
 
 - **Name**: "entities.py"
-- **Path**: "app/core/cinema/domain/entities.py"
+- **Path**: " app.cinema/domain/entities.py"
 - **Language**: "python"
 - **Content**:
 
@@ -61,7 +61,7 @@
 
 - **ID**: "repository-pattern"
 - **Title**: "Repository Implementation"
-- **Description**: "SQLAlchemy repository implementation with data mapper pattern translating between database models and domain entities"
+- **Description**: "SQLAlchemy repository implementation with data mapp. pattern translating between database models and domain entities"
 - **Category**: "Data Access"
 - **Tags**:
   - Repository Pattern
@@ -73,18 +73,18 @@
 **File 1:**
 
 - **Name**: "repositories.py"
-- **Path**: "app/core/cinema/infrastructure/persistence/sqlalchemy/repositories.py"
+- **Path**: " app.cinema/infrastructure/persistence/sqlalchemy/repositories.py"
 - **Language**: "python"
 - **Content**:
 
   ```python
   from sqlalchemy import select, func, and_
   from sqlalchemy.ext.asyncio import AsyncSession
-  from app.core.cinema.domain.entities import Cinema
-  from app.core.cinema.domain.repositories import CinemaRepository
-  from app.core.shared.pagination import PaginationParams, Page
+  from  app.cinema.domain.entities import Cinema
+  from  app.cinema.domain.repositories import CinemaRepository
+  from  app.shared.pagination import PaginationParams, Page
   from .models import CinemaModel
-  from .mappers import CinemaModelMapper
+  from .mapp.s import CinemaModelMapp.
 
   class SQLAlchemyCinemaRepository(CinemaRepository):
       """Repository implementation using SQLAlchemy async."""
@@ -114,28 +114,28 @@
           models = result.scalars().all()
 
           # Map database models to domain entities
-          cinemas = [CinemaModelMapper.to_domain(model) for model in models]
+          cinemas = [CinemaModelMapp..to_domain(model) for model in models]
           return Page.create(items=cinemas, total=total, params=params)
 
       async def find_by_id(self, entity_id: int) -> Optional[Cinema]:
           model = await self.session.get(CinemaModel, entity_id)
-          return CinemaModelMapper.to_domain(model) if model else None
+          return CinemaModelMapp..to_domain(model) if model else None
   ```
 
 - **Highlighted**: `true`
-- **Explanation**: "Repository abstracts data access and uses mapper to convert SQLAlchemy models to domain entities, maintaining layer separation"
+- **Explanation**: "Repository abstracts data access and uses mapp. to convert SQLAlchemy models to domain entities, maintaining layer separation"
 
 ---
 
 ### Example 3: Use Case Pattern
 
 - **ID**: "use-case-pattern"
-- **Title**: "Use Case Application Layer"
-- **Description**: "Application service orchestrating business workflows with caching, validation, and transaction management"
-- **Category**: "Application Layer"
+- **Title**: "Use Case application Layer"
+- **Description**: "application service orchestrating business workflows with caching, validation, and transaction management"
+- **Category**: "application Layer"
 - **Tags**:
   - Use Case
-  - Application Service
+  - application Service
   - Caching
 
 #### Files (`CodeFile[]`)
@@ -143,24 +143,24 @@
 **File 1:**
 
 - **Name**: "use_cases.py"
-- **Path**: "app/core/cinema/application/use_cases.py"
+- **Path**: " app.cinema/application/use_cases.py"
 - **Language**: "python"
 - **Content**:
 
   ```python
   from typing import Optional
-  from app.core.cinema.domain.repositories import CinemaRepository
-  from app.core.cinema.application.dtos import CinemaResponseDTO
-  from app.core.cinema.application.mappers import CinemaDTOMapper
-  from app.core.shared.exceptions import EntityNotFoundException
-  from app.core.cinema.application.cache import cinema_cache
+  from  app.cinema.domain.repositories import CinemaRepository
+  from  app.cinema.application.dtos import CinemaResponseDTO
+  from  app.cinema.application.mapp.s import CinemaDTOMapp.
+  from  app.shared.exceptions import EntityNotFoundException
+  from  app.cinema.application.cache import cinema_cache
 
   class GetCinemaByIdUseCase:
       """Retrieve a cinema by ID with caching."""
 
       def __init__(self, repository: CinemaRepository):
           self.repository = repository
-          self.mapper = CinemaDTOMapper()
+          self.mapp. = CinemaDTOMapp.()
 
       @cinema_cache(key_prefix="cinema:id", ttl=300)
       async def execute(self, cinema_id: int) -> CinemaResponseDTO:
@@ -183,7 +183,7 @@
                   entity_id=cinema_id
               )
 
-          return self.mapper.to_response_dto(cinema)
+          return self.mapp..to_response_dto(cinema)
 
 
   class SearchCinemasUseCase:
@@ -191,7 +191,7 @@
 
       def __init__(self, repository: CinemaRepository):
           self.repository = repository
-          self.mapper = CinemaDTOMapper()
+          self.mapp. = CinemaDTOMapp.()
 
       async def execute(
           self,
@@ -203,7 +203,7 @@
 
           # Map domain entities to DTOs
           dto_items = [
-              self.mapper.to_response_dto(cinema)
+              self.mapp..to_response_dto(cinema)
               for cinema in cinema_page.items
           ]
 
@@ -215,7 +215,7 @@
   ```
 
 - **Highlighted**: `true`
-- **Explanation**: "Use cases encapsulate business workflows, coordinate repositories, and apply caching decorators for performance"
+- **Explanation**: "Use cases encapsulate business workflows, coordinate repositories, and app. caching decorators for performance"
 
 ---
 
@@ -235,7 +235,7 @@
 **File 1:**
 
 - **Name**: "jwt_auth_middleware.py"
-- **Path**: "app/config/jwt_auth_middleware.py"
+- **Path**: "app.config/jwt_auth_middleware.py"
 - **Language**: "python"
 - **Content**:
 
@@ -330,7 +330,7 @@
 **File 1:**
 
 - **Name**: "jwt_auth_middleware.py"
-- **Path**: "app/config/jwt_auth_middleware.py"
+- **Path**: "app.config/jwt_auth_middleware.py"
 - **Language**: "python"
 - **Content**:
 
@@ -350,7 +350,7 @@
       """
       def decorator(func: Callable) -> Callable:
           @wraps(func)
-          async def wrapper(*args, **kwargs):
+          async def wrapp.(*args, **kwargs):
               request: Request = kwargs.get("request")
 
               if not request or not hasattr(request.state, "current_user"):
@@ -369,7 +369,7 @@
 
               return await func(*args, **kwargs)
 
-          return wrapper
+          return wrapp.
       return decorator
 
 
@@ -405,7 +405,7 @@
 **File 1:**
 
 - **Name**: "cache.py"
-- **Path**: "app/core/cinema/application/cache.py"
+- **Path**: " app.cinema/application/cache.py"
 - **Language**: "python"
 - **Content**:
 
@@ -424,7 +424,7 @@
       """
       def decorator(func: Callable) -> Callable:
           @wraps(func)
-          async def wrapper(self, *args, **kwargs):
+          async def wrapp.(self, *args, **kwargs):
               # Generate cache key from arguments
               cache_key = f"{key_prefix}:{args[0]}" if args else key_prefix
 
@@ -448,7 +448,7 @@
 
               return result
 
-          return wrapper
+          return wrapp.
       return decorator
 
 
@@ -458,7 +458,7 @@
       async def execute(self, cinema_id: int) -> CinemaResponseDTO:
           # This result will be cached for 5 minutes
           cinema = await self.repository.find_by_id(cinema_id)
-          return self.mapper.to_response_dto(cinema)
+          return self.mapp..to_response_dto(cinema)
   ```
 
 - **Highlighted**: `true`
@@ -482,7 +482,7 @@
 **File 1:**
 
 - **Name**: "pagination.py"
-- **Path**: "app/core/shared/pagination.py"
+- **Path**: " app.shared/pagination.py"
 - **Language**: "python"
 - **Content**:
 
@@ -561,7 +561,7 @@
 **File 1:**
 
 - **Name**: "global_exception_handler.py"
-- **Path**: "app/config/global_exception_handler.py"
+- **Path**: "app.config/global_exception_handler.py"
 - **Language**: "python"
 - **Content**:
 
@@ -569,9 +569,9 @@
   from fastapi import Request, status
   from fastapi.responses import JSONResponse
   from fastapi.exceptions import RequestValidationError
-  from app.core.shared.exceptions import (
+  from  app.shared.exceptions import (
       DomainException,
-      ApplicationException,
+      applicationException,
       EntityNotFoundException
   )
 
@@ -617,7 +617,7 @@
       """Handle Pydantic validation errors."""
       errors = []
       for error in exc.errors():
-          errors.append({
+          errors.app.d({
               "field": ".".join(str(loc) for loc in error["loc"]),
               "message": error["msg"],
               "type": error["type"]

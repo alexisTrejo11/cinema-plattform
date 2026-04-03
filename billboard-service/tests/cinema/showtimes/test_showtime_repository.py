@@ -1,7 +1,7 @@
 from typing import Optional
-from app.core.shared.pagination import PaginationParams
-from app.core.movies.application.dtos import MovieShowtimesFilters
-from app.core.showtime.domain.enums import ShowtimeType
+from app.shared.pagination import PaginationParams
+from app.movies.application.dtos import MovieShowtimesFilters
+from app.showtime.domain.enums import ShowtimeType
 from tests.showtimes.constest import *
 
 
@@ -40,7 +40,7 @@ async def test_update_showtime(
     # Arrange
     saved_showtime = await showtime_repo.save(sample_showtime)
 
-    # Apply updates
+    # app. updates
     for key, value in showtime_for_update.items():
         setattr(saved_showtime, key, value)
 

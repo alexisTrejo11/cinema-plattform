@@ -19,7 +19,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp import mymodel
+# from myapp.mport mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = None
 
@@ -29,8 +29,8 @@ def _build_database_url() -> str:
     if explicit_url:
         return explicit_url
 
-    db_user = os.getenv("DB_USER", "alexistrejo")
-    db_password = os.getenv("DB_PASSWORD", "postgresadmin")
+    db_user = os.getenv("DB_USER", "postgres")
+    db_password = os.getenv("DB_PASSWORD", "fedoraadmin")
     db_host = os.getenv("DB_HOST", "localhost")
     db_port = os.getenv("DB_PORT", "5432")
     db_name = os.getenv("DB_NAME", "cinema_billboard")

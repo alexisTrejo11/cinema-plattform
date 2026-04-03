@@ -12,7 +12,7 @@
     - **Icon**: "🌐"
     - **Description**: "Modern web browsers accessing REST API endpoints"
   - **Component 2**
-    - **Name**: "Mobile Apps"
+    - **Name**: "Mobile app.
     - **Icon**: "📱"
     - **Description**: "iOS/Android applications consuming JSON API"
   - **Component 3**
@@ -30,7 +30,7 @@
   - **Component 1**
     - **Name**: "Load Balancer"
     - **Icon**: "⚖️"
-    - **Description**: "NGINX/HAProxy distributing traffic across app instances"
+    - **Description**: "NGINX/HAProxy distributing traffic across app.nstances"
   - **Component 2**
     - **Name**: "SSL/TLS Termination"
     - **Icon**: "🔒"
@@ -42,15 +42,15 @@
 
 ---
 
-### Layer 3: Application Layer
+### Layer 3: application Layer
 
-- **Name**: "Application Service Layer"
+- **Name**: "application Service Layer"
 - **Color**: "#2ecc71"
 - **Components** (`DeploymentComponent[]`):
   - **Component 1**
-    - **Name**: "FastAPI Application"
+    - **Name**: "FastAPI application"
     - **Icon**: "⚡"
-    - **Description**: "Python 3.13 FastAPI app with 4 Gunicorn workers (Uvicorn)"
+    - **Description**: "Python 3.13 FastAPI app.ith 4 Gunicorn workers (Uvicorn)"
   - **Component 2**
     - **Name**: "JWT Auth Middleware"
     - **Icon**: "🔐"
@@ -98,7 +98,7 @@
   - **Component 2**
     - **Name**: "Docker Compose"
     - **Icon**: "📦"
-    - **Description**: "Multi-container orchestration (app, db, redis)"
+    - **Description**: "Multi-container orchestration (app.db, redis)"
   - **Component 3**
     - **Name**: "Health Checks"
     - **Icon**: "❤️"
@@ -108,7 +108,7 @@
 
 ## 2. Docker Files (`DockerFile[]`)
 
-### Service 1: Application Service
+### Service 1: application Service
 
 - **Service**: "billboard-service"
 - **Description**: "Multi-stage Python application container with non-root execution"
@@ -130,13 +130,13 @@
       rm -rf /var/lib/apt/lists/*
   COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
   COPY . .
-  RUN useradd -m -u 1000 appuser && \
-      chown -R appuser:appuser /app
-  USER appuser
+  RUN useradd -m -u 1000 app.er && \
+      chown -R app.er:app.er /app
+  USER app.er
   EXPOSE 8000
   HEALTHCHECK --interval=30s --timeout=3s \
     CMD python -c "import requests; requests.get('http://localhost:8000/')"
-  CMD ["gunicorn", "main:fast_api_app", "-k", "uvicorn.workers.UvicornWorker", \
+  CMD ["gunicorn", "main:fast_api_app. "-k", "uvicorn.workers.UvicornWorker", \
        "-w", "4", "-b", "0.0.0.0:8000"]
   ```
 
@@ -234,7 +234,7 @@
 
 ### Service 6: Monitoring & Logging
 
-- **Name**: "Application Monitoring"
+- **Name**: "application Monitoring"
 - **Purpose**: "Metrics, logs aggregation, alerting (Prometheus/Grafana/ELK)"
 - **Icon**: "📊"
 - **Cost**: "Self-hosted or managed ($20-100/month)"
@@ -254,7 +254,7 @@
 
 ### Metric 2: Startup Time
 
-- **Label**: "Application Startup"
+- **Label**: "application Startup"
 - **Value**: "<10s (with migrations)"
 - **Icon**: "⚡"
 - **Description**: "Fast cold start including database migration execution"
@@ -281,7 +281,7 @@
 
 ### Metric 5: Memory Usage
 
-- **Label**: "Application Memory"
+- **Label**: "application Memory"
 - **Value**: "~150-250MB per worker"
 - **Icon**: "🧠"
 - **Description**: "Low memory footprint per Gunicorn worker"

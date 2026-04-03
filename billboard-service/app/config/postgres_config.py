@@ -1,31 +1,103 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
+import sys
+import logging
+from typing import FrozenSet
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import inspect, text
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from app.config.app_config import settings
-import logging
 
 logger = logging.getLogger(__name__)
 
-DATABASE_URL = settings.resolved_database_url
-
-engine = create_async_engine(DATABASE_URL, echo=settings.db_echo, pool_pre_ping=True)
+engine = create_async_engine(
+    settings.get_database_url(),
+    echo=settings.DEBUG_MODE,
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+)
 
 AsyncSessionLocal = async_sessionmaker(
-    bind=engine, class_=AsyncSession, expire_on_commit=False
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
 )
 
 
-async def get_db():
+class Base(DeclarativeBase):
+    pass
+
+
+async def get_db() -> AsyncSession:
     async with AsyncSessionLocal() as session:
-        yield session
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
 
 
-async def verify_db_connection() -> None:
-    """Fail fast during startup if the DB is not reachable."""
+# PostgreSQL checks before the app.ccepts traffic.
+# If validation fails, startup aborts so bad deployments fail fast.
+def _required_table_names() -> FrozenSet[str]:
+    from app.config import model_init  # noqa: F401 — registers models on Base.metadata
+
+    return frozenset(Base.metadata.tables.keys())
+
+
+async def validate_postgres(engine: AsyncEngine) -> None:
+    """
+    Ping PostgreSQL and assert expected ORM tables exist.
+    """
+    required = _required_table_names()
+    if not required:
+        logger.warning("No ORM tables registered on Base; skipping schema checks.")
+
+    async with engine.connect() as conn:
+        await conn.execute(text("SELECT 1"))
+
+        if not required:
+            logger.info("PostgreSQL connectivity check passed.")
+            return
+
+        def _existing_tables(sync_conn) -> set[str]:
+            return set(inspect(sync_conn).get_table_names())
+
+        existing: set[str] = await conn.run_sync(_existing_tables)
+
+    missing = required - existing
+    if missing:
+        raise RuntimeError(
+            f"Database schema incomplete. Missing table(s): {sorted(missing)}. "
+            "Run migrations before starting the service."
+        )
+
+    logger.info(
+        "PostgreSQL validation passed: connectivity and %d table(s) verified.",
+        len(required),
+    )
+
+
+async def run_postgres_startup_check(engine: AsyncEngine) -> None:
+    """
+    Validate DB during startup and terminate process on failure.
+    """
+    if not settings.POSTGRES_VALIDATE_ON_STARTUP:
+        logger.info(
+            "PostgreSQL startup validation skipped (POSTGRES_VALIDATE_ON_STARTUP=false)."
+        )
+        return
+
     try:
-        async with engine.connect() as connection:
-            await connection.execute(text("SELECT 1"))
-            logger.info("Database connection check passed.")
-    except SQLAlchemyError as exc:
-        raise RuntimeError("Database is unavailable") from exc
+        await validate_postgres(engine)
+    except Exception as exc:
+        logger.critical(
+            "PostgreSQL startup validation failed. Refusing to start: %s",
+            exc,
+            exc_info=True,
+        )
+        sys.exit(1)

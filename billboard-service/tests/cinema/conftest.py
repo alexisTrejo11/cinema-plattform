@@ -3,17 +3,17 @@ from tests.conftest import *
 from datetime import date
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.cinema.domain.entities import Cinema
-from app.core.cinema.domain.value_objects import (
+from app.cinema.domain.entities import Cinema
+from app.cinema.domain.value_objects import (
     CinemaAmenities,
     ContactInfo,
     Location,
     SocialMedia,
 )
-from app.core.cinema.infrastructure.persistence.sql_alch_repository import (
+from app.cinema.infrastructure.persistence.sql_alch_repository import (
     SQLAlchemyCinemaRepository as CinemaRepository,
 )
-from app.core.cinema.domain.enums import (
+from app.cinema.domain.enums import (
     CinemaType,
     CinemaStatus,
     LocationRegion,

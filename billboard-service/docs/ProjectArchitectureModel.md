@@ -29,14 +29,14 @@
 
 ---
 
-### Layer 2: Application Layer
+### Layer 2: application Layer
 
-- **Name**: "Application Layer"
+- **Name**: "application Layer"
 - **Description**: "Use cases and business workflows orchestrating domain logic and coordinating between repositories"
 - **Components**:
   - Use Case Classes
-  - Application DTOs
-  - Domain Mappers
+  - application DTOs
+  - Domain Mapp.s
   - Cache Decorators
   - Transaction Coordinators
 - **Color**: "#e74c3c"
@@ -87,7 +87,7 @@
 - **Components**:
   - SQLAlchemy Models
   - Repository Implementations
-  - Database Mappers
+  - Database Mapp.s
   - Connection Pool Management
   - Transaction Management
   - Migration Scripts (Alembic)
@@ -129,11 +129,11 @@
 
 ---
 
-### Pattern 3: Data Mapper Pattern
+### Pattern 3: Data Mapp. Pattern
 
-- **Title**: "Data Mapper Pattern"
+- **Title**: "Data Mapp. Pattern"
 - **Emoji**: "🔄"
-- **Description**: "Decouples database schema from domain models using mapper classes to translate between SQLAlchemy models and domain entities"
+- **Description**: "Decouples database schema from domain models using mapp. classes to translate between SQLAlchemy models and domain entities"
 - **Category**: "Data Transformation"
 - **Badge**: "DDD Pattern"
 
@@ -145,7 +145,7 @@
 - **Emoji**: "⚙️"
 - **Description**: "Each business operation is encapsulated as a single-purpose use case class with an execute() method for consistent application flow"
 - **Category**: "Business Logic"
-- **Badge**: "Application Pattern"
+- **Badge**: "application Pattern"
 
 ---
 
@@ -163,7 +163,7 @@
 
 - **Title**: "Cache-Aside Pattern"
 - **Emoji**: "💾"
-- **Description**: "Application checks cache before database, loads on miss, with decorator-based implementation on use case methods"
+- **Description**: "application checks cache before database, loads on miss, with decorator-based implementation on use case methods"
 - **Category**: "Performance"
 - **Badge**: "Caching Strategy"
 
@@ -364,7 +364,7 @@
 #### Legend 1:
 
 - **Type**: "client"
-- **Label**: "Client Application"
+- **Label**: "Client application"
 - **Color**: "#3498db"
 - **Icon**: "📱"
 
@@ -378,7 +378,7 @@
 #### Legend 3:
 
 - **Type**: "service"
-- **Label**: "Application Service"
+- **Label**: "application Service"
 - **Color**: "#2ecc71"
 - **Icon**: "⚙️"
 
@@ -564,7 +564,7 @@
 
 - **Number**: 4
 - **Title**: "Use Case Execution"
-- **Description**: "Application layer executes business workflow, checks cache, and calls repository if needed"
+- **Description**: "application layer executes business workflow, checks cache, and calls repository if needed"
 - **Icon**: "⚙️"
 
 #### Step 5:
@@ -584,8 +584,8 @@
 #### Step 7:
 
 - **Number**: 7
-- **Title**: "Data Mapping"
-- **Description**: "Mapper translates SQLAlchemy model to domain entity then to DTO"
+- **Title**: "Data Mapp.g"
+- **Description**: "Mapp. translates SQLAlchemy model to domain entity then to DTO"
 - **Icon**: "🔄"
 
 #### Step 8:

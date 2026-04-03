@@ -4,7 +4,7 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-echo "Building and starting billboard stack (Postgres, Redis, app replicas, NGINX)..."
+echo "Building and starting billboard stack (Postgres, Redis, app.eplicas, NGINX)..."
 docker-compose -f docker/docker-compose.yml up -d --build
 
 echo

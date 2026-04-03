@@ -1,10 +1,13 @@
 from tests.cinema.conftest import *
 
+
 # -----------------------------
 # Test: Create & Read (get_by_id)
 # -----------------------------
 @pytest.mark.asyncio
-async def test_create_and_get_cinema(cinema_repo: CinemaRepository, sample_cinema: Cinema):
+async def test_create_and_get_cinema(
+    cinema_repo: CinemaRepository, sample_cinema: Cinema
+):
     # Arrange
     saved = await cinema_repo.save(sample_cinema)
 
@@ -17,13 +20,18 @@ async def test_create_and_get_cinema(cinema_repo: CinemaRepository, sample_cinem
     assert fetched.name == sample_cinema.name
     assert fetched.tax_number == sample_cinema.tax_number
 
+
 # -----------------------------
 # Test: Update
 # -----------------------------
 @pytest.mark.asyncio
-async def test_update_cinema(cinema_repo: CinemaRepository, sample_cinema: Cinema, updated_cinema_data: Dict[str, Any]):
+async def test_update_cinema(
+    cinema_repo: CinemaRepository,
+    sample_cinema: Cinema,
+    updated_cinema_data: Dict[str, Any],
+):
     saved = await cinema_repo.save(sample_cinema)
-    # Apply updates
+    # app. updates
     for key, value in updated_cinema_data.items():
         setattr(saved, key, value)
 
@@ -68,7 +76,9 @@ async def test_list_all_cinemas(cinema_repo: CinemaRepository, sample_cinema: Ci
 # Test: Search Cinemas
 # -----------------------------
 @pytest.mark.asyncio
-async def test_search_cinemas_by_name(cinema_repo: CinemaRepository, sample_cinema: Cinema):
+async def test_search_cinemas_by_name(
+    cinema_repo: CinemaRepository, sample_cinema: Cinema
+):
     await cinema_repo.save(sample_cinema)
     page_params = {"offset": 0, "limit": 10}
     filter_params = {"name": "Sample"}
@@ -80,7 +90,9 @@ async def test_search_cinemas_by_name(cinema_repo: CinemaRepository, sample_cine
 
 
 @pytest.mark.asyncio
-async def test_search_cinemas_by_region(cinema_repo: CinemaRepository, sample_cinema: Cinema):
+async def test_search_cinemas_by_region(
+    cinema_repo: CinemaRepository, sample_cinema: Cinema
+):
     await cinema_repo.save(sample_cinema)
     page_params = {"offset": 0, "limit": 10}
     filter_params = {"region": sample_cinema.region}
@@ -92,7 +104,9 @@ async def test_search_cinemas_by_region(cinema_repo: CinemaRepository, sample_ci
 
 
 @pytest.mark.asyncio
-async def test_search_cinemas_by_is_active(cinema_repo: CinemaRepository, sample_cinema: Cinema):
+async def test_search_cinemas_by_is_active(
+    cinema_repo: CinemaRepository, sample_cinema: Cinema
+):
     await cinema_repo.save(sample_cinema)
     page_params = {"offset": 0, "limit": 10}
     filter_params = {"is_active": True}
@@ -107,7 +121,9 @@ async def test_search_cinemas_by_is_active(cinema_repo: CinemaRepository, sample
 # Test: Get Cinemas by Tax Number
 # -----------------------------
 @pytest.mark.asyncio
-async def test_get_cinema_by_tax_number(cinema_repo: CinemaRepository, sample_cinema: Cinema):
+async def test_get_cinema_by_tax_number(
+    cinema_repo: CinemaRepository, sample_cinema: Cinema
+):
     saved = await cinema_repo.save(sample_cinema)
 
     cinema = await cinema_repo.get_by_tax_number(saved.tax_number)
@@ -120,7 +136,9 @@ async def test_get_cinema_by_tax_number(cinema_repo: CinemaRepository, sample_ci
 # Test: Filter by Min/Max Screens
 # -----------------------------
 @pytest.mark.asyncio
-async def test_search_by_min_screens(cinema_repo: CinemaRepository, sample_cinema: Cinema):
+async def test_search_by_min_screens(
+    cinema_repo: CinemaRepository, sample_cinema: Cinema
+):
     sample_cinema.screens = 5
     await cinema_repo.save(sample_cinema)
 
@@ -132,7 +150,9 @@ async def test_search_by_min_screens(cinema_repo: CinemaRepository, sample_cinem
 
 
 @pytest.mark.asyncio
-async def test_search_by_max_screens(cinema_repo: CinemaRepository, sample_cinema: Cinema):
+async def test_search_by_max_screens(
+    cinema_repo: CinemaRepository, sample_cinema: Cinema
+):
     sample_cinema.screens = 5
     await cinema_repo.save(sample_cinema)
 
@@ -147,7 +167,9 @@ async def test_search_by_max_screens(cinema_repo: CinemaRepository, sample_cinem
 # Test: Filter by Renovation Date
 # -----------------------------
 @pytest.mark.asyncio
-async def test_search_by_renovated_after(cinema_repo: CinemaRepository, sample_cinema: Cinema):
+async def test_search_by_renovated_after(
+    cinema_repo: CinemaRepository, sample_cinema: Cinema
+):
     sample_cinema.last_renovation = date(2020, 1, 1)
     await cinema_repo.save(sample_cinema)
 
@@ -159,7 +181,6 @@ async def test_search_by_renovated_after(cinema_repo: CinemaRepository, sample_c
     assert results[0].last_renovation > date(2019, 1, 1)
 
 
-
 # -----------------------------
 # Test: Get Active Cinemas
 # -----------------------------
@@ -167,14 +188,19 @@ async def test_search_by_renovated_after(cinema_repo: CinemaRepository, sample_c
 async def test_get_active_cinemas(cinema_repo: CinemaRepository, sample_cinema: Cinema):
     inactive_cinema = sample_cinema.model_copy()
     inactive_cinema.is_active = False
-    inactive_cinema.contact_info = ContactInfo(phone="+1234567890",email_contact="test-email2@email.com", address="123",location=Location(lat=19.4326, lng=-99.1332))    
+    inactive_cinema.contact_info = ContactInfo(
+        phone="+1234567890",
+        email_contact="test-email2@email.com",
+        address="123",
+        location=Location(lat=19.4326, lng=-99.1332),
+    )
     inactive_cinema.name = "Inactive Cinema"
     inactive_cinema.tax_number = "0987654321"
 
     # Save both
     await cinema_repo.save(sample_cinema)
     await cinema_repo.save(inactive_cinema)
-    
+
     active_cinemas = await cinema_repo.list_active()
 
     assert len(active_cinemas) == 1

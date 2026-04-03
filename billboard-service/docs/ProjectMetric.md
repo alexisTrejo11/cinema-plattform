@@ -126,12 +126,12 @@
 
 ---
 
-### Metric 11: Application Startup Time
+### Metric 11: application Startup Time
 
 - **Label**: "Cold Start Time"
 - **Value**: "<10s"
 - **Unit** (optional): "seconds"
-- **Description** (optional): "Application startup including database migrations"
+- **Description** (optional): "application startup including database migrations"
 - **Icon** (optional): "⏱️"
 - **Trend** (optional): `stable`
 - **Threshold** (optional): 15

@@ -19,10 +19,10 @@ app/
 │   │   │   ├── repositories.py            # Repository interfaces (abstract)
 │   │   │   └── services.py                # Domain services (complex business logic)
 │   │   │
-│   │   ├── application/                  # Application layer
+│   │   ├── application/                  # application layer
 │   │   │   ├── __init__.py
 │   │   │   ├── dtos.py                    # Data Transfer Objects
-│   │   │   ├── mappers.py                  # Entity <-> DTO mappings
+│   │   │   ├── mapp.s.py                  # Entity <-> DTO mapp.gs
 │   │   │   ├── use_cases.py                # ALL use cases in one file (simple)
 │   │   │   └── cache.py                    # Domain-specific cache keys/helpers
 │   │   │
@@ -36,7 +36,7 @@ app/
 │   │       └── persistence/                # Database layer
 │   │           ├── __init__.py
 │   │           ├── models.py                 # SQLAlchemy models
-│   │           ├── mappers.py                 # Model <-> Entity mappings
+│   │           ├── mapp.s.py                 # Model <-> Entity mapp.gs
 │   │           └── repositories.py            # Repository implementations
 │   │
 │   └── shared/                           # Shared kernel (cross-domain code)
@@ -49,9 +49,9 @@ app/
 │       ├── pagination.py                    # Pagination utilities
 │       └── validators.py                     # Shared validation logic
 │
-├── config/                               # Application configuration
+├── config/                               # application configuration
 │   ├── __init__.py
-│   ├── app_config.py                       # Pydantic settings
+│   ├── app.config.py                       # Pydantic settings
 │   ├── cache_config.py                      # Redis/Cache setup
 │   ├── database.py                          # Database connection
 │   ├── exceptions.py                        # Global exception handlers
@@ -68,7 +68,7 @@ app/
 | Type | Convention | Example |
 |------|------------|---------|
 | Domain files | `{entity}_file.py` | `movie_entity.py`, `seat_value_object.py` |
-| Application files | `{purpose}.py` | `use_cases.py`, `dtos.py`, `mappers.py` |
+| application files | `{purpose}.py` | `use_cases.py`, `dtos.py`, `mapp.s.py` |
 | Infrastructure files | `{technology}_{purpose}.py` | `sqlalchemy_models.py`, `fastapi_controllers.py` |
 | Test files | `test_{module}.py` | `test_movie_use_cases.py` |
 
@@ -79,7 +79,7 @@ app/
 | DTOs | `{EntityName}{Purpose}DTO` | `MovieCreateDTO`, `MovieResponseDTO` |
 | Use Cases | `{Action}{EntityName}UseCase` | `CreateMovieUseCase`, `GetMovieUseCase` |
 | Repositories | `{EntityName}Repository` | `MovieRepository`, `CinemaRepository` |
-| Mappers | `{EntityName}Mapper` | `MovieMapper`, `ShowTimeMapper` |
+| Mapp.s | `{EntityName}Mapp.` | `MovieMapp.`, `ShowTimeMapp.` |
 | Controllers | `{EntityName}Controller` | `MovieController`, `CinemaController` |
 
 ### 3. **Function/Method Names** (use snake_case)
@@ -92,7 +92,7 @@ app/
 
 ## 🎯 Simple Architecture Rules
 
-### **Rule 1: One file per layer (simple approach)**
+### **Rule 1: One file per layer (simple app.ach)**
 ```
 domain/
 ├── entities.py      # All domain entities
@@ -102,7 +102,7 @@ domain/
 application/
 ├── use_cases.py     # All use cases
 ├── dtos.py          # All DTOs
-└── mappers.py       # All mappers
+└── mapp.s.py       # All mapp.s
 
 infrastructure/
 ├── api/
@@ -130,19 +130,19 @@ theater/application/use_case.py
 ### **Rule 3: Import conventions**
 ```python
 # Domain imports domain (OK)
-from app.core.movies.domain.entities import Movie
-from app.core.movies.domain.repositories import MovieRepository
+from  app.movies.domain.entities import Movie
+from  app.movies.domain.repositories import MovieRepository
 
-# Application imports domain (OK)
-from app.core.movies.application.dtos import MovieDTO
-from app.core.movies.application.use_cases import CreateMovieUseCase
+# application imports domain (OK)
+from  app.movies.application.dtos import MovieDTO
+from  app.movies.application.use_cases import CreateMovieUseCase
 
 # Infrastructure imports everything (OK)
-from app.core.movies.infrastructure.api.controllers import router
-from app.core.movies.infrastructure.persistence.models import MovieModel
+from  app.movies.infrastructure.api.controllers import router
+from  app.movies.infrastructure.persistence.models import MovieModel
 
 # Never import infrastructure into domain (❌)
-from app.core.movies.infrastructure.persistence.models import MovieModel  # DON'T
+from  app.movies.infrastructure.persistence.models import MovieModel  # DON'T
 ```
 
 ## 🔧 Standard File Templates
@@ -173,33 +173,33 @@ class {EntityName}:
 ### **application/use_cases.py**
 ```python
 """Use cases for {domain_name} domain."""
-from app.core.{domain_name}.domain.entities import {EntityName}
-from app.core.{domain_name}.domain.repositories import {EntityName}Repository
-from app.core.{domain_name}.application.dtos import {EntityName}DTO
-from app.core.{domain_name}.application.mappers import {EntityName}Mapper
+from  app.{domain_name}.domain.entities import {EntityName}
+from  app.{domain_name}.domain.repositories import {EntityName}Repository
+from  app.{domain_name}.application.dtos import {EntityName}DTO
+from  app.{domain_name}.application.mapp.s import {EntityName}Mapp.
 
 class Create{EntityName}UseCase:
     """Create a new {entity_name}."""
     
     def __init__(self, repository: {EntityName}Repository):
         self.repository = repository
-        self.mapper = {EntityName}Mapper()
+        self.mapp. = {EntityName}Mapp.()
     
     async def execute(self, data: {EntityName}DTO) -> {EntityName}DTO:
-        entity = self.mapper.to_entity(data)
+        entity = self.mapp..to_entity(data)
         created = await self.repository.create(entity)
-        return self.mapper.to_dto(created)
+        return self.mapp..to_dto(created)
 
 class Get{EntityName}UseCase:
     """Retrieve a {entity_name} by ID."""
     
     def __init__(self, repository: {EntityName}Repository):
         self.repository = repository
-        self.mapper = {EntityName}Mapper()
+        self.mapp. = {EntityName}Mapp.()
     
     async def execute(self, entity_id: int) -> {EntityName}DTO:
         entity = await self.repository.get_by_id(entity_id)
-        return self.mapper.to_dto(entity) if entity else None
+        return self.mapp..to_dto(entity) if entity else None
 ```
 
 ### **infrastructure/api/controllers.py**
@@ -207,12 +207,12 @@ class Get{EntityName}UseCase:
 """FastAPI controllers for {domain_name} endpoints."""
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.core.{domain_name}.application.use_cases import (
+from  app.{domain_name}.application.use_cases import (
     Create{EntityName}UseCase,
     Get{EntityName}UseCase
 )
-from app.core.{domain_name}.application.dtos import {EntityName}DTO
-from app.core.{domain_name}.infrastructure.api.dependencies import (
+from  app.{domain_name}.application.dtos import {EntityName}DTO
+from  app.{domain_name}.infrastructure.api.dependencies import (
     get_{entity_name}_repository
 )
 
@@ -241,7 +241,7 @@ async def get_{entity_name}(
 ## ✅ Quick Checklist for New Modules
 
 - [ ] **Domain**: entities, repositories (interfaces), enums, exceptions
-- [ ] **Application**: dtos, mappers, use_cases, cache (if needed)
+- [ ] **application**: dtos, mapp.s, use_cases, cache (if needed)
 - [ ] **Infrastructure**: 
   - API: controllers, dependencies
   - Persistence: models, repositories (implementations)
@@ -252,10 +252,10 @@ async def get_{entity_name}(
 ---
 
 This template ensures:
-- **Simple** but structured approach
+- **Simple** but structured app.ach
 - **Consistent** naming across all domains
 - **Clear** separation of concerns
 - **Easy** onboarding for new developers
 - **Scalable** for future growth
 
-Would you like me to help you apply these conventions to any specific part of your project?
+Would you like me to help you app. these conventions to any specific part of your project?

@@ -2,9 +2,9 @@ from datetime import date
 
 from pydantic import HttpUrl
 from tests.conftest import *
-from app.core.movies.domain.entities import Movie
-from app.core.movies.domain.enums import MovieGenre, MovieRating
-from app.core.movies.infrastructure.persistence.sql_alchemist_repository import (
+from app.movies.domain.entities import Movie
+from app.movies.domain.enums import MovieGenre, MovieRating
+from app.movies.infrastructure.persistence.sql_alchemist_repository import (
     SQLAlchemyMovieRepository as MovieRepository,
 )
 

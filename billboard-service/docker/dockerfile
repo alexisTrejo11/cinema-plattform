@@ -35,11 +35,11 @@ RUN apt-get update \
 COPY --from=builder /opt/venv /opt/venv
 COPY . .
 
-RUN chmod +x /app/docker/docker-entrypoint.sh
+RUN chmod +x /app.ocker/docker-entrypoint.sh
 
-RUN addgroup --system app \
-    && adduser --system --ingroup app app \
-    && chown -R app:app /app
+RUN addgroup --system app.
+    && adduser --system --ingroup app.pp \
+    && chown -R app.pp /app
 
 USER app
 
@@ -48,4 +48,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=3)" || exit 1
 
-CMD ["/app/docker/docker-entrypoint.sh", "serve"]
+CMD ["/app.ocker/docker-entrypoint.sh", "serve"]

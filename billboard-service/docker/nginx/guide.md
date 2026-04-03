@@ -19,7 +19,7 @@ pip install gunicorn
 **Task 1.1:** Update your existing Dockerfile
 ```dockerfile
 # Replace the last line (CMD) with:
-CMD ["gunicorn", "main:fast_api_app", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "4"]
+CMD ["gunicorn", "main:fast_api_app. "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "4"]
 ```
 
 ### **Phase 2: Create NGINX Configuration**
@@ -37,9 +37,9 @@ events {
 
 http {
     upstream billboard_servers {
-        server billboard-app-1:8000;
-        server billboard-app-2:8000;
-        server billboard-app-3:8000;
+        server billboard-app.:8000;
+        server billboard-app.:8000;
+        server billboard-app.:8000;
     }
 
     proxy_cache_path /var/cache/nginx levels=1:2 keys_zone=api_cache:10m max_size=1g inactive=60m;
@@ -141,7 +141,7 @@ services:
       timeout: 5s
       retries: 5
 
-  billboard-app-1:
+  billboard-app.:
     build: .
     environment:
       DATABASE_URL: postgresql://${DB_USER:-billboard}:${DB_PASSWORD:-billboard123}@postgres:5432/${DB_NAME:-billboard}
@@ -154,9 +154,9 @@ services:
     networks:
       - billboard_network
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/app.ogs
 
-  billboard-app-2:
+  billboard-app.:
     build: .
     environment:
       DATABASE_URL: postgresql://${DB_USER:-billboard}:${DB_PASSWORD:-billboard123}@postgres:5432/${DB_NAME:-billboard}
@@ -169,9 +169,9 @@ services:
     networks:
       - billboard_network
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/app.ogs
 
-  billboard-app-3:
+  billboard-app.:
     build: .
     environment:
       DATABASE_URL: postgresql://${DB_USER:-billboard}:${DB_PASSWORD:-billboard123}@postgres:5432/${DB_NAME:-billboard}
@@ -184,7 +184,7 @@ services:
     networks:
       - billboard_network
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/app.ogs
 
   nginx:
     build: ./nginx
@@ -192,9 +192,9 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - billboard-app-1
-      - billboard-app-2
-      - billboard-app-3
+      - billboard-app.
+      - billboard-app.
+      - billboard-app.
     networks:
       - billboard_network
     volumes:
@@ -213,8 +213,8 @@ volumes:
 DB_USER=billboard
 DB_PASSWORD=billboard123
 DB_NAME=billboard
-APP_NAME=Billboard Service
-APP_VERSION=1.0.0
+app.AME=Billboard Service
+app.ERSION=1.0.0
 REDIS_URL=redis://redis:6379
 ```
 
@@ -243,7 +243,7 @@ docker-compose logs -f nginx
 #!/bin/bash
 INSTANCES=${1:-3}
 echo "Scaling to $INSTANCES instances..."
-docker-compose up -d --scale billboard-app=$INSTANCES
+docker-compose up -d --scale billboard-app.INSTANCES
 ```
 
 **Task 5.3:** Make scripts executable
@@ -269,9 +269,9 @@ curl -k https://localhost/api/movies
 curl -k https://localhost/api/movies  # Should hit different instance
 
 # 5. Check load balancing
-docker-compose logs billboard-app-1 | grep "GET"
-docker-compose logs billboard-app-2 | grep "GET"
-docker-compose logs billboard-app-3 | grep "GET"
+docker-compose logs billboard-app. | grep "GET"
+docker-compose logs billboard-app. | grep "GET"
+docker-compose logs billboard-app. | grep "GET"
 ```
 
 ### **Phase 7: Production SSL (Optional - for real domain)**
@@ -340,20 +340,20 @@ certbot:
 ```bash
 # Check logs
 docker-compose logs nginx
-docker-compose logs billboard-app-1
+docker-compose logs billboard-app.
 
 # Enter containers
 docker-compose exec nginx sh
-docker-compose exec billboard-app-1 bash
+docker-compose exec billboard-app. bash
 
 # Test internal communication
-docker-compose exec nginx curl http://billboard-app-1:8000/health
+docker-compose exec nginx curl http://billboard-app.:8000/health
 
 # Restart specific service
 docker-compose restart nginx
 
 # Scale down/up
-docker-compose up -d --scale billboard-app=2
+docker-compose up -d --scale billboard-app.
 ```
 
 This setup gives you:

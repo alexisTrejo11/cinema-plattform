@@ -1,8 +1,8 @@
 import pytest
 from datetime import date, datetime
-from app.core.movies.domain.enums import MovieGenre, MovieRating
+from app.movies.domain.enums import MovieGenre, MovieRating
 from app.config.base_model import Base
-from app.core.movies.infrastructure.persistence.models import MovieModel
+from app.movies.infrastructure.persistence.models import MovieModel
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 

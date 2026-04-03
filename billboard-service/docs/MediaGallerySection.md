@@ -15,7 +15,7 @@
 - **URL**: "/assets/architecture-diagram.png" (placeholder)
 - **Thumbnail** (optional): "/assets/thumbnails/architecture-thumb.png"
 - **Title**: "Domain-Driven Design Architecture"
-- **Description**: "Multi-layer DDD architecture showing API Gateway, Application Layer, Domain Layer, and Infrastructure Layer with PostgreSQL and Redis"
+- **Description**: "Multi-layer DDD architecture showing API Gateway, application Layer, Domain Layer, and Infrastructure Layer with PostgreSQL and Redis"
 - **Alt** (optional): "Billboard Service DDD Architecture Diagram"
 - **Category** (optional): `architecture`
 
@@ -63,7 +63,7 @@
 - **URL**: "/assets/docker-compose.png" (placeholder)
 - \*\*Thumbnail" (optional): "/assets/thumbnails/docker-thumb.png"
 - **Title**: "Docker Compose Architecture"
-- **Description**: "Multi-container setup with FastAPI app, PostgreSQL 16, and Redis 7 with health checks and volume persistence"
+- **Description**: "Multi-container setup with FastAPI app.PostgreSQL 16, and Redis 7 with health checks and volume persistence"
 - **Alt** (optional): "Docker Compose Service Diagram"
 - **Category** (optional): `diagram`
 
@@ -123,7 +123,7 @@
 - **URL**: "/assets/health-dashboard.png" (placeholder)
 - \*\*Thumbnail" (optional): "/assets/thumbnails/health-thumb.png"
 - **Title**: "Service Health Monitoring"
-- **Description**: "Docker health check dashboard showing live status of FastAPI app, PostgreSQL, and Redis services"
+- **Description**: "Docker health check dashboard showing live status of FastAPI app.PostgreSQL, and Redis services"
 - \*\*Alt" (optional): "Health Check Monitoring Dashboard"
 - \*\*Category" (optional): `screenshot`
 
@@ -134,6 +134,6 @@
 - Architecture diagrams can be created using tools like Draw.io, Excalidraw, or Mermaid
 - Database schema diagrams can be generated using DBeaver, pgAdmin, or dbdiagram.io
 - API screenshots should be taken from the live Swagger UI at `/docs`
-- Docker diagrams can show container relationships and port mappings
+- Docker diagrams can show container relationships and port mapp.gs
 - Performance metrics can be captured from monitoring tools like Grafana or custom dashboards
 - State machine diagrams can be created with Mermaid, PlantUML, or similar tools
