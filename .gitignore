@@ -19,6 +19,10 @@
 **/.coverage
 **/htmlcov/
 
+# Logs
+**/logs/
+**/*.log
+
 # IDE
 **/.vscode/
 **/.idea/
