@@ -19,11 +19,6 @@ from app.config.kafka_config import shutdown_kafka, start_kafka_consumer_tasks
 from app.shared.middleware.logging_middleware import LoggingMiddleware
 from app.shared.middleware.jwt_security import JwtAuthMiddleware
 
-from app.movies.infrastructure.api import movie_controllers
-from app.movies.infrastructure.api import movie_showtime_controller
-from app.cinema.infrastructure.api import cinema_controllers
-from app.theater.infrastructure.api import theater_controllers
-from app.theater.infrastructure.api import theather_seat_controllers
 from app.showtime.infrastructure.api import showtime_controller
 
 
@@ -124,11 +119,6 @@ app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(JwtAuthMiddleware)
 
 # API routers
-app.include_router(movie_controllers.router)
-app.include_router(movie_showtime_controller.router)
-app.include_router(cinema_controllers.router)
-app.include_router(theater_controllers.router)
-app.include_router(theather_seat_controllers.router)
 app.include_router(showtime_controller.router)
 
 

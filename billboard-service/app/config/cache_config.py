@@ -65,7 +65,7 @@ async def init_cache() -> None:
         _redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
         if settings.REDIS_VALIDATE_ON_STARTUP:
             await _redis.ping()
-        cache_service = RedisCacheService()
+        cache_service = CacheService()
         logger.info("Redis cache initialized.")
     except Exception as exc:
         logger.warning("Redis unavailable (%s); continuing without cache.", exc)

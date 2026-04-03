@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     API_VERSION: str = "2.0.0"
     DEBUG_MODE: bool = False
-    SERVICE_NAME: str = "payment-service"
+    SERVICE_NAME: str = "billboard-service"
 
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # Outbound gRPC targets (host:port), e.g. ``payment-service:50051``. Empty = skip remote calls.
     GRPC_PAYMENT_TARGET: str = ""
     GRPC_BILLBOARD_TARGET: str = ""
+    GRPC_CATALOG_TARGET: str = "localhost:50056"
     GRPC_TIMEOUT_SECONDS: float = 10.0
 
     # Optional full sync URL for Alembic (psycopg2). If unset, built from POSTGRES_*.

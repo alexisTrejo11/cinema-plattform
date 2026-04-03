@@ -1,10 +1,9 @@
-from typing import Dict, List, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 from datetime import datetime
 from abc import abstractmethod, ABC
 from app.shared.core.pagination import PaginationParams, Page
 from app.showtime.domain.entities.showtime import Showtime
 from app.showtime.domain.entities.showtime_seat import ShowtimeSeat
-from app.movies.application.dtos import MovieShowtimesFilters
 
 if TYPE_CHECKING:
     from app.showtime.application.dtos import SearchShowtimeFilters
@@ -17,12 +16,6 @@ class ShowTimeRepository(ABC):
 
     @abstractmethod
     async def find_incoming_by_movie(self, movie_id: int) -> List[Showtime]:
-        pass
-
-    @abstractmethod
-    async def find_by_filters_group_by_movie(
-        self, showtime_filters: MovieShowtimesFilters, page_data: PaginationParams
-    ) -> Dict[int, List[Showtime]]:
         pass
 
     @abstractmethod

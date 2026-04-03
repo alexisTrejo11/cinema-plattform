@@ -1,5 +1,4 @@
 import asyncio
-import os
 from logging.config import fileConfig
 
 from sqlalchemy import pool
@@ -7,6 +6,8 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+from app.config.app_config import settings
+from app.config.postgres_config import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -19,25 +20,10 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-# from myapp.mport mymodel
-# target_metadata = mymodel.Base.metadata
-target_metadata = None
+from app.config import model_init as _model_init  # noqa: F401
 
-
-def _build_database_url() -> str:
-    explicit_url = os.getenv("DATABASE_URL")
-    if explicit_url:
-        return explicit_url
-
-    db_user = os.getenv("DB_USER", "postgres")
-    db_password = os.getenv("DB_PASSWORD", "fedoraadmin")
-    db_host = os.getenv("DB_HOST", "localhost")
-    db_port = os.getenv("DB_PORT", "5432")
-    db_name = os.getenv("DB_NAME", "cinema_billboard")
-    return f"postgresql+asyncpg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-
-
-config.set_main_option("sqlalchemy.url", _build_database_url())
+target_metadata = Base.metadata
+config.set_main_option("sqlalchemy.url", settings.get_database_url())
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

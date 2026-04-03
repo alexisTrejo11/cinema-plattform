@@ -36,7 +36,7 @@ def start_kafka_consumer_tasks(stop: asyncio.Event) -> List[asyncio.Task[None]]:
         return tasks
     if settings.KAFKA_CONSUMER_PAYMENT_ENABLED:
         logger.info("Starting payment Kafka consumer task")
-        tasks.app.d(asyncio.create_task(_run_payment_consumer_loop(stop)))
+        tasks.append(asyncio.create_task(_run_payment_consumer_loop(stop)))
     return tasks
 
 

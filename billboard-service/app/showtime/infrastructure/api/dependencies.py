@@ -7,6 +7,7 @@ from app.showtime.infrastructure.persistence.sqlalchemy import (
     SQLAlchemyShowtimeRepository,
     SQLAlchemyShowtimeSeatRepository,
 )
+from app.showtime.infrastructure.grpc import GrpcCatalogGateway
 
 # USECASE
 from app.showtime.application.use_cases import (
@@ -22,12 +23,6 @@ from app.showtime.application.use_cases import (
     GetShowtimeSeatByIdUseCase,
     TakeSeatUseCase,
     CancelSeatUseCase,
-)
-
-# THEATER
-from app.theater.infrastructure.persistence.sqlalchemy import (
-    SQLAlchemyTheaterSeatRepository,
-    SQLAlchemyTheaterRepository,
 )
 
 # DOMAIN SERVICES
@@ -49,11 +44,8 @@ async def update_showtime_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> UpdateShowtimeUseCase:
     showtime_repo = SQLAlchemyShowtimeRepository(db)
-    theater_seat_repository = SQLAlchemyTheaterSeatRepository(db)
-
-    validation_service = ShowtimeValidationService(
-        showtime_repo, theater_seat_repository
-    )
+    catalog_gateway = GrpcCatalogGateway()
+    validation_service = ShowtimeValidationService(showtime_repo, catalog_gateway)
     return UpdateShowtimeUseCase(showtime_repo, validation_service)
 
 
@@ -62,13 +54,9 @@ async def draft_showtime_use_case(
 ) -> DraftShowtimeUseCase:
     showtime_repo = SQLAlchemyShowtimeRepository(db)
     showtime_seat_repo = SQLAlchemyShowtimeSeatRepository(db)
-    theater_seat_repository = SQLAlchemyTheaterSeatRepository(db)
-    validation_service = ShowtimeValidationService(
-        showtime_repo, theater_seat_repository
-    )
-    showtime_seat_service = ShowTimeSeatService(
-        theater_seat_repository, showtime_seat_repo
-    )
+    catalog_gateway = GrpcCatalogGateway()
+    validation_service = ShowtimeValidationService(showtime_repo, catalog_gateway)
+    showtime_seat_service = ShowTimeSeatService(catalog_gateway, showtime_seat_repo)
     return DraftShowtimeUseCase(
         showtime_repo, validation_service, showtime_seat_service
     )
@@ -114,14 +102,14 @@ async def get_showtime_by_id_use_case(
 async def get_showtime_seat_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> GetShowtimeSeatByIdUseCase:
-    showtime_seat_repo = SQLAlchemyTheaterSeatRepository(db)
+    showtime_seat_repo = SQLAlchemyShowtimeSeatRepository(db)
     return GetShowtimeSeatByIdUseCase(showtime_seat_repo)
 
 
 async def list_showtimes_seat_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> ListShowtimeSeatsUseCase:
-    showtime_seat_repo = SQLAlchemyTheaterSeatRepository(db)
+    showtime_seat_repo = SQLAlchemyShowtimeSeatRepository(db)
     showtime_repo = SQLAlchemyShowtimeRepository(db)
     return ListShowtimeSeatsUseCase(showtime_seat_repo, showtime_repo)
 
@@ -129,12 +117,12 @@ async def list_showtimes_seat_use_case(
 async def take_showtime_seat_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> TakeSeatUseCase:
-    showtime_seat_repo = SQLAlchemyTheaterSeatRepository(db)
+    showtime_seat_repo = SQLAlchemyShowtimeSeatRepository(db)
     return TakeSeatUseCase(showtime_seat_repo)
 
 
 async def cancel_showtime_seat_use_case(
     db: AsyncSession = Depends(get_db),
 ) -> CancelSeatUseCase:
-    showtime_seat_repo = SQLAlchemyTheaterSeatRepository(db)
+    showtime_seat_repo = SQLAlchemyShowtimeSeatRepository(db)
     return CancelSeatUseCase(showtime_seat_repo)

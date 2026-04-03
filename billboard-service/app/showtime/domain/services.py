@@ -2,29 +2,22 @@ from datetime import timezone, datetime
 from typing import List
 
 from app.shared.core.exceptions import ValidationException
-from app.theater.domain.repositories import TheaterSeatRepository
-from app.theater.domain.seat import TheaterSeat
+from app.showtime.application.ports import CatalogGateway, CatalogTheaterSeat
 from app.showtime.domain.entities import Showtime, ShowtimeSeat
 from app.showtime.domain.repositories import (
     ShowTimeRepository,
     ShowtimeSeatRepository,
 )
-from app.movies.domain.repositories import MovieRepository
-from app.cinema.domain.repositories import CinemaRepository
 
 
 class ShowtimeValidationService:
     def __init__(
         self,
         showtime_repository: ShowTimeRepository,
-        theater_seat_repository: TheaterSeatRepository,
-        cinema_repository: CinemaRepository,
-        movie_repository: MovieRepository,
+        catalog_gateway: CatalogGateway,
     ):
         self.showtime_repository = showtime_repository
-        self.theater_seat_repository = theater_seat_repository
-        self.cinema_repository = cinema_repository
-        self.movie_repository = movie_repository
+        self.catalog_gateway = catalog_gateway
 
     async def validate_business_logic(
         self, proposed_showtime: Showtime, has_post_credits: bool
@@ -41,8 +34,8 @@ class ShowtimeValidationService:
         await self.validate_theater_seats(proposed_showtime.theater_id)
 
     async def validate_theater_seats(self, theater_id: int):
-        theater_count = await self.theater_seat_repository.exists_by_theater(theater_id)
-        if theater_count == 0:
+        has_seats = await self.catalog_gateway.theater_has_seats(theater_id)
+        if not has_seats:
             raise ValidationException(
                 field="Theater", reason="Don't have seats to create showtime"
             )
@@ -99,15 +92,15 @@ class ShowtimeValidationService:
             )
 
     async def validate_movie_cinema_active(self, movie_id: int, cinema_id: int):
-        cinema = await self.cinema_repository.find_by_id(cinema_id)
-        if not cinema or not cinema.is_active:
+        is_cinema_active = await self.catalog_gateway.is_cinema_active(cinema_id)
+        if not is_cinema_active:
             raise ValidationException(
                 field="Cinema",
                 reason=f"Cinema with ID {cinema_id} is not active or does not exist.",
             )
 
-        movie = await self.movie_repository.find_by_id(movie_id)
-        if not movie or not movie.is_active:
+        is_movie_active = await self.catalog_gateway.is_movie_active(movie_id)
+        if not is_movie_active:
             raise ValidationException(
                 field="Movie",
                 reason=f"Movie with ID {movie_id} is not active or does not exist.",
@@ -117,21 +110,19 @@ class ShowtimeValidationService:
 class ShowTimeSeatService:
     def __init__(
         self,
-        theater_seat_repository: TheaterSeatRepository,
+        catalog_gateway: CatalogGateway,
         showtime_seat_repo: ShowtimeSeatRepository,
     ):
-        self.theater_seat_repository = theater_seat_repository
+        self.catalog_gateway = catalog_gateway
         self.showtime_seat_repo = showtime_seat_repo
 
     async def create_showtimes_seats(self, showtime: Showtime):
-        theater_seats = await self.theater_seat_repository.get_by_theater(
-            showtime.theater_id
-        )
+        theater_seats = await self.catalog_gateway.list_theater_seats(showtime.theater_id)
         showtimes_seats = self._generate_showtimes_seats(theater_seats, showtime)
         await self.showtime_seat_repo.bulk_create(showtimes_seats)
 
     def _generate_showtimes_seats(
-        self, theater_seats: List[TheaterSeat], showtime: Showtime
+        self, theater_seats: List[CatalogTheaterSeat], showtime: Showtime
     ) -> List[ShowtimeSeat]:
         showtimes_seats: List[ShowtimeSeat] = []
 

@@ -1,13 +1,10 @@
 from typing import Any, Dict, List, Optional
 from datetime import datetime, timezone, timedelta
-from collections import defaultdict
 
 from sqlalchemy import and_, select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.showtime.domain.entities import Showtime, ShowtimeSeat
 from app.shared.core.pagination import PaginationParams, Page
-from app.movies.application.dtos import MovieShowtimesFilters
 from app.showtime.application.dtos import SearchShowtimeFilters
 from app.showtime.domain.repositories import (
     ShowtimeSeatRepository,
@@ -223,41 +220,6 @@ class SQLAlchemyShowtimeRepository(ShowTimeRepository):
         )
         return result.scalars().first() is not None
 
-    # MOVE?
-    async def find_by_filters_group_by_movie(
-        self, showtime_filters: MovieShowtimesFilters, page_data: PaginationParams
-    ) -> Dict[int, List[Showtime]]:
-        stmt = select(ShowtimeModel)
-
-        filters: List[Any] = []
-
-        if showtime_filters.incoming:
-            filters.app.d(ShowtimeModel.start_time > datetime.now())
-        if showtime_filters.cinema_id_list:
-            filters.app.d(ShowtimeModel.cinema_id.in_(showtime_filters.cinema_id_list))
-        if showtime_filters.movie_id:
-            filters.app.d(ShowtimeModel.movie_id == showtime_filters.movie_id)
-
-        if filters:
-            stmt = stmt.where(and_(*filters))
-
-        stmt = stmt.offset(page_data.offset).limit(page_data.limit)
-
-        result = await self.session.execute(stmt)
-
-        models = result.scalars().all()
-        if not models:
-            return {}
-
-        showtimes_by_movie: Dict[int, List[Showtime]] = defaultdict(list)
-
-        for model in models:
-            showtimes_by_movie[model.movie_id].append(
-                ShowtimeModelMapper.to_domain(model)
-            )
-
-        return dict(showtimes_by_movie)
-
     async def search(
         self, params: PaginationParams, filters: SearchShowtimeFilters
     ) -> Page[Showtime]:
@@ -291,19 +253,19 @@ class SQLAlchemyShowtimeRepository(ShowTimeRepository):
         conditions: List[Any] = []
 
         if filters.movie_id is not None:
-            conditions.app.d(ShowtimeModel.movie_id == filters.movie_id)
+            conditions.append(ShowtimeModel.movie_id == filters.movie_id)
         if filters.theater_id is not None:
-            conditions.app.d(ShowtimeModel.theater_id == filters.theater_id)
+            conditions.append(ShowtimeModel.theater_id == filters.theater_id)
         if filters.cinema_id is not None:
-            conditions.app.d(ShowtimeModel.cinema_id == filters.cinema_id)
+            conditions.append(ShowtimeModel.cinema_id == filters.cinema_id)
         if filters.type is not None:
-            conditions.app.d(ShowtimeModel.type == filters.type)
+            conditions.append(ShowtimeModel.type == filters.type)
         if filters.language is not None:
-            conditions.app.d(ShowtimeModel.language == filters.language)
+            conditions.append(ShowtimeModel.language == filters.language)
         if filters.start_time_after is not None:
-            conditions.app.d(ShowtimeModel.start_time >= filters.start_time_after)
+            conditions.append(ShowtimeModel.start_time >= filters.start_time_after)
         if filters.start_time_before is not None:
-            conditions.app.d(ShowtimeModel.start_time <= filters.start_time_before)
+            conditions.append(ShowtimeModel.start_time <= filters.start_time_before)
         if filters.is_upcoming is not None:
             now_utc = datetime.now(timezone.utc)
             if filters.is_upcoming:

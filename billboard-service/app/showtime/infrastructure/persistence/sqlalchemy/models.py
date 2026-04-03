@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from datetime import datetime
 from decimal import Decimal
 from sqlalchemy import (
@@ -20,12 +20,6 @@ from app.showtime.domain.enums import (
     ShowtimeStatus,
 )
 
-if TYPE_CHECKING:
-    from app.movies.infrastructure.persistence.sqlalchemy import MovieModel
-    from app.theater.infrastructure.persistence.sqlalchemy import TheaterModel
-    from app.cinema.infrastructure.persistence.sqlalchemy import CinemaModel
-
-
 class ShowtimeSeatModel(Base):
     """
     SQLAlchemy ORM model for the 'showtime_seats' table.
@@ -37,9 +31,7 @@ class ShowtimeSeatModel(Base):
     showtime_id = Column(
         Integer, ForeignKey("showtimes.id", ondelete="CASCADE"), nullable=False
     )
-    theater_seat_id = Column(
-        Integer, ForeignKey("theater_seats.id", ondelete="RESTRICT"), nullable=False
-    )
+    theater_seat_id = Column(Integer, nullable=False)
     taken_at = Column(DateTime(timezone=True), nullable=True)
     transaction_id = Column(Integer, nullable=True)
     user_id = Column(Integer, nullable=True)
@@ -55,7 +47,6 @@ class ShowtimeSeatModel(Base):
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     showtimes = relationship("ShowtimeModel", back_populates="showtime_seats")
-    theater_seat = relationship("TheaterSeatModel", back_populates="showtime_bookings")
 
     __table_args__ = (
         UniqueConstraint("showtime_id", "theater_seat_id", name="uq_showtime_seat"),
@@ -72,9 +63,9 @@ class ShowtimeModel(Base):
     __tablename__ = "showtimes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    movie_id: Mapped[int] = mapped_column(ForeignKey("movies.id"), nullable=False)
-    theater_id: Mapped[int] = mapped_column(ForeignKey("theaters.id"), nullable=False)
-    cinema_id: Mapped[int] = mapped_column(ForeignKey("cinemas.id"), nullable=False)
+    movie_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    theater_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    cinema_id: Mapped[int] = mapped_column(Integer, nullable=False)
     start_time: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
@@ -122,15 +113,8 @@ class ShowtimeModel(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    movie: Mapped["MovieModel"] = relationship("MovieModel", back_populates="showtimes")
-    theater: Mapped["TheaterModel"] = relationship(
-        "TheaterModel", back_populates="showtimes"
-    )
     showtime_seats: Mapped["ShowtimeSeatModel"] = relationship(
         "ShowtimeSeatModel", back_populates="showtimes"
-    )
-    cinema: Mapped["CinemaModel"] = relationship(
-        "CinemaModel", back_populates="showtimes"
     )
 
     def __repr__(self) -> str:

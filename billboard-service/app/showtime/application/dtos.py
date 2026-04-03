@@ -266,3 +266,21 @@ class ShowtimeSeatUpdate(BaseModel):
     user_id: Optional[int] = Field(
         None, description="The ID of the user who took this seat."
     )
+
+
+class MovieShowtimesFilters(BaseModel):
+    """Filters for retrieving movie showtimes grouped by movie."""
+
+    cinema_id_list: Optional[List[int]] = Field(
+        default=None,
+        description="Optional list of cinema IDs to filter by.",
+        examples=[[1, 2]],
+    )
+    movie_id: Optional[int] = Field(
+        None, description="Optional movie ID to filter by.", examples=[3]
+    )
+    incoming: Optional[bool] = Field(
+        True,
+        description="If true, include only upcoming showtimes; if false, include released/past data (depending on repository logic).",
+        examples=[False],
+    )
