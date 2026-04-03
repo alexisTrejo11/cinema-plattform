@@ -1,49 +1,52 @@
-from fastapi import APIRouter, HTTPException, Depends, Query, status
-from uuid import UUID
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+
+from app.notification.application.commands.notification_command import (
+    CreateNotificationCommand,
+)
 from app.notification.application.dtos import (
     NotificationListResponse,
     NotificationResponse,
 )
 from app.notification.application.queries.notification_queries import (
     GetNotificationByIdQuery,
-    ListNotificationsByChannelQuery,
-    ListNotificationsByStatusQuery,
-    ListNotificationsByTypeQuery,
-    ListNotificationsByUserIdQuery,
+    ListNotificationsQuery,
 )
-
-from app.notification.application.queries.notification_query_handler import (
-    GetNotificationByIdQueryHandler,
-    ListNotificationsByChannelQueryHandler,
-    ListNotificationsByStatusQueryHandler,
-    ListNotificationsByTypeQueryHandler,
-    ListNotificationsByUserIdQueryHandler,
+from app.notification.application.usecases.notification_usecases import (
+    CreateNotificationUseCase,
+    GetNotificationByIdUseCase,
+    ListNotificationsUseCase,
+)
+from app.notification.domain.enums import (
+    NotificationChannel,
+    NotificationStatus,
+    NotificationType,
 )
 
 from .dependencies import (
-    get_get_notification_by_id_handler,
-    get_list_notifications_by_type_handler,
-    get_list_notifications_by_channel_handler,
-    get_list_notifications_by_status_handler,
-    get_list_notifications_by_user_id_handler,
+    get_create_notification_usecase,
+    get_list_notifications_usecase,
+    get_notification_by_id_usecase,
 )
 
 
 router = APIRouter(prefix="/api/v2/notifications")
 
 
+@router.post("", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
+async def create_notification(
+    command: CreateNotificationCommand,
+    usecase: CreateNotificationUseCase = Depends(get_create_notification_usecase),
+):
+    return await usecase.execute(command)
+
+
 @router.get("/{notification_id}", response_model=NotificationResponse)
 async def get_notification_by_id(
-    notification_id: UUID,
-    handler: GetNotificationByIdQueryHandler = Depends(
-        get_get_notification_by_id_handler
-    ),
+    notification_id: str,
+    usecase: GetNotificationByIdUseCase = Depends(get_notification_by_id_usecase),
 ):
-    """
-    Retrieve a single notification by its unique ID.
-    """
     query = GetNotificationByIdQuery(notification_id=notification_id)
-    notification = await handler.handle(query)
+    notification = await usecase.execute(query)
     if not notification:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found"
@@ -51,67 +54,22 @@ async def get_notification_by_id(
     return notification
 
 
-@router.get("/by-type/{notification_type}", response_model=NotificationListResponse)
-async def list_notifications_by_type(
-    notification_type: str,
+@router.get("", response_model=NotificationListResponse)
+async def list_notifications(
+    notification_type: NotificationType | None = None,
+    channel: NotificationChannel | None = None,
+    user_id: str | None = None,
+    status_filter: NotificationStatus | None = Query(default=None, alias="status"),
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    handler: ListNotificationsByTypeQueryHandler = Depends(
-        get_list_notifications_by_type_handler
-    ),
+    usecase: ListNotificationsUseCase = Depends(get_list_notifications_usecase),
 ):
-    """
-    List notifications filtered by type.
-    """
-    query = ListNotificationsByTypeQuery(
-        notification_type=notification_type, limit=limit, offset=offset
+    query = ListNotificationsQuery(
+        notification_type=notification_type,
+        channel=channel,
+        user_id=user_id,
+        status=status_filter,
+        limit=limit,
+        offset=offset,
     )
-    return await handler.handle(query)
-
-
-@router.get("/by-channel/{channel}", response_model=NotificationListResponse)
-async def list_notifications_by_channel(
-    channel: str,
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    handler: ListNotificationsByChannelQueryHandler = Depends(
-        get_list_notifications_by_channel_handler
-    ),
-):
-    """
-    List notifications filtered by channel.
-    """
-    query = ListNotificationsByChannelQuery(channel=channel, limit=limit, offset=offset)
-    return await handler.handle(query)
-
-
-@router.get("/by-user/{user_id}", response_model=NotificationListResponse)
-async def list_notifications_by_user_id(
-    user_id: str,
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    handler: ListNotificationsByUserIdQueryHandler = Depends(
-        get_list_notifications_by_user_id_handler
-    ),
-):
-    """
-    List notifications for a specific user.
-    """
-    query = ListNotificationsByUserIdQuery(user_id=user_id, limit=limit, offset=offset)
-    return await handler.handle(query)
-
-
-@router.get("/by-status/{status}", response_model=NotificationListResponse)
-async def list_notifications_by_status(
-    status: str,
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    handler: ListNotificationsByStatusQueryHandler = Depends(
-        get_list_notifications_by_status_handler
-    ),
-):
-    """
-    List notifications filtered by status.
-    """
-    query = ListNotificationsByStatusQuery(status=status, limit=limit, offset=offset)
-    return await handler.handle(query)
+    return await usecase.execute(query)

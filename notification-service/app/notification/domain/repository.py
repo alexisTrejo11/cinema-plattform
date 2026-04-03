@@ -1,7 +1,12 @@
-from typing import Optional, Dict, Any, List
-from app.notification.domain.entities.models import Notification
 from abc import ABC, abstractmethod
-from uuid import UUID
+from typing import List, Optional
+
+from app.notification.domain.entities.models import Notification
+from app.notification.domain.enums import (
+    NotificationChannel,
+    NotificationStatus,
+    NotificationType,
+)
 
 
 class NotificationRepository(ABC):
@@ -11,58 +16,36 @@ class NotificationRepository(ABC):
     """
 
     @abstractmethod
-    async def get_by_id(self, notification_id: UUID) -> Optional[Notification]:
+    async def get_by_id(self, notification_id: str) -> Optional[Notification]:
         """Retrieves a single notification by its unique ID."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    async def list_by_type(
-        self, notification_type: str, limit: int, offset: int
+    async def list_notifications(
+        self,
+        *,
+        notification_type: Optional[NotificationType] = None,
+        channel: Optional[NotificationChannel] = None,
+        user_id: Optional[str] = None,
+        status: Optional[NotificationStatus] = None,
+        limit: int = 10,
+        offset: int = 0,
     ) -> List[Notification]:
-        """Lists notifications by their type, with pagination."""
-        pass
+        """Lists notifications by optional filters with pagination."""
+        raise NotImplementedError
 
     @abstractmethod
-    async def list_by_channel(
-        self, channel: str, limit: int, offset: int
-    ) -> List[Notification]:
-        """Lists notifications by their channel, with pagination."""
-        pass
-
-    @abstractmethod
-    async def list_by_user_id(
-        self, user_id: UUID, limit: int, offset: int
-    ) -> List[Notification]:
-        """Lists notifications for a specific user ID, with pagination."""
-        pass
-
-    @abstractmethod
-    async def list_by_status(
-        self, status: str, limit: int, offset: int
-    ) -> List[Notification]:
-        """Lists notifications by their status, with pagination."""
-        pass
-
-    @abstractmethod
-    async def count_by_type(self, notification_type: str) -> int:
-        """Counts notifications by their type."""
-        pass
-
-    @abstractmethod
-    async def count_by_channel(self, channel: str) -> int:
-        """Counts notifications by their channel."""
-        pass
-
-    @abstractmethod
-    async def count_by_user_id(self, user_id: UUID) -> int:
-        """Counts notifications by their user ID."""
-        pass
-
-    @abstractmethod
-    async def count_by_status(self, status: str) -> int:
-        """Counts notifications by their status."""
-        pass
+    async def count_notifications(
+        self,
+        *,
+        notification_type: Optional[NotificationType] = None,
+        channel: Optional[NotificationChannel] = None,
+        user_id: Optional[str] = None,
+        status: Optional[NotificationStatus] = None,
+    ) -> int:
+        """Counts notifications by optional filters."""
+        raise NotImplementedError
 
     @abstractmethod
     async def save(self, notification: Notification) -> Notification:
-        pass
+        raise NotImplementedError

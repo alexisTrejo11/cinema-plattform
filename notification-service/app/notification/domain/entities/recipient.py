@@ -1,36 +1,24 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 from typing import Optional
-from ..enums import *
+
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
-@dataclass(frozen=True)
-class Recipient:
-    """
-    Value object representing the recipient of a notification.
-    """
+class Recipient(BaseModel):
+    """Recipient value object."""
+
+    model_config = ConfigDict(extra="forbid")
 
     user_id: str
     email: Optional[str] = None
     phone_number: Optional[str] = None
     device_token: Optional[str] = None
 
-    def __post_init__(self):
-        """
-        Validates that at least one contact method is provided.
-        """
+    @model_validator(mode="after")
+    def validate_contact_method(self) -> "Recipient":
         if not any([self.email, self.phone_number, self.device_token]):
             raise ValueError(
-                "Recipient must have at least one contact method (email, phone_number, or device_token)."
+                "Recipient requires at least one contact method (email, phone_number, device_token)."
             )
-
-    def to_dict(self) -> dict:
-        """
-        Converts the Recipient value object to a dictionary.
-        """
-        return {
-            "user_id": self.user_id,
-            "email": self.email,
-            "phone_number": self.phone_number,
-            "device_token": self.device_token,
-        }
+        return self

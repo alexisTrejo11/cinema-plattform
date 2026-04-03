@@ -1,8 +1,9 @@
 from __future__ import annotations
+
 from enum import Enum
 
 
-class NotificationType(Enum):
+class NotificationType(str, Enum):
     """
     Represents the type of notification.
     """
@@ -17,7 +18,7 @@ class NotificationType(Enum):
     CUSTOM_MESSAGE = "CUSTOM_MESSAGE"
 
 
-class NotificationChannel(Enum):
+class NotificationChannel(str, Enum):
     """
     Represents the communication channel for the notification.
     """
@@ -28,7 +29,7 @@ class NotificationChannel(Enum):
     IN_APP = "IN_APP"
 
 
-class NotificationStatus(Enum):
+class NotificationStatus(str, Enum):
     """
     Represents the current status of the notification.
     """

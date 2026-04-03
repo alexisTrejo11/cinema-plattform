@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 from typing import Any, Optional, Dict, List
 from pydantic import BaseModel, ConfigDict, Field
 from app.notification.domain.enums import (
@@ -87,8 +86,8 @@ class NotificationListResponse(BaseModel):
     notifications: List[NotificationResponse]
     total_count: int
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "notifications": [
                     {
@@ -117,3 +116,4 @@ class NotificationListResponse(BaseModel):
                 "total_count": 2,
             }
         }
+    )

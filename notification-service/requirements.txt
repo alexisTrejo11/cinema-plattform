@@ -1,17 +1,40 @@
+# ---- Web -------
 fastapi[standard]
-pydantic-settings
+uvicorn
+aiohttp
+
+# ---- Validation -------
 pydantic
-
-motor==3.3.2
-pymongo==4.6.0
-python-multipart==0.0.6
-
-
-jinja2==3.1.2
+pydantic-settings
 email-validator==2.1.0
-httpx==0.25.2
-twilio==9.6.4
 
-aio_pika==9.5.5
-colorlog
+# ---- Database -------
+pymongo==4.6.0
+motor==3.3.2
+
+# ---- Caching -------
+fastapi-cache[redis]
+redis>=5.0.0
+
+# ---- Security -------
+PyJWT
+passlib[bcrypt]
+python-multipart
+
+# ---- Rate limiting -------
 slowapi
+
+# ---- Messaging -------
+kafka-python
+jinja2==3.1.2
+twilio==9.6.4
+httpx==0.25.2
+
+# ---- Logging -------
+colorlog
+
+# ---- Testing -------
+pytest
+pytest-asyncio
+
+

@@ -1,50 +1,48 @@
 from fastapi import Depends
+
+from app.config.mongo_config import get_mongo_database
+from app.notification.application.usecases.notification_usecases import (
+    CreateNotificationUseCase,
+    GetNotificationByIdUseCase,
+    ListNotificationsUseCase,
+)
 from app.notification.domain.repository import NotificationRepository
-from config.mongo_config import get_mongo_database
+from app.notification.domain.sending_service import SendingService
+from app.notification.infrastructure.email.mail_service import EmailService
+from app.notification.infrastructure.message.sms_message_services import SmsMessageService
 from app.notification.infrastructure.repository.mongo_notification_repository import (
     MongoNotificationRepository,
 )
-from app.notification.application.queries.notification_query_handler import (
-    GetNotificationByIdQueryHandler,
-    ListNotificationsByStatusQueryHandler,
-    ListNotificationsByUserIdQueryHandler,
-    ListNotificationsByTypeQueryHandler,
-    ListNotificationsByChannelQueryHandler,
-)
+from app.notification.infrastructure.services import SendingServiceImplementation
 
 
 async def get_notification_repository(
     db=Depends(get_mongo_database),
 ) -> NotificationRepository:
-    """Provides a NotificationRepository instance."""
     return MongoNotificationRepository(db)
 
 
-def get_get_notification_by_id_handler(
+def get_sending_service() -> SendingService:
+    return SendingServiceImplementation(
+        email_service=EmailService(),
+        sms_service=SmsMessageService(),
+    )
+
+
+def get_create_notification_usecase(
     repo: NotificationRepository = Depends(get_notification_repository),
-) -> GetNotificationByIdQueryHandler:
-    return GetNotificationByIdQueryHandler(repository=repo)
+    sending_service: SendingService = Depends(get_sending_service),
+) -> CreateNotificationUseCase:
+    return CreateNotificationUseCase(repository=repo, sending_service=sending_service)
 
 
-def get_list_notifications_by_type_handler(
+def get_notification_by_id_usecase(
     repo: NotificationRepository = Depends(get_notification_repository),
-) -> ListNotificationsByTypeQueryHandler:
-    return ListNotificationsByTypeQueryHandler(repository=repo)
+) -> GetNotificationByIdUseCase:
+    return GetNotificationByIdUseCase(repository=repo)
 
 
-def get_list_notifications_by_channel_handler(
+def get_list_notifications_usecase(
     repo: NotificationRepository = Depends(get_notification_repository),
-) -> ListNotificationsByChannelQueryHandler:
-    return ListNotificationsByChannelQueryHandler(repository=repo)
-
-
-def get_list_notifications_by_user_id_handler(
-    repo: NotificationRepository = Depends(get_notification_repository),
-) -> ListNotificationsByUserIdQueryHandler:
-    return ListNotificationsByUserIdQueryHandler(repository=repo)
-
-
-def get_list_notifications_by_status_handler(
-    repo: NotificationRepository = Depends(get_notification_repository),
-) -> ListNotificationsByStatusQueryHandler:
-    return ListNotificationsByStatusQueryHandler(repository=repo)
+) -> ListNotificationsUseCase:
+    return ListNotificationsUseCase(repository=repo)
