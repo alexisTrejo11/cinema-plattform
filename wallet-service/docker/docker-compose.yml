@@ -1,0 +1,189 @@
+name: wallet-service
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    networks:
+      - wallet_network
+    ports:
+      - "6378:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    networks:
+      - wallet_network
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-cinema_wallet}
+    ports:
+      - "5431:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app-1:
+    build:
+      context: ..
+      dockerfile: docker/dockerfile
+    image: wallet-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wallet_network
+
+  app-2:
+    image: wallet-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      app-1:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wallet_network
+
+  app-3:
+    image: wallet-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "serve"]
+    depends_on:
+      app-1:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wallet_network
+
+  app-grpc:
+    image: wallet-service:local
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+      GRPC_HOST: 0.0.0.0
+      GRPC_PORT: 50051
+    command: ["/app/docker/docker-entrypoint.sh", "serve-grpc"]
+    depends_on:
+      app-1:
+        condition: service_started
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "50051:50051"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import socket; s=socket.socket(); s.settimeout(3); s.connect(('127.0.0.1',50051)); s.close()",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    networks:
+      - wallet_network
+
+  migrate:
+    image: wallet-service:local
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}
+      TEST_DATABASE_URL: postgresql+asyncpg://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-cinema_wallet}_test
+      DB_HOST: db
+      DB_PORT: 5432
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: ["/app/docker/docker-entrypoint.sh", "migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - wallet_network
+    profiles:
+      - tools
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    depends_on:
+      - app-1
+      - app-2
+      - app-3
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - wallet_network
+    volumes:
+      - ./nginx/logs:/var/log/nginx
+
+networks:
+  wallet_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

@@ -1,0 +1,46 @@
+# ---- Web -------
+fastapi[standard]
+uvicorn
+aiohttp
+
+# ---- gRPC -------
+protobuf
+grpcio>=1.78.0
+grpcio-tools>=1.78.0
+
+# ---- Validation -------
+pydantic
+pydantic-settings
+email-validator
+
+# ---- Database -------
+SQLAlchemy
+asyncpg
+psycopg2-binary
+greenlet
+aiosqlite
+alembic
+
+# ---- Caching -------
+fastapi-cache[redis]
+redis>=5.0.0
+
+# ---- Security -------
+PyJWT
+passlib[bcrypt]
+python-multipart
+
+# ---- Rate limiting -------
+slowapi
+
+# ---- Messaging -------
+kafka-python
+httpx
+
+# ---- Logging -------
+colorlog
+
+
+# ---- Testing -------
+pytest
+pytest-asyncio
