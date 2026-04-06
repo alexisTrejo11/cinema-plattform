@@ -1,6 +1,0 @@
-aio-pika
-fastapi[standard]
-uvicorn
-pydantic
-pydantic-settings
-aiohttp
