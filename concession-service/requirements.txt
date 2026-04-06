@@ -1,0 +1,31 @@
+
+# FastAPI and dependencies
+fastapi[standard]
+pydantic
+pydantic-settings
+# Database and ORM
+SQLAlchemy
+asyncpg
+psycopg2-binary
+greenlet
+fastapi-cache[redis]
+redis>=5.0.0
+# Testing
+pytest
+pytest-asyncio
+pytest-mock
+# Log
+colorlog
+# Rate Limiting
+slowapi
+PyJWT
+# CORS
+fastapi-cors
+# ASYNC HTTP
+aiohttp
+alembic
+
+gunicorn>=20.1.0
+
+grpcio 
+grpcio-tools
