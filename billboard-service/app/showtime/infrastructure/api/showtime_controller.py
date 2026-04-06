@@ -69,7 +69,7 @@ async def draft_showtime(
     use_case: DraftShowtimeUseCase = Depends(
         showtime_use_cases.draft_showtime_use_case
     ),
-    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
+    _: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     return await use_case.execute(showtime_data)
 
@@ -82,7 +82,7 @@ async def launch_showtime(
     use_case: LaunchShowtimeUseCase = Depends(
         showtime_use_cases.launch_showtime_use_case
     ),
-    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
+    _: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     showtime = await use_case.execute(showtime_id)
     return ShowtimeDetailResponse.model_validate(showtime)
@@ -96,7 +96,7 @@ async def cancel_showtime(
     use_case: CancelShowtimeUseCase = Depends(
         showtime_use_cases.cancel_showtime_use_case
     ),
-    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
+    _: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     showtime = await use_case.execute(showtime_id)
     return ShowtimeDetailResponse.model_validate(showtime)
@@ -110,7 +110,7 @@ async def restore_showtime(
     use_case: RestoreShowtimeUseCase = Depends(
         showtime_use_cases.restore_showtime_use_case
     ),
-    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
+    _: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     showtime = await use_case.execute(showtime_id)
     return ShowtimeDetailResponse.model_validate(showtime)
@@ -125,7 +125,7 @@ async def update_showtime(
     use_case: UpdateShowtimeUseCase = Depends(
         showtime_use_cases.update_showtime_use_case
     ),
-    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
+    _: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     return await use_case.execute(showtime_id, update_data)
 
@@ -138,6 +138,6 @@ async def delete_showtime(
     use_case: DeleteShowtimeUseCase = Depends(
         showtime_use_cases.delete_showtime_use_case
     ),
-    current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
+    _: AuthUserContext = Depends(require_roles("admin", "manager")),
 ):
     await use_case.execute(showtime_id)

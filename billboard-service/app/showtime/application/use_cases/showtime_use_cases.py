@@ -19,7 +19,7 @@ class GetShowtimeByIdUseCase:
     def __init__(self, repository: ShowTimeRepository):
         self.repository = repository
 
-    async def execute(self, showtime_id: int) -> Optional[Showtime]:
+    async def execute(self, showtime_id: int) -> Showtime:
         """
         Execute the use case to get a showtime by ID.
         Args:

@@ -2,646 +2,250 @@
 
 ## Code Examples (`CodeExample[]`)
 
-### Example 1: Domain Entity with DDD
+### Example 1: Showtime Entity with Business Rules
 
-- **ID**: "domain-entity"
-- **Title**: "Cinema Domain Entity"
-- **Description**: "Pure domain model representing a cinema aggregate root with business logic separated from infrastructure"
-- **Category**: "Domain-Driven Design"
+- **ID**: "showtime-entity"
+- **Title**: "Showtime Entity with Business Rules"
+- **Description**: "Domain entity implementing validation for price, duration, and scheduling rules"
+- **Category**: "Domain"
 - **Duration** (optional): ""
-- **Views** (optional):
+- **Views** (optional): 
 - **Tags** (optional):
-  - DDD
-  - Domain Entity
-  - Clean Architecture
+  - Domain-Driven Design
+  - Business Rules
+  - Validation
 
 #### Files (`CodeFile[]`)
 
-**File 1:**
-
-- **Name**: "entities.py"
-- **Path**: " app.cinema/domain/entities.py"
+- **Name**: "showtime.py"
+- **Path**: "app/showtime/domain/entities/showtime.py"
 - **Language**: "python"
 - **Content**:
-
   ```python
-  from pydantic import Field
-  from .base import CinemaBase
-  from typing import Optional
+  def _validate_price(self):
+      MAX_LIMIT_PRICE = Decimal("50.00")
+      MIN_LIMIT_PRICE = Decimal("3.00")
+      if not (MIN_LIMIT_PRICE < self.price < MAX_LIMIT_PRICE):
+          raise InvalidShowtimePriceError(self.price, MIN_LIMIT_PRICE, MAX_LIMIT_PRICE)
 
-  class Cinema(CinemaBase):
-      """Domain model representing a cinema with all required fields.
+  def _validate_schedule_date(self):
+      self._validate_not_schedule_in_past()
+      self._validate_schedule_date_no_too_far()
 
-      This is a pure domain entity with no infrastructure concerns.
-      It contains business logic and validates domain rules.
-      """
-      id: Optional[int] = Field(None, description="Unique identifier")
-      name: str
-      cinema_status: CinemaStatus
-      cinema_type: CinemaType
-      region: CinemaRegion
-      tax_number: str
-      screens: int
-      has_parking: bool
-      has_food_court: bool
-      latitude: Optional[Decimal]
-      longitude: Optional[Decimal]
+  def _validate_not_schedule_in_past(self):
+      now_utc = datetime.now(timezone.utc)
+      start_time_utc = self._normalize_datetime_to_utc(self.start_time)
+      if start_time_utc < now_utc:
+          raise ShowtimeSchedulingError("Showtime start time cannot be in the past")
 
-      def is_operational(self) -> bool:
-          """Business rule: cinema is operational if OPEN and active."""
-          return self.cinema_status == CinemaStatus.OPEN and self.is_active
+  def _validate_schedule_date_no_too_far(self):
+      MAX_DAYS_START_DATE_ALLOWED = 30
+      now_utc = datetime.now(timezone.utc)
+      future_limit_date = now_utc + timedelta(days=MAX_DAYS_START_DATE_ALLOWED)
+      start_time_utc = self._normalize_datetime_to_utc(self.start_time)
+      if start_time_utc > future_limit_date:
+          raise ShowtimeSchedulingError(f"Showtime exceeds {MAX_DAYS_START_DATE_ALLOWED} days limit")
   ```
-
-- **Highlighted**: `true`
-- **Explanation**: "Domain entities are pure Python objects with no database or framework dependencies, following DDD principles"
+- **Highlighted** (optional): `true`
+- **Explanation** (optional): "The Showtime entity enforces business rules: price $3-$50, duration 30-300 mins, schedule within 30 days"
 
 ---
 
-### Example 2: Repository Pattern
+### Example 2: Showtime Lifecycle Methods
 
-- **ID**: "repository-pattern"
-- **Title**: "Repository Implementation"
-- **Description**: "SQLAlchemy repository implementation with data mapp. pattern translating between database models and domain entities"
-- **Category**: "Data Access"
-- **Tags**:
-  - Repository Pattern
-  - SQLAlchemy
-  - Async
+- **ID**: "showtime-lifecycle"
+- **Title**: "Showtime Lifecycle Methods"
+- **Description**: "Domain methods for showtime state transitions (draft, launch, cancel, restore)"
+- **Category**: "Domain"
+- **Duration** (optional): ""
+- **Views** (optional): 
+- **Tags** (optional):
+  - State Management
+  - Business Logic
 
 #### Files (`CodeFile[]`)
 
-**File 1:**
-
-- **Name**: "repositories.py"
-- **Path**: " app.cinema/infrastructure/persistence/sqlalchemy/repositories.py"
+- **Name**: "showtime.py"
+- **Path**: "app/showtime/domain/entities/showtime.py"
 - **Language**: "python"
 - **Content**:
-
   ```python
-  from sqlalchemy import select, func, and_
-  from sqlalchemy.ext.asyncio import AsyncSession
-  from  app.cinema.domain.entities import Cinema
-  from  app.cinema.domain.repositories import CinemaRepository
-  from  app.shared.pagination import PaginationParams, Page
-  from .models import CinemaModel
-  from .mapp.s import CinemaModelMapp.
+  def mark_as_launchable(self):
+      if self.status != ShowtimeStatus.DRAFT:
+          raise ValidationError("Showtime is not draft can't be launched")
+      self.status = ShowtimeStatus.UPCOMING
+      self.updated_at = datetime.now(timezone.utc)
 
-  class SQLAlchemyCinemaRepository(CinemaRepository):
-      """Repository implementation using SQLAlchemy async."""
+  def cancel(self):
+      if self.deleted_at is not None:
+          raise ShowtimeCancellationError(self.id)
+      if self.status == ShowtimeStatus.COMPLETED:
+          raise ShowtimeCancellationError(self.id)
+      self.status = ShowtimeStatus.CANCELLED
+      self.updated_at = datetime.now(timezone.utc)
 
-      def __init__(self, session: AsyncSession):
-          self.session = session
-
-      async def find_active(self, params: PaginationParams) -> Page[Cinema]:
-          # Count total active cinemas
-          count_stmt = (
-              select(func.count())
-              .select_from(CinemaModel)
-              .where(CinemaModel.is_active == True)
-          )
-          count_result = await self.session.execute(count_stmt)
-          total = count_result.scalar() or 0
-
-          # Get paginated active cinemas
-          stmt = (
-              select(CinemaModel)
-              .where(CinemaModel.is_active == True)
-              .offset(params.offset)
-              .limit(params.limit)
-          )
-
-          result = await self.session.execute(stmt)
-          models = result.scalars().all()
-
-          # Map database models to domain entities
-          cinemas = [CinemaModelMapp..to_domain(model) for model in models]
-          return Page.create(items=cinemas, total=total, params=params)
-
-      async def find_by_id(self, entity_id: int) -> Optional[Cinema]:
-          model = await self.session.get(CinemaModel, entity_id)
-          return CinemaModelMapp..to_domain(model) if model else None
+  def restore(self):
+      if self.deleted_at is None:
+          raise ShowtimeRestorationError(self.id)
+      self.deleted_at = None
+      self.updated_at = datetime.now(timezone.utc)
   ```
-
-- **Highlighted**: `true`
-- **Explanation**: "Repository abstracts data access and uses mapp. to convert SQLAlchemy models to domain entities, maintaining layer separation"
+- **Highlighted** (optional): `true`
+- **Explanation** (optional): "State machine for showtime lifecycle with validation at each transition"
 
 ---
 
-### Example 3: Use Case Pattern
+### Example 3: ShowtimeSeat Entity
 
-- **ID**: "use-case-pattern"
-- **Title**: "Use Case application Layer"
-- **Description**: "application service orchestrating business workflows with caching, validation, and transaction management"
-- **Category**: "application Layer"
-- **Tags**:
-  - Use Case
-  - application Service
-  - Caching
+- **ID**: "showtime-seat"
+- **Title**: "ShowtimeSeat Entity"
+- **Description**: "Seat reservation with take/leave operations and timestamp tracking"
+- **Category**: "Domain"
+- **Duration** (optional): ""
+- **Views** (optional): 
+- **Tags** (optional):
+  - Seat Reservation
+  - Domain Entities
 
 #### Files (`CodeFile[]`)
 
-**File 1:**
-
-- **Name**: "use_cases.py"
-- **Path**: " app.cinema/application/use_cases.py"
+- **Name**: "showtime_seat.py"
+- **Path**: "app/showtime/domain/entities/showtime_seat.py"
 - **Language**: "python"
 - **Content**:
-
   ```python
-  from typing import Optional
-  from  app.cinema.domain.repositories import CinemaRepository
-  from  app.cinema.application.dtos import CinemaResponseDTO
-  from  app.cinema.application.mapp.s import CinemaDTOMapp.
-  from  app.shared.exceptions import EntityNotFoundException
-  from  app.cinema.application.cache import cinema_cache
+  class ShowtimeSeat(ShowtimeSeatBase):
+      id: Optional[int] = Field(None)
+      created_at: Optional[datetime] = None
+      updated_at: Optional[datetime] = None
 
-  class GetCinemaByIdUseCase:
-      """Retrieve a cinema by ID with caching."""
+      def is_taken(self) -> bool:
+          return self.taken_at is not None 
 
-      def __init__(self, repository: CinemaRepository):
-          self.repository = repository
-          self.mapp. = CinemaDTOMapp.()
+      def take(self):
+          if self.is_taken():
+              raise ValueError("Seat Already Taken")
+          self.taken_at = datetime.now(timezone.utc)
 
-      @cinema_cache(key_prefix="cinema:id", ttl=300)
-      async def execute(self, cinema_id: int) -> CinemaResponseDTO:
-          """Execute use case to get cinema by ID.
-
-          Args:
-              cinema_id: Unique cinema identifier
-
-          Returns:
-              CinemaResponseDTO with cinema details
-
-          Raises:
-              EntityNotFoundException if cinema not found
-          """
-          cinema = await self.repository.find_by_id(cinema_id)
-
-          if not cinema:
-              raise EntityNotFoundException(
-                  entity_name="Cinema",
-                  entity_id=cinema_id
-              )
-
-          return self.mapp..to_response_dto(cinema)
-
-
-  class SearchCinemasUseCase:
-      """Search cinemas with filters and pagination."""
-
-      def __init__(self, repository: CinemaRepository):
-          self.repository = repository
-          self.mapp. = CinemaDTOMapp.()
-
-      async def execute(
-          self,
-          params: PaginationParams,
-          filters: SearchCinemaFilters
-      ) -> Page[CinemaResponseDTO]:
-          """Execute search with filters."""
-          cinema_page = await self.repository.search(params, filters)
-
-          # Map domain entities to DTOs
-          dto_items = [
-              self.mapp..to_response_dto(cinema)
-              for cinema in cinema_page.items
-          ]
-
-          return Page.create(
-              items=dto_items,
-              total=cinema_page.total,
-              params=params
-          )
+      def leave(self):
+          self.taken_at = None
+          self.user_id = None
   ```
-
-- **Highlighted**: `true`
-- **Explanation**: "Use cases encapsulate business workflows, coordinate repositories, and app. caching decorators for performance"
+- **Highlighted** (optional): `false`
+- **Explanation** (optional): "Seat entity with timestamp-based reservation tracking"
 
 ---
 
-### Example 4: JWT Authentication Middleware
+### Example 4: Showtime Controller
 
-- **ID**: "jwt-middleware"
-- **Title**: "JWT Authentication Middleware"
-- **Description**: "Middleware extracting and validating JWT tokens, populating request context with user information"
-- **Category**: "Security"
-- **Tags**:
-  - JWT
-  - Authentication
-  - Middleware
-
-#### Files (`CodeFile[]`)
-
-**File 1:**
-
-- **Name**: "jwt_auth_middleware.py"
-- **Path**: "app.config/jwt_auth_middleware.py"
-- **Language**: "python"
-- **Content**:
-
-  ```python
-  import jwt
-  from fastapi import Request, HTTPException, status
-  from pydantic import BaseModel, Field
-  from typing import Optional, Any
-
-  class AuthUserContext(BaseModel):
-      """User context extracted from JWT token."""
-      user_id: Optional[str] = None
-      subject: Optional[str] = None
-      email: Optional[str] = None
-      username: Optional[str] = None
-      roles: list[str] = Field(default_factory=list)
-      claims: dict[str, Any] = Field(default_factory=dict)
-
-      @classmethod
-      def from_claims(cls, claims: dict[str, Any]) -> "AuthUserContext":
-          """Extract user context from JWT claims."""
-          roles_raw = claims.get("roles") or claims.get("role") or []
-
-          if isinstance(roles_raw, str):
-              roles = [roles_raw]
-          elif isinstance(roles_raw, list):
-              roles = [str(role) for role in roles_raw]
-          else:
-              roles = []
-
-          return cls(
-              user_id=_first_text_claim(claims, "user_id", "uid", "sub"),
-              subject=_first_text_claim(claims, "sub"),
-              email=_first_text_claim(claims, "email"),
-              username=_first_text_claim(
-                  claims, "username", "preferred_username", "name"
-              ),
-              roles=roles,
-              claims=claims,
-          )
-
-
-  async def jwt_auth_middleware(request: Request, call_next):
-      """Extract and validate JWT token from Authorization header."""
-      auth_header = request.headers.get("Authorization", "")
-
-      if not auth_header.startswith("Bearer "):
-          request.state.current_user = None
-          return await call_next(request)
-
-      token = auth_header.replace("Bearer ", "")
-
-      try:
-          claims = jwt.decode(
-              token,
-              settings.jwt_secret,
-              algorithms=["HS256"]
-          )
-          request.state.current_user = AuthUserContext.from_claims(claims)
-      except jwt.ExpiredSignatureError:
-          raise HTTPException(
-              status_code=status.HTTP_401_UNAUTHORIZED,
-              detail="Token has expired"
-          )
-      except jwt.InvalidTokenError:
-          raise HTTPException(
-              status_code=status.HTTP_401_UNAUTHORIZED,
-              detail="Invalid token"
-          )
-
-      return await call_next(request)
-  ```
-
-- **Highlighted**: `true`
-- **Explanation**: "Middleware pattern validates JWT tokens and injects user context into request state for downstream use"
-
----
-
-### Example 5: Role-Based Authorization
-
-- **ID**: "rbac-decorator"
-- **Title**: "Role-Based Access Control Decorator"
-- **Description**: "Decorator enforcing role-based access control on protected endpoints"
-- **Category**: "Security"
-- **Tags**:
-  - RBAC
-  - Authorization
-  - Decorator
+- **ID**: "showtime-controller"
+- **Title**: "Showtime Controller"
+- **Description**: "FastAPI controller with dependency injection and role-based access"
+- **Category**: "Presentation"
+- **Duration** (optional): ""
+- **Views** (optional): 
+- **Tags** (optional):
+  - FastAPI
+  - REST API
+  - Dependency Injection
 
 #### Files (`CodeFile[]`)
 
-**File 1:**
-
-- **Name**: "jwt_auth_middleware.py"
-- **Path**: "app.config/jwt_auth_middleware.py"
+- **Name**: "showtime_controller.py"
+- **Path**: "app/showtime/infrastructure/api/showtime_controller.py"
 - **Language**: "python"
 - **Content**:
-
   ```python
-  from functools import wraps
-  from typing import Callable
-  from fastapi import Request, HTTPException, status
-
-  def require_roles(*required_roles: str) -> Callable:
-      """Decorator for role-based access control.
-
-      Usage:
-          @require_roles("admin", "manager")
-          async def protected_endpoint(request: Request):
-              # Only admin or manager can access
-              pass
-      """
-      def decorator(func: Callable) -> Callable:
-          @wraps(func)
-          async def wrapp.(*args, **kwargs):
-              request: Request = kwargs.get("request")
-
-              if not request or not hasattr(request.state, "current_user"):
-                  raise HTTPException(
-                      status_code=status.HTTP_401_UNAUTHORIZED,
-                      detail="Authentication required"
-                  )
-
-              user_roles = request.state.current_user.roles
-
-              if not any(role in user_roles for role in required_roles):
-                  raise HTTPException(
-                      status_code=status.HTTP_403_FORBIDDEN,
-                      detail=f"Requires one of: {', '.join(required_roles)}"
-                  )
-
-              return await func(*args, **kwargs)
-
-          return wrapp.
-      return decorator
-
-
-  # Usage in controller
-  @router.post("/showtimes/", status_code=201)
-  @require_roles("admin", "manager")
-  async def create_showtime(
+  @router.post("/{showtime_id}/launch", response_model=ShowtimeDetailResponse)
+  @limiter.limit("10/minute")
+  async def launch_showtime(
+      showtime_id: int,
       request: Request,
-      data: CreateShowtimeDTO
+      use_case: LaunchShowtimeUseCase = Depends(
+          showtime_use_cases.launch_showtime_use_case
+      ),
+      current_user: AuthUserContext = Depends(require_roles("admin", "manager")),
   ):
-      """Create new showtime (admin/manager only)."""
-      return await use_case.execute(data)
+      showtime = await use_case.execute(showtime_id)
+      return ShowtimeDetailResponse.model_validate(showtime)
   ```
-
-- **Highlighted**: `true`
-- **Explanation**: "Decorator pattern enforces role-based authorization, checking user roles extracted from JWT token"
+- **Highlighted** (optional): `true`
+- **Explanation** (optional): "Controller demonstrating dependency injection and RBAC"
 
 ---
 
-### Example 6: Cache Decorator
+### Example 5: Buffer Time Calculation
 
-- **ID**: "cache-decorator"
-- **Title**: "Cache-Aside Pattern Decorator"
-- **Description**: "Decorator implementing cache-aside pattern with Redis for performance optimization"
-- **Category**: "Performance"
-- **Tags**:
-  - Caching
-  - Redis
-  - Performance
-
-#### Files (`CodeFile[]`)
-
-**File 1:**
-
-- **Name**: "cache.py"
-- **Path**: " app.cinema/application/cache.py"
-- **Language**: "python"
-- **Content**:
-
-  ```python
-  from functools import wraps
-  from typing import Callable, Optional
-  import json
-  from redis.asyncio import Redis
-
-  def cinema_cache(key_prefix: str, ttl: int = 300):
-      """Cache decorator for cinema use cases.
-
-      Args:
-          key_prefix: Prefix for cache key
-          ttl: Time to live in seconds (default 5 minutes)
-      """
-      def decorator(func: Callable) -> Callable:
-          @wraps(func)
-          async def wrapp.(self, *args, **kwargs):
-              # Generate cache key from arguments
-              cache_key = f"{key_prefix}:{args[0]}" if args else key_prefix
-
-              # Try to get from cache
-              redis: Redis = await get_redis_client()
-              cached_value = await redis.get(cache_key)
-
-              if cached_value:
-                  # Cache hit - deserialize and return
-                  return json.loads(cached_value)
-
-              # Cache miss - execute function
-              result = await func(self, *args, **kwargs)
-
-              # Store in cache with TTL
-              await redis.setex(
-                  cache_key,
-                  ttl,
-                  json.dumps(result.model_dump())
-              )
-
-              return result
-
-          return wrapp.
-      return decorator
-
-
-  # Usage in use case
-  class GetCinemaByIdUseCase:
-      @cinema_cache(key_prefix="cinema:id", ttl=300)
-      async def execute(self, cinema_id: int) -> CinemaResponseDTO:
-          # This result will be cached for 5 minutes
-          cinema = await self.repository.find_by_id(cinema_id)
-          return self.mapp..to_response_dto(cinema)
-  ```
-
-- **Highlighted**: `true`
-- **Explanation**: "Cache-aside pattern with decorator checks Redis before executing function, storing result on cache miss"
-
----
-
-### Example 7: Pagination Pattern
-
-- **ID**: "pagination"
-- **Title**: "Cursor-Based Pagination"
-- **Description**: "Reusable pagination pattern with offset/limit and total count for API responses"
-- **Category**: "API Design"
-- **Tags**:
-  - Pagination
-  - API
-  - Performance
+- **ID**: "buffer-times"
+- **Title**: "Buffer Time Calculation"
+- **Description**: "Class method for calculating pre-show and post-show buffer times"
+- **Category**: "Domain"
+- **Duration** (optional): ""
+- **Views** (optional): 
+- **Tags** (optional):
+  - Business Logic
+  - Time Management
 
 #### Files (`CodeFile[]`)
 
-**File 1:**
-
-- **Name**: "pagination.py"
-- **Path**: " app.shared/pagination.py"
+- **Name**: "showtime.py"
+- **Path**: "app/showtime/domain/entities/showtime.py"
 - **Language**: "python"
 - **Content**:
-
   ```python
-  from typing import Generic, TypeVar, List
-  from pydantic import BaseModel, Field
-
-  T = TypeVar("T")
-
-  class PaginationParams(BaseModel):
-      """Pagination request parameters."""
-      offset: int = Field(0, ge=0, description="Number of items to skip")
-      limit: int = Field(10, ge=1, le=100, description="Max items per page")
-
-      @property
-      def page_number(self) -> int:
-          """Calculate current page number."""
-          return (self.offset // self.limit) + 1
-
-
-  class Page(BaseModel, Generic[T]):
-      """Generic paginated response."""
-      items: List[T] = Field(description="List of items for current page")
-      total: int = Field(description="Total number of items")
-      offset: int = Field(description="Current offset")
-      limit: int = Field(description="Items per page")
-      has_next: bool = Field(description="Whether next page exists")
-      has_previous: bool = Field(description="Whether previous page exists")
-
-      @classmethod
-      def create(
-          cls,
-          items: List[T],
-          total: int,
-          params: PaginationParams
-      ) -> "Page[T]":
-          """Create paginated response."""
-          return cls(
-              items=items,
-              total=total,
-              offset=params.offset,
-              limit=params.limit,
-              has_next=(params.offset + params.limit) < total,
-              has_previous=params.offset > 0
-          )
-
-
-  # Usage in API
-  @router.get("/cinemas/active/")
-  async def get_active_cinemas(
-      offset: int = 0,
-      limit: int = 10
-  ) -> Page[CinemaResponseDTO]:
-      params = PaginationParams(offset=offset, limit=limit)
-      return await use_case.execute(params)
-  ```
-
-- **Highlighted**: `true`
-- **Explanation**: "Generic pagination pattern provides consistent structure across all API endpoints with total count and navigation flags"
-
----
-
-### Example 8: Global Exception Handling
-
-- **ID**: "exception-handling"
-- **Title**: "Centralized Exception Handler"
-- **Description**: "FastAPI exception handlers providing consistent error responses across all endpoints"
-- **Category**: "Error Handling"
-- **Tags**:
-  - Exceptions
-  - API
-  - Error Handling
-
-#### Files (`CodeFile[]`)
-
-**File 1:**
-
-- **Name**: "global_exception_handler.py"
-- **Path**: "app.config/global_exception_handler.py"
-- **Language**: "python"
-- **Content**:
-
-  ```python
-  from fastapi import Request, status
-  from fastapi.responses import JSONResponse
-  from fastapi.exceptions import RequestValidationError
-  from  app.shared.exceptions import (
-      DomainException,
-      applicationException,
-      EntityNotFoundException
-  )
-
-  async def domain_exception_handler(
-      request: Request,
-      exc: DomainException
-  ) -> JSONResponse:
-      """Handle domain-specific business rule violations."""
-      return JSONResponse(
-          status_code=status.HTTP_400_BAD_REQUEST,
-          content={
-              "error": {
-                  "code": exc.error_code,
-                  "message": exc.message,
-                  "details": exc.details
-              }
-          }
-      )
-
-
-  async def not_found_exception_handler(
-      request: Request,
-      exc: EntityNotFoundException
-  ) -> JSONResponse:
-      """Handle entity not found errors."""
-      return JSONResponse(
-          status_code=status.HTTP_404_NOT_FOUND,
-          content={
-              "error": {
-                  "code": "NOT_FOUND",
-                  "message": str(exc),
-                  "entity": exc.entity_name,
-                  "id": exc.entity_id
-              }
-          }
-      )
-
-
-  async def validation_exception_handler(
-      request: Request,
-      exc: RequestValidationError
-  ) -> JSONResponse:
-      """Handle Pydantic validation errors."""
-      errors = []
-      for error in exc.errors():
-          errors.app.d({
-              "field": ".".join(str(loc) for loc in error["loc"]),
-              "message": error["msg"],
-              "type": error["type"]
-          })
-
-      return JSONResponse(
-          status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-          content={
-              "error": {
-                  "code": "VALIDATION_ERROR",
-                  "message": "Invalid request data",
-                  "validation_errors": errors
-              }
-          }
-      )
-
-
-  # Register handlers in FastAPI app
-  exception_handlers = {
-      DomainException: domain_exception_handler,
-      EntityNotFoundException: not_found_exception_handler,
-      RequestValidationError: validation_exception_handler
+  _EXTRA_DURATIONS: ClassVar = {
+      "initial_cleaning": 10,
+      "initial_commercials": 40,
+      "post_credits_scene": 10,
+      "post_cleaning": 30,
   }
-  ```
 
-- **Highlighted**: `true`
-- **Explanation**: "Centralized exception handling ensures consistent error responses with proper HTTP status codes and detailed error information"
+  @classmethod
+  def get_buffered_extra_times(cls, include_post_credits_scene: bool = False) -> Dict[str, timedelta]:
+      pre_buffer_minutes = cls._EXTRA_DURATIONS["initial_cleaning"] + cls._EXTRA_DURATIONS["initial_commercials"]
+      post_buffer_minutes = cls._EXTRA_DURATIONS["post_cleaning"]
+      if include_post_credits_scene:
+          post_buffer_minutes += cls._EXTRA_DURATIONS["post_credits_scene"]
+      return {"pre_buffer": timedelta(minutes=pre_buffer_minutes), "post_buffer": timedelta(minutes=post_buffer_minutes)}
+  ```
+- **Highlighted** (optional): `false`
+- **Explanation** (optional): "Buffer times: 50min pre-show (cleaning + commercials), 30min post-show"
+
+---
+
+### Example 6: Seat Quantity Validation
+
+- **ID**: "seat-validation"
+- **Title**: "Seat Quantity Validation"
+- **Description**: "Validation for seat reservation limits"
+- **Category**: "Domain"
+- **Duration** (optional): ""
+- **Views** (optional): 
+- **Tags** (optional):
+  - Business Rules
+  - Validation
+
+#### Files (`CodeFile[]`)
+
+- **Name**: "showtime.py"
+- **Path**: "app/showtime/domain/entities/showtime.py"
+- **Language**: "python"
+- **Content**:
+  ```python
+  def take_seats(self, seats_number: int):
+      self._validate_seat_quantity(seats_number)
+      self._validate_avaliable_seats(seats_number)
+      self.available_seats -= seats_number
+
+  def _validate_seat_quantity(self, seats_number: int):
+      MIN_SEAT_ALLOWED = 1
+      MAX_SEAT_ALLOWED = 15
+      if not MIN_SEAT_ALLOWED <= seats_number <= MAX_SEAT_ALLOWED:
+          raise ShowtimeSeatsError(f"Seat quantity must be between {MIN_SEAT_ALLOWED} to {MAX_SEAT_ALLOWED}")
+
+  def _validate_avaliable_seats(self, seats_number: int):
+      if seats_number > self.available_seats:
+          raise ShowtimeSeatsError("No Seats Avaliable for requested operation")
+  ```
+- **Highlighted** (optional): `false`
+- **Explanation** (optional): "Validate seat quantity (1-15) and availability before reservation"

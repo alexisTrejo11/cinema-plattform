@@ -2,50 +2,48 @@
 
 ## 1. Problem Statement (`OverviewProblemStatement`)
 
-- **Problem Title**: "Modern Cinema Operations Management"
+- **Problem Title**: Showtime & Seat Management
 - **Problem Description**:
-  - Cinema chains face operational challenges in managing multiple locations, theaters, showtimes, and seat inventories efficiently while providing real-time availability and scheduling capabilities.
+  - Need for centralized showtime scheduling and management across cinemas
+  - Real-time seat availability tracking and reservation
+  - Integration with catalog service for movie/theater data
+  - Integration with payment service for ticket purchases
+  - Event-driven architecture for seat status updates
 - **Problem List**:
-  - Manual cinema and theater management leads to scheduling conflicts and inefficiencies
-  - Lack of real-time showtime scheduling and seat availability tracking
-  - Difficulty in managing multiple cinema locations with different theater types and capabilities
-  - Complex showtime lifecycle management (draft, upcoming, in-progress, completed)
-  - Need for role-based access control for cinema managers and administrators
-  - Poor search and filtering capabilities across movies, cinemas, and showtimes
+  - Complex scheduling with buffer times (cleaning, commercials)
+  - Business rule validation (price limits, duration, booking window)
+  - Seat reservation with transaction support
+  - Showtime lifecycle management (draft, upcoming, completed, cancelled)
 
 ---
 
 ## 2. Solution (`OverviewSolution`)
 
-- **Solution Title**: "Billboard Service: Enterprise Cinema Management Platform"
+- **Solution Title**: Clean Architecture Billboard Microservice
 - **Solution List** (array of `Solution`):
   - **Solution 1**
-    - **Title**: "Comprehensive Domain Management"
-    - **Description**: "Complete management system for cinemas, movies, theaters, showtimes, and seat inventories with multi-location support and real-time tracking"
+    - **Title**: Showtime Domain Model
+    - **Description**: Domain entity with business rules for scheduling, price validation, and lifecycle management
   - **Solution 2**
-    - **Title**: "Scalable Microservice Architecture"
-    - **Description**: "FastAPI-based REST API with DDD architecture, PostgreSQL persistence, Redis caching, and Docker containerization for production-ready deployment"
+    - **Title**: Seat Reservation System
+    - **Description**: Real-time seat status tracking with take/leave operations and transaction IDs
   - **Solution 3**
-    - **Title**: "Advanced Search & Filtering"
-    - **Description**: "Multi-criterion search across all domains with cursor-based pagination, time-based filters, and status tracking"
+    - **Title**: Catalog Service Integration
+    - **Description**: gRPC client for fetching movie and theater data from catalog service
   - **Solution 4**
-    - **Title**: "Security & Performance"
-    - **Description**: "JWT authentication, role-based authorization, rate limiting, and Redis caching for optimal performance and security"
+    - **Title**: Service Registry
+    - **Description**: Optional service registry for dynamic service discovery and health checks
 
 ---
 
 ## 3. Key Metrics (`OverviewKeyMetrics`)
 
-- **Metrics Title**: "Platform Performance & Coverage"
+- **Metrics Title**: Billboard Service Key Metrics
 - **Metrics List** (strings):
-  - 100% async architecture with FastAPI and SQLAlchemy 2.0
-  - Multi-region support (CDMX metropolitan area)
-  - 6+ theater types (2D, 3D, IMAX, 4DX, VIP)
-  - 6 seat categories (Standard, VIP, Accessible, Premium, 4DX, Loveseat)
-  - REST API with 30+ endpoints across 5 domain modules
-  - Redis caching for sub-50ms response times
-  - Rate limiting: 60 req/min reads, 10 req/min writes
-  - Docker-ready with multi-stage builds and health checks
+  - API Response Time: < 150ms (p95)
+  - Seat Reservation: < 50ms
+  - Showtime Queries: 5,000 QPS peak
+  - Concurrent Reservations: 1,000+
 
 See also [ProjectMetric.md](ProjectMetric.md) for richer metrics.
 
@@ -54,8 +52,8 @@ See also [ProjectMetric.md](ProjectMetric.md) for richer metrics.
 ## 4. Cover Image (`ProjectCoverImage`, optional)
 
 - **URL**: ""
-- **Alt**: "Cinema Billboard Service Architecture Diagram"
-- **Credit** (optional): ""
+- **Alt**: "Billboard Service Architecture"
+- **Credit** (optional): "Cinema Platform Team"
 
 ---
 
@@ -63,10 +61,10 @@ See also [ProjectMetric.md](ProjectMetric.md) for richer metrics.
 
 See [ProjectLinks.md](ProjectLinks.md).
 
-- **GitHub**:
-- **Demo**:
-- **Documentation**:
-- **Docker Hub**:
+- **GitHub**: https://github.com/anomalyco/cinema-platform/billboard-service
+- **Demo**: ""
+- **Documentation**: http://localhost:8000/docs
+- **Docker Hub**: ""
 
 ---
 
@@ -74,8 +72,8 @@ See [ProjectLinks.md](ProjectLinks.md).
 
 See [MediaGallerySection.md](MediaGallerySection.md).
 
-- **Title**: ""
-- **Description**: ""
+- **Title**: "Billboard Service Screenshots"
+- **Description**: "Screenshots and diagrams of the billboard service architecture and API documentation"
 - **Items**: list of media items (see `ProjectMediaItem` in MediaGallerySection.md).
 
 ---
@@ -84,13 +82,13 @@ See [MediaGallerySection.md](MediaGallerySection.md).
 
 For each media item:
 
-- **Type**: `image` | `video`
+- **Type**: `diagram`
 - **URL**: ""
 - **Thumbnail** (optional): ""
-- **Title**: ""
-- **Description**: ""
-- **Alt** (optional): ""
-- **Category** (optional): `screenshot` | `diagram` | `demo` | `architecture`
+- **Title**: "Showtime Lifecycle"
+- **Description**: "Diagram showing showtime states: draft → upcoming → completed/cancelled"
+- **Alt** (optional): "Showtime Lifecycle Diagram"
+- **Category** (optional): `diagram`
 
 ---
 
@@ -98,10 +96,10 @@ For each media item:
 
 For each metric see [ProjectMetric.md](ProjectMetric.md):
 
-- **Label**: ""
-- **Value**: ""
-- **Description** (optional): ""
-- **Icon** (optional): ""
-- **Unit** (optional): ""
-- **Trend** (optional): `up` | `down` | `stable`
-- **Threshold** (optional):
+- **Label**: "API Response Time"
+- **Value**: "< 150ms"
+- **Description** (optional): "95th percentile response time"
+- **Icon** (optional): "⚡"
+- **Unit** (optional): "ms"
+- **Trend** (optional): `stable`
+- **Threshold** (optional): 150
