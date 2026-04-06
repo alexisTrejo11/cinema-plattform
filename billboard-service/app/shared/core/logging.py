@@ -1,4 +1,3 @@
-<<<<<<< HEAD:catalog-service/app/shared/core/logging.py
 import json
 import logging
 import os
@@ -250,10 +249,3 @@ def setup_logging() -> None:
             sa_logger.removeHandler(handler)
 
         sa_logger.propagate = False
-=======
-"""application logging: NDJSON files + console (see app.hared.core.logging)."""
-
-from app.shared.core.logging import JsonFormatter, setup_logging
-
-__all__ = ["JsonFormatter", "setup_logging"]
->>>>>>> feature/billboard-service:billboard-service/app/config/logging.py
