@@ -1,0 +1,25 @@
+"""enable pgcrypto extension
+
+Revision ID: 0001
+Revises:
+Create Date: 2026-03-20
+"""
+
+from typing import Sequence, Union
+
+from alembic import op
+import sqlalchemy as sa
+
+
+revision: str = "0001"
+down_revision: Union[str, Sequence[str], None] = None
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
+
+def upgrade() -> None:
+    op.execute(sa.text("CREATE EXTENSION IF NOT EXISTS pgcrypto"))
+
+
+def downgrade() -> None:
+    op.execute(sa.text("DROP EXTENSION IF EXISTS pgcrypto"))

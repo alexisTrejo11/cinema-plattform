@@ -1,0 +1,221 @@
+from datetime import datetime
+from decimal import Decimal
+from typing import List, Optional
+from uuid import UUID
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, PositiveInt
+from app.promotions.domain.entities.value_objects import PromotionType
+from app.promotions.application.commands import (
+    ExtendPromotionCommand,
+    PromotionCreateCommand,
+    AddProductsPromotionCommand,
+    AddCategoryPromotionCommand,
+    RemoveProductsPromotionCommand,
+    RemoveCategoryPromotionCommand,
+)
+from app.products.domain.entities.value_objects import ProductId
+from app.promotions.domain.entities.promotion import PromotionId
+
+
+class PromotionCreateRequest(BaseModel):
+    """
+    Pydantic model for creating a new Promotion.
+    Used as input for a 'create promotion' use case.
+    """
+
+    name: str = Field(
+        ...,
+        min_length=5,
+        max_length=100,
+        description="Descriptive name of the promotion",
+    )
+
+    promotion_type: PromotionType = Field(
+        ..., description="Type of promotion (e.g., PERCENTAGE_DISCOUNT, FIXED_DISCOUNT)"
+    )
+
+    applicable_product_ids: Optional[List[UUID]] = Field(
+        None,
+        description="List of product IDs to which the promotion applies",
+    )
+
+    applicable_category_id: Optional[int] = Field(
+        None,
+        description="ID of the category to which the promotion initially applies",
+    )
+    rule: "PromotionRuleRequest" = Field(
+        ..., description="Additional rules for applying the promotion"
+    )
+
+    start_date: datetime = Field(
+        ..., description="Start date of the promotion's validity"
+    )
+
+    end_date: datetime = Field(..., description="End date of the promotion's validity")
+
+    description: Optional[str] = Field(
+        None, max_length=500, description="Optional description of the promotion"
+    )
+
+    is_active: bool = Field(True, description="Indicates if the promotion is active")
+
+    max_uses: Optional[PositiveInt] = Field(
+        None, description="Maximum number of allowed uses (None for unlimited)"
+    )
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    def to_command(self) -> PromotionCreateCommand:
+        return PromotionCreateCommand(
+            name=self.name,
+            description=self.description,
+            start_date=self.start_date,
+            promotion_type=self.promotion_type,
+            rule=self.rule.model_dump(),
+            is_active=self.is_active,
+            max_uses=self.max_uses,
+            end_date=self.end_date,
+            applicable_product_ids=[
+                ProductId(value=pid) for pid in (self.applicable_product_ids or [])
+            ],
+            applicable_category_id=self.applicable_category_id,
+        )
+
+    class PromotionRuleRequest(BaseModel):
+        """
+        Pydantic model for the promotion rule.
+        Used as part of the PromotionCreateRequest.
+        """
+
+        min_quantity: Optional[int] = Field(
+            None,
+            ge=1,
+            le=20,
+            description="Minimum quantity of items required for the promotion",
+        )
+
+        max_quantity: Optional[int] = Field(
+            None,
+            ge=1,
+            le=100,
+            description="Maximum quantity of items allowed for the promotion",
+        )
+        min_percentage_discount: Optional[Decimal] = Field(
+            None,
+            ge=0,
+            le=100,
+            description="Minimum percentage discount allowed for the promotion",
+        )
+        max_percentage_discount: Optional[Decimal] = Field(
+            None,
+            ge=0,
+            le=100,
+            description="Maximum percentage discount allowed for the promotion",
+        )
+
+        model_config = ConfigDict(
+            arbitrary_types_allowed=True,
+        )
+
+
+class ExtendPromotionRequest(BaseModel):
+    """
+    Pydantic model for extending an existing Promotion's validity.
+    Used as input for an 'extend promotion' use case.
+    """
+
+    available_until: datetime = Field(
+        ..., description="New end date for the promotion's validity"
+    )
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    def to_command(self, promotion_id: UUID) -> ExtendPromotionCommand:
+        return ExtendPromotionCommand(
+            id=PromotionId(value=promotion_id),
+            available_until=self.available_until,
+        )
+
+
+class ApplyPromotionRequest(BaseModel):
+    """Body for applying a promotion to a set of products."""
+
+    product_ids: list[UUID] = Field(
+        ..., description="List of product IDs to apply the promotion to"
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def product_ids_as_domain(self) -> list[ProductId]:
+        return [ProductId(value=pid) for pid in self.product_ids]
+
+
+class AddProductsToPromotionRequest(BaseModel):
+    """Body for adding products to a promotion."""
+
+    product_ids: list[UUID] = Field(..., description="Product IDs to add")
+    promotion_id: UUID = Field(..., description="Promotion to add products to")
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def to_command(self) -> AddProductsPromotionCommand:
+        return AddProductsPromotionCommand(
+            product_ids=[ProductId(value=pid) for pid in self.product_ids],
+            promotion_id=PromotionId(value=self.promotion_id),
+        )
+
+
+class AddCategoryToPromotionRequest(BaseModel):
+    """Body for associating a category with a promotion."""
+
+    category_id: int = Field(..., description="Category to add")
+    promotion_id: UUID = Field(
+        ...,
+        description="Promotion to add the category to",
+        validation_alias=AliasChoices("promotion_id", "promotionId"),
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def to_command(self) -> AddCategoryPromotionCommand:
+        return AddCategoryPromotionCommand(
+            category_id=self.category_id,
+            promotion_id=PromotionId(value=self.promotion_id),
+        )
+
+
+class RemoveCategoryFromPromotionRequest(BaseModel):
+    """Body for removing a category from a promotion."""
+
+    category_id: int = Field(..., description="Category to remove")
+    promotion_id: UUID = Field(
+        ...,
+        description="Promotion to remove the category from",
+        validation_alias=AliasChoices("promotion_id", "promotionId"),
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def to_command(self) -> RemoveCategoryPromotionCommand:
+        return RemoveCategoryPromotionCommand(
+            category_id=self.category_id,
+            promotion_id=PromotionId(value=self.promotion_id),
+        )
+
+
+class RemoveProductsFromPromotionRequest(BaseModel):
+    """Body for removing products from a promotion."""
+
+    product_ids: list[UUID] = Field(..., description="Product IDs to remove")
+    promotion_id: UUID = Field(..., description="Promotion to remove products from")
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def to_command(self) -> RemoveProductsPromotionCommand:
+        return RemoveProductsPromotionCommand(
+            product_ids=[ProductId(value=pid) for pid in self.product_ids],
+            promotion_id=PromotionId(value=self.promotion_id),
+        )

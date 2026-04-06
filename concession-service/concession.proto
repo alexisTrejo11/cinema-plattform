@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+package concession;
+
+service ConcessionCatalogService {
+  rpc GetProductById (EntityByIdRequest) returns (ProductReply) {}
+  rpc GetProductsByIds (EntityByIdsRequest) returns (ProductListReply) {}
+
+  rpc GetComboById (EntityByIdRequest) returns (ComboReply) {}
+  rpc GetCombosByIds (EntityByIdsRequest) returns (ComboListReply) {}
+
+  rpc GetPromotionById (EntityByIdRequest) returns (PromotionReply) {}
+  rpc GetPromotionsByIds (EntityByIdsRequest) returns (PromotionListReply) {}
+}
+
+message EntityByIdRequest {
+  string id = 1;
+}
+
+message EntityByIdsRequest {
+  repeated string ids = 1;
+}
+
+message ProductData {
+  string id = 1;
+  int32 category_id = 2;
+  string description = 3;
+  string image_url = 4;
+  bool is_available = 5;
+  string preparation_time_mins = 6;
+  string calories = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  string deleted_at = 10;
+  string name = 11;
+  double price = 12;
+}
+
+message ProductReply {
+  bool exists = 1;
+  ProductData data = 2;
+}
+
+message ProductListReply {
+  repeated ProductReply items = 1;
+}
+
+message ComboItemData {
+  string id = 1;
+  string product_id = 2;
+  string product_name = 3;
+  double product_price = 4;
+  bool product_is_available = 5;
+  int32 quantity = 6;
+}
+
+message ComboData {
+  string id = 1;
+  string name = 2;
+  double price = 3;
+  bool is_available = 4;
+  string description = 5;
+  double discount_percentage = 6;
+  string image_url = 7;
+  string created_at = 8;
+  string updated_at = 9;
+  string deleted_at = 10;
+  repeated ComboItemData items = 11;
+}
+
+message ComboReply {
+  bool exists = 1;
+  ComboData data = 2;
+}
+
+message ComboListReply {
+  repeated ComboReply items = 1;
+}
+
+message PromotionData {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  bool is_active = 4;
+  string promotion_type = 5;
+  string rule_json = 6;
+  string start_date = 7;
+  string end_date = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  string max_uses = 11;
+  int32 current_uses = 12;
+  repeated string applicable_product_ids = 13;
+  repeated int32 applicable_categories_ids = 14;
+}
+
+message PromotionReply {
+  bool exists = 1;
+  PromotionData data = 2;
+}
+
+message PromotionListReply {
+  repeated PromotionReply items = 1;
+}
