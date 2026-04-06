@@ -6,7 +6,12 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from ..enums import NotificationChannel, NotificationStatus, NotificationType
+from ..enums import (
+    NotificationAttentionStatus,
+    NotificationChannel,
+    NotificationStatus,
+    NotificationType,
+)
 from .content import NotificationContent
 from .recipient import Recipient
 
@@ -28,6 +33,13 @@ class Notification(BaseModel):
     failed_at: Optional[datetime] = None
     error_details: Optional[str] = None
     provider_response: Optional[str] = None
+    source: Optional[str] = None
+    source_event_type: Optional[str] = None
+    correlation_id: Optional[str] = None
+    causation_id: Optional[str] = None
+    is_important: bool = False
+    attention_status: NotificationAttentionStatus = NotificationAttentionStatus.NONE
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_identifier(self) -> "Notification":
@@ -53,11 +65,16 @@ class Notification(BaseModel):
         self.provider_response = provider_response
         self.sent_at = None
 
+    def mark_attention_open(self) -> None:
+        self.is_important = True
+        self.attention_status = NotificationAttentionStatus.OPEN
+
     def to_document(self) -> Dict[str, Any]:
         payload = self.model_dump(mode="python")
         payload["notification_type"] = self.notification_type.value
         payload["channel"] = self.channel.value
         payload["status"] = self.status.value
+        payload["attention_status"] = self.attention_status.value
         payload["_id"] = payload.pop("notification_id")
         return payload
 

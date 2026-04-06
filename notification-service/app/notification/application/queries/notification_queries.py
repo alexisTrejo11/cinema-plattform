@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.notification.domain.enums import (
+    NotificationAttentionStatus,
     NotificationChannel,
     NotificationStatus,
     NotificationType,
@@ -23,5 +24,8 @@ class ListNotificationsQuery(BaseModel):
     channel: NotificationChannel | None = None
     user_id: str | None = None
     status: NotificationStatus | None = None
+    is_important: bool | None = None
+    attention_status: NotificationAttentionStatus | None = None
+    source_event_type: str | None = None
     limit: int = Field(10, gt=0, le=100)
     offset: int = Field(0, ge=0)

@@ -21,6 +21,9 @@ class CreateNotificationCommand(BaseModel):
     event_id: Optional[str] = None
     correlation_id: Optional[UUID] = None
     causation_id: Optional[UUID] = None
+    source: Optional[str] = None
+    source_event_type: Optional[str] = None
+    is_important: bool = False
     issued_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -32,3 +35,6 @@ class ProcessIncomingNotificationEventCommand(BaseModel):
     event_type: str
     event_id: str
     payload: dict
+    source: str = "unknown"
+    occurred_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    correlation_id: Optional[str] = None

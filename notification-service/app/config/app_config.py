@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     KAFKA_CONSUMER_GROUP_NOTIFICATION: str = "notification-service-consumer"
     KAFKA_CONSUMER_AUTO_OFFSET_RESET: str = "latest"
     KAFKA_CONSUMER_POLL_TIMEOUT_MS: int = 1000
+    KAFKA_CONSUMER_TOPICS: str = "notification.incoming,cinema.user-service.events,wallet.events"
+
+    USER_DIRECTORY_LOOKUP_ENABLED: bool = False
+    USER_DIRECTORY_BASE_URL: str = "http://localhost:8001"
+    USER_DIRECTORY_TIMEOUT_SECONDS: float = 3.0
 
     REGISTRY_ENABLED: bool = False
     REGISTRY_ADMIN_URL: str = "http://localhost:8080"

@@ -17,8 +17,6 @@ class Recipient(BaseModel):
 
     @model_validator(mode="after")
     def validate_contact_method(self) -> "Recipient":
-        if not any([self.email, self.phone_number, self.device_token]):
-            raise ValueError(
-                "Recipient requires at least one contact method (email, phone_number, device_token)."
-            )
+        if not self.user_id.strip():
+            raise ValueError("Recipient user_id is required.")
         return self

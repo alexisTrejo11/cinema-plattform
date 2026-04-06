@@ -17,6 +17,7 @@ from app.notification.application.usecases.notification_usecases import (
     ListNotificationsUseCase,
 )
 from app.notification.domain.enums import (
+    NotificationAttentionStatus,
     NotificationChannel,
     NotificationStatus,
     NotificationType,
@@ -60,6 +61,9 @@ async def list_notifications(
     channel: NotificationChannel | None = None,
     user_id: str | None = None,
     status_filter: NotificationStatus | None = Query(default=None, alias="status"),
+    is_important: bool | None = Query(default=None),
+    attention_status: NotificationAttentionStatus | None = Query(default=None),
+    source_event_type: str | None = Query(default=None),
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
     usecase: ListNotificationsUseCase = Depends(get_list_notifications_usecase),
@@ -69,6 +73,9 @@ async def list_notifications(
         channel=channel,
         user_id=user_id,
         status=status_filter,
+        is_important=is_important,
+        attention_status=attention_status,
+        source_event_type=source_event_type,
         limit=limit,
         offset=offset,
     )

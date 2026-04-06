@@ -81,7 +81,6 @@ async def lifespan(app: FastAPI):
     rc = getattr(app.state, "registry_client", None)
     if rc is not None and settings.REGISTRY_ENABLED:
         rc.stop_heartbeat_loop()
-        await rc.aclose()
 
     await close_mongo_connection()
 

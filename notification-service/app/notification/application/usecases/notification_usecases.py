@@ -9,6 +9,7 @@ from app.notification.application.queries.notification_queries import (
     ListNotificationsQuery,
 )
 from app.notification.domain.entities.models import Notification
+from app.notification.domain.enums import NotificationAttentionStatus
 from app.notification.domain.repository import NotificationRepository
 from app.notification.domain.sending_service import SendingService
 
@@ -29,9 +30,30 @@ class CreateNotificationUseCase:
             content=command.content,
             channel=command.channel,
             event_id=command.event_id,
+            correlation_id=str(command.correlation_id)
+            if command.correlation_id is not None
+            else None,
+            causation_id=str(command.causation_id)
+            if command.causation_id is not None
+            else None,
+            source=command.source,
+            source_event_type=command.source_event_type,
+            is_important=command.is_important,
+            attention_status=(
+                NotificationAttentionStatus.OPEN
+                if command.is_important
+                else NotificationAttentionStatus.NONE
+            ),
         )
         saved = await self.repository.save(notification)
-        await self.sending_service.send_notification(saved)
+        try:
+            await self.sending_service.send_notification(saved)
+            saved.mark_as_sent()
+        except Exception as exc:
+            saved.mark_as_failed(error_details=str(exc))
+            if saved.is_important:
+                saved.mark_attention_open()
+        await self.repository.update(saved)
         logger.info(
             "notification.created id=%s user_id=%s channel=%s type=%s",
             saved.notification_id,
@@ -63,6 +85,9 @@ class ListNotificationsUseCase:
             channel=query.channel,
             user_id=query.user_id,
             status=query.status,
+            is_important=query.is_important,
+            attention_status=query.attention_status,
+            source_event_type=query.source_event_type,
             limit=query.limit,
             offset=query.offset,
         )
@@ -71,6 +96,9 @@ class ListNotificationsUseCase:
             channel=query.channel,
             user_id=query.user_id,
             status=query.status,
+            is_important=query.is_important,
+            attention_status=query.attention_status,
+            source_event_type=query.source_event_type,
         )
         return NotificationListResponse(
             notifications=[

@@ -40,3 +40,14 @@ class NotificationStatus(str, Enum):
     DELIVERED = "DELIVERED"
     READ = "READ"
     CANCELED = "CANCELED"
+
+
+class NotificationAttentionStatus(str, Enum):
+    """
+    Monitoring state for alerts that need operational follow-up.
+    """
+
+    NONE = "NONE"
+    OPEN = "OPEN"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
+    RESOLVED = "RESOLVED"

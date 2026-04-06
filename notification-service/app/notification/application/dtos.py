@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Any, Optional, Dict, List
 from pydantic import BaseModel, ConfigDict, Field
 from app.notification.domain.enums import (
+    NotificationAttentionStatus,
     NotificationChannel,
     NotificationStatus,
     NotificationType,
@@ -76,6 +77,26 @@ class NotificationResponse(BaseModel):
     failed_at: Optional[datetime] = Field(None, description="When notification failed")
     error_details: Optional[str] = Field(None, description="Error details if failed")
     provider_response: Optional[str] = Field(None, description="Raw provider response")
+    source: Optional[str] = Field(None, description="Source service name")
+    source_event_type: Optional[str] = Field(
+        None, description="Original integration event type"
+    )
+    correlation_id: Optional[str] = Field(
+        None, description="Correlation ID for distributed tracing"
+    )
+    causation_id: Optional[str] = Field(
+        None, description="Causation ID for event chaining"
+    )
+    is_important: bool = Field(
+        default=False, description="Marks records that need easy monitoring."
+    )
+    attention_status: NotificationAttentionStatus = Field(
+        default=NotificationAttentionStatus.NONE,
+        description="Operational follow-up state for important alerts.",
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Additional event context."
+    )
 
 
 class NotificationListResponse(BaseModel):
