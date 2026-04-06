@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package catalog;
+
+service CatalogService {
+  rpc IsMovieActive(IsMovieActiveRequest) returns (IsMovieActiveResponse);
+  rpc IsCinemaActive(IsCinemaActiveRequest) returns (IsCinemaActiveResponse);
+  rpc TheaterHasSeats(TheaterHasSeatsRequest) returns (TheaterHasSeatsResponse);
+  rpc ListTheaterSeats(ListTheaterSeatsRequest) returns (ListTheaterSeatsResponse);
+}
+
+message IsMovieActiveRequest {
+  int64 movie_id = 1;
+}
+
+message IsMovieActiveResponse {
+  bool is_active = 1;
+}
+
+message IsCinemaActiveRequest {
+  int64 cinema_id = 1;
+}
+
+message IsCinemaActiveResponse {
+  bool is_active = 1;
+}
+
+message TheaterHasSeatsRequest {
+  int64 theater_id = 1;
+}
+
+message TheaterHasSeatsResponse {
+  bool has_seats = 1;
+}
+
+message ListTheaterSeatsRequest {
+  int64 theater_id = 1;
+}
+
+message TheaterSeat {
+  int64 id = 1;
+  int64 theater_id = 2;
+  string seat_row = 3;
+  int64 seat_number = 4;
+}
+
+message ListTheaterSeatsResponse {
+  repeated TheaterSeat seats = 1;
+}
